@@ -27,7 +27,7 @@ description: 產生股票策略回測視覺化 HTML 圖表。當使用者要求�
 - 單檔：只放一組 `(stock_id, stock_name, strategy_name)`
 - 批次：放入所有需要的組合
 
-產出路徑：`strategies/{stock_id}_{stock_name}_chart.html`
+產出路徑：`charts/{stock_id}_{stock_name}_chart.html`
 產出後用 `open {path}` 在瀏覽器中預覽。
 
 ## 完整腳本
@@ -39,7 +39,7 @@ sys.path.insert(0, '.')
 from backtest import *
 from pathlib import Path
 
-STRATEGIES_DIR = Path("strategies")
+CHARTS_DIR = Path("charts")
 
 # *** 根據需求修改此清單 ***
 # 批次：放入所有 watchlist 組合
@@ -473,7 +473,7 @@ def generate_chart(stock_id, stock_name, strategy_name):
     html = html.replace("{{LEGEND_ITEMS}}", "\n      ".join(legend_items))
     html = html.replace("{{DATA_JSON}}", json.dumps(data, ensure_ascii=False))
 
-    out_path = STRATEGIES_DIR / f"{stock_id}_{stock_name}_chart.html"
+    out_path = CHARTS_DIR / f"{stock_id}_{stock_name}_chart.html"
     out_path.write_text(html, encoding="utf-8")
     return out_path, len(trades)
 

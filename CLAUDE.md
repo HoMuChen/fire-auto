@@ -172,9 +172,19 @@ python backtest.py
 - 每個策略記錄：名稱、類別（順勢/逆勢）、進出場條件描述、報酬率、交易次數、勝率、平均持有天數、最大回撤、Sharpe ratio
 - 只記錄達到目標的策略（如回測報酬 > 50%），不記錄失敗的
 - 每個 JSON 檔包含 `backtest_engine` 和 `engine_version` 欄位，記錄產出來源
-- `WATCHLIST.md` — 風險調整後的觀察清單（篩選條件：Sharpe ≥ 1.4、回撤 < 20%、勝率 ≥ 60%）
 
 完成一檔股票的策略研究後，將可行策略寫入對應的 JSON 檔。
+
+### `WATCHLIST.md` — 觀察清單（根目錄）
+
+風險調整後的觀察清單，篩選條件：Sharpe ≥ 1.4、回撤 < 20%、勝率 ≥ 60%。
+連結指向 `strategies/*.json`（策略檔）和 `charts/*_chart.html`（圖表）。
+
+### `charts/` — 策略回測圖表
+
+每檔 watchlist 股票一個 HTML 圖表，檔名 `{stock_id}_{股票名稱}_chart.html`。
+包含股價走勢、技術指標 overlay、進出場標記、資金成長曲線、交易明細表。
+產生方式見 `.claude/skills/generate-strategy-chart.md`。
 
 ## 資料來源
 
