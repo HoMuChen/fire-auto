@@ -1,0 +1,29 @@
+{
+  "stock_id": "3205",
+  "stock_name": "佰研",
+  "industry_category": "生技醫療業",
+  "type": "tpex",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 11.1,
+  "daily_volatility_pct": 2.83,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "網格(5%/6%)",
+      "category": "逆勢",
+      "description": "每跌5%買入，漲6%賣出",
+      "stop_loss": "固定停損-10%（2倍網格）",
+      "total_return_pct": 60.88,
+      "final_capital": 1608793,
+      "trades": 20,
+      "win_rate_pct": 75.0,
+      "avg_holding_days": 28.8,
+      "max_drawdown_pct": 38.89,
+      "sharpe_ratio": 0.91,
+      "stop_loss_count": 5
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

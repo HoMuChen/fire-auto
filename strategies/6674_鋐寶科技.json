@@ -1,0 +1,29 @@
+{
+  "stock_id": "6674",
+  "stock_name": "鋐寶科技",
+  "industry_category": "通信網路業",
+  "type": "twse",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 25.7,
+  "daily_volatility_pct": 2.87,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "KD(5)快速",
+      "category": "逆勢",
+      "description": "KD(5) K<25且K上穿D買入，K>65且K下穿D賣出",
+      "stop_loss": "移動停損-6%",
+      "total_return_pct": 55.59,
+      "final_capital": 1555878,
+      "trades": 8,
+      "win_rate_pct": 62.5,
+      "avg_holding_days": 20.5,
+      "max_drawdown_pct": 18.18,
+      "sharpe_ratio": 0.99,
+      "stop_loss_count": 6
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

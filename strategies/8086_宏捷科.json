@@ -1,0 +1,29 @@
+{
+  "stock_id": "8086",
+  "stock_name": "宏捷科",
+  "industry_category": "半導體業",
+  "type": "tpex",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 17.5,
+  "daily_volatility_pct": 3.11,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "快速網格(3%/4%)",
+      "category": "逆勢",
+      "description": "每跌3%買入，漲4%賣出",
+      "stop_loss": "固定停損-7%",
+      "total_return_pct": 51.46,
+      "final_capital": 1514604,
+      "trades": 47,
+      "win_rate_pct": 70.2,
+      "avg_holding_days": 8.5,
+      "max_drawdown_pct": 40.27,
+      "sharpe_ratio": 0.79,
+      "stop_loss_count": 14
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

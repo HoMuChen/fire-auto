@@ -1,0 +1,29 @@
+{
+  "stock_id": "3708",
+  "stock_name": "上緯投控",
+  "industry_category": "綠能環保",
+  "type": "twse",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 5.8,
+  "daily_volatility_pct": 3.36,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "RSI階梯[40,30,20]→55",
+      "category": "逆勢",
+      "description": "RSI(14)分批建倉：跌破40買1/3，跌破30再買1/3，跌破20買最後1/3。RSI>55全部賣出",
+      "stop_loss": "ATR停損：均價-2×ATR(14)",
+      "total_return_pct": 61.26,
+      "final_capital": 1612610,
+      "trades": 12,
+      "win_rate_pct": 75.0,
+      "avg_holding_days": 21.8,
+      "max_drawdown_pct": 5.65,
+      "sharpe_ratio": 1.7,
+      "stop_loss_count": 3
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

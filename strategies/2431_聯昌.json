@@ -1,0 +1,29 @@
+{
+  "stock_id": "2431",
+  "stock_name": "聯昌",
+  "industry_category": "電子零組件業",
+  "type": "twse",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 18.3,
+  "daily_volatility_pct": 3.0,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "連3黑/持10天",
+      "category": "逆勢",
+      "description": "連續3天收黑買入，持10天賣出",
+      "stop_loss": "固定停損-5%",
+      "total_return_pct": 79.57,
+      "final_capital": 1795737,
+      "trades": 28,
+      "win_rate_pct": 60.7,
+      "avg_holding_days": 13.2,
+      "max_drawdown_pct": 22.56,
+      "sharpe_ratio": 1.11,
+      "stop_loss_count": 8
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

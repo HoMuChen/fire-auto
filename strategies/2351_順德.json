@@ -1,0 +1,29 @@
+{
+  "stock_id": "2351",
+  "stock_name": "順德",
+  "industry_category": "電子工業",
+  "type": "twse",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 15.9,
+  "daily_volatility_pct": 3.1,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "MACD快速(8,17,9)",
+      "category": "順勢",
+      "description": "MACD(8,17,9)柱狀圖負轉正買入，正轉負賣出",
+      "stop_loss": "移動停損-7%",
+      "total_return_pct": 55.67,
+      "final_capital": 1556746,
+      "trades": 20,
+      "win_rate_pct": 55.0,
+      "avg_holding_days": 16.2,
+      "max_drawdown_pct": 21.01,
+      "sharpe_ratio": 0.84,
+      "stop_loss_count": 10
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

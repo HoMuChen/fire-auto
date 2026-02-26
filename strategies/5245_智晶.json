@@ -1,0 +1,29 @@
+{
+  "stock_id": "5245",
+  "stock_name": "智晶",
+  "industry_category": "光電業",
+  "type": "tpex",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 23.4,
+  "daily_volatility_pct": 3.05,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "KD(5)快速",
+      "category": "逆勢",
+      "description": "KD(5) K<25且K上穿D買入，K>65且K下穿D賣出",
+      "stop_loss": "移動停損-6%",
+      "total_return_pct": 73.86,
+      "final_capital": 1738587,
+      "trades": 8,
+      "win_rate_pct": 50.0,
+      "avg_holding_days": 13.5,
+      "max_drawdown_pct": 15.55,
+      "sharpe_ratio": 1.19,
+      "stop_loss_count": 8
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

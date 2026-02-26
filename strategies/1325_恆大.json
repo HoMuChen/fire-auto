@@ -1,0 +1,29 @@
+{
+  "stock_id": "1325",
+  "stock_name": "恆大",
+  "industry_category": "塑膠工業",
+  "type": "twse",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 14.1,
+  "daily_volatility_pct": 2.77,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "RSI+Bollinger",
+      "category": "逆勢",
+      "description": "RSI(14)<35且低於布林下軌買入，RSI>65或碰上軌賣出",
+      "stop_loss": "ATR停損：買入價-2.5×ATR(14)",
+      "total_return_pct": 66.95,
+      "final_capital": 1669536,
+      "trades": 6,
+      "win_rate_pct": 83.3,
+      "avg_holding_days": 20.2,
+      "max_drawdown_pct": 25.06,
+      "sharpe_ratio": 1.31,
+      "stop_loss_count": 1
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

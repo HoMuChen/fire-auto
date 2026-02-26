@@ -1,0 +1,29 @@
+{
+  "stock_id": "3594",
+  "stock_name": "磐儀",
+  "industry_category": "電腦及週邊設備業",
+  "type": "tpex",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 8.4,
+  "daily_volatility_pct": 2.71,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "RSI(7)+SMA(10)",
+      "category": "逆勢",
+      "description": "RSI(7)<30且低於10日均線買入，RSI>50賣出",
+      "stop_loss": "ATR停損：買入價-1.5×ATR(7)",
+      "total_return_pct": 56.23,
+      "final_capital": 1562295,
+      "trades": 16,
+      "win_rate_pct": 87.5,
+      "avg_holding_days": 9.6,
+      "max_drawdown_pct": 20.19,
+      "sharpe_ratio": 1.09,
+      "stop_loss_count": 2
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

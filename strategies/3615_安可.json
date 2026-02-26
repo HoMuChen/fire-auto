@@ -1,0 +1,29 @@
+{
+  "stock_id": "3615",
+  "stock_name": "安可",
+  "industry_category": "光電業",
+  "type": "tpex",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 5.4,
+  "daily_volatility_pct": 3.2,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "RSI+Bollinger",
+      "category": "逆勢",
+      "description": "RSI(14)<35且低於布林下軌買入，RSI>65或碰上軌賣出",
+      "stop_loss": "ATR停損：買入價-2.5×ATR(14)",
+      "total_return_pct": 74.49,
+      "final_capital": 1744890,
+      "trades": 6,
+      "win_rate_pct": 66.7,
+      "avg_holding_days": 38.3,
+      "max_drawdown_pct": 25.76,
+      "sharpe_ratio": 1.19,
+      "stop_loss_count": 2
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

@@ -1,0 +1,29 @@
+{
+  "stock_id": "3380",
+  "stock_name": "明泰",
+  "industry_category": "電子工業",
+  "type": "twse",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 15.6,
+  "daily_volatility_pct": 2.54,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "威廉%R(14)",
+      "category": "逆勢",
+      "description": "Williams %R<-80買入，>-20賣出",
+      "stop_loss": "ATR停損：買入價-2×ATR(14)",
+      "total_return_pct": 66.49,
+      "final_capital": 1664887,
+      "trades": 26,
+      "win_rate_pct": 65.4,
+      "avg_holding_days": 14.0,
+      "max_drawdown_pct": 30.49,
+      "sharpe_ratio": 1.03,
+      "stop_loss_count": 9
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

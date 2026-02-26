@@ -1,0 +1,44 @@
+{
+  "stock_id": "4909",
+  "stock_name": "新復興",
+  "industry_category": "通信網路業",
+  "type": "tpex",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 0.5,
+  "daily_volatility_pct": 4.1,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "快速網格(3%/4%)",
+      "category": "逆勢",
+      "description": "每跌3%買入，漲4%賣出",
+      "stop_loss": "固定停損-7%",
+      "total_return_pct": 175.08,
+      "final_capital": 2750788,
+      "trades": 64,
+      "win_rate_pct": 67.2,
+      "avg_holding_days": 7.1,
+      "max_drawdown_pct": 43.92,
+      "sharpe_ratio": 1.33,
+      "stop_loss_count": 20
+    },
+    {
+      "rank": 2,
+      "name": "缺口回補",
+      "category": "逆勢",
+      "description": "跳空下跌>3%買入，缺口補回或持5天賣出",
+      "stop_loss": "固定停損-5%",
+      "total_return_pct": 54.0,
+      "final_capital": 1540037,
+      "trades": 70,
+      "win_rate_pct": 58.6,
+      "avg_holding_days": 4.7,
+      "max_drawdown_pct": 41.63,
+      "sharpe_ratio": 0.76,
+      "stop_loss_count": 21
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

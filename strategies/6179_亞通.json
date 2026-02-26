@@ -1,0 +1,29 @@
+{
+  "stock_id": "6179",
+  "stock_name": "亞通",
+  "industry_category": "其他",
+  "type": "tpex",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 25.5,
+  "daily_volatility_pct": 2.63,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "RSI+Bollinger",
+      "category": "逆勢",
+      "description": "RSI(14)<35且低於布林下軌買入，RSI>65或碰上軌賣出",
+      "stop_loss": "ATR停損：買入價-2.5×ATR(14)",
+      "total_return_pct": 59.14,
+      "final_capital": 1591445,
+      "trades": 7,
+      "win_rate_pct": 71.4,
+      "avg_holding_days": 49.9,
+      "max_drawdown_pct": 23.72,
+      "sharpe_ratio": 1.04,
+      "stop_loss_count": 1
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

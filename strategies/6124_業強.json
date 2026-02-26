@@ -1,0 +1,29 @@
+{
+  "stock_id": "6124",
+  "stock_name": "業強",
+  "industry_category": "電子零組件業",
+  "type": "tpex",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 16.6,
+  "daily_volatility_pct": 2.79,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "RSI+Bollinger",
+      "category": "逆勢",
+      "description": "RSI(14)<35且低於布林下軌買入，RSI>65或碰上軌賣出",
+      "stop_loss": "ATR停損：買入價-2.5×ATR(14)",
+      "total_return_pct": 56.76,
+      "final_capital": 1567615,
+      "trades": 9,
+      "win_rate_pct": 55.6,
+      "avg_holding_days": 34.9,
+      "max_drawdown_pct": 17.74,
+      "sharpe_ratio": 1.06,
+      "stop_loss_count": 4
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

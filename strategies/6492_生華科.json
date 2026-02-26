@@ -1,0 +1,29 @@
+{
+  "stock_id": "6492",
+  "stock_name": "生華科",
+  "industry_category": "生技醫療業",
+  "type": "tpex",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 8.1,
+  "daily_volatility_pct": 2.93,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "威廉%R(14)",
+      "category": "逆勢",
+      "description": "Williams %R<-80買入，>-20賣出",
+      "stop_loss": "ATR停損：買入價-2×ATR(14)",
+      "total_return_pct": 60.32,
+      "final_capital": 1603208,
+      "trades": 19,
+      "win_rate_pct": 68.4,
+      "avg_holding_days": 22.8,
+      "max_drawdown_pct": 36.24,
+      "sharpe_ratio": 0.92,
+      "stop_loss_count": 5
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}

@@ -1,0 +1,29 @@
+{
+  "stock_id": "2382",
+  "stock_name": "廣達",
+  "industry_category": "電腦及週邊設備業",
+  "type": "twse",
+  "backtest_period": "2024-02-15 ~ 2026-02-25",
+  "initial_capital": 1000000,
+  "buy_and_hold_return_pct": 11.6,
+  "daily_volatility_pct": 2.58,
+  "viable_strategies": [
+    {
+      "rank": 1,
+      "name": "KD(5)快速",
+      "category": "逆勢",
+      "description": "KD(5) K<25且K上穿D買入，K>65且K下穿D賣出",
+      "stop_loss": "移動停損-6%",
+      "total_return_pct": 51.57,
+      "final_capital": 1515745,
+      "trades": 6,
+      "win_rate_pct": 66.7,
+      "avg_holding_days": 29.3,
+      "max_drawdown_pct": 11.34,
+      "sharpe_ratio": 1.25,
+      "stop_loss_count": 3
+    }
+  ],
+  "backtest_engine": "backtest.py",
+  "engine_version": "v2"
+}
