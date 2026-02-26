@@ -48,9 +48,12 @@
 從 Supabase `stocks` 表篩選，排除以下非個股類別：
 ETF、上櫃ETF、上櫃指數股票型基金(ETF)、ETN、指數投資證券(ETN)、受益證券、存託憑證、所有證券、Index、大盤
 
-每筆欄位：`stock_id`, `stock_name`, `industry_category`, `type`
+每筆欄位：`stock_id`, `stock_name`, `industry_category`, `type`, `avg_daily_vol_張`, `low_liquidity`
 
-分佈：上市 1,231 / 上櫃 913 / 興櫃 374
+- `avg_daily_vol_張`：過去兩年平均每日成交張數（無本地股價資料者為 `null`）
+- `low_liquidity`：`true` 表示平均日成交張數 < 200 張，視為流動性不足，**回測與 Watchlist 應排除**；`false` 為可用標的；`null` 表示無本地股價資料
+
+分佈：上市 1,231 / 上櫃 913 / 興櫃 374（其中 low_liquidity=false 可用標的 1,439 檔）
 
 ### `data/stock_prices/` — 本地股價快取（CSV）
 
