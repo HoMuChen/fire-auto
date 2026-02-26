@@ -129,7 +129,8 @@ class StockCache:
         if not last:
             return True
         today = datetime.now().strftime("%Y-%m-%d")
-        return last < today
+        end_date = last if isinstance(last, str) else last.get("end", "")
+        return end_date < today
 
     def get(self, stock_id: str, force_update: bool = False) -> list[dict]:
         """
@@ -156,12 +157,13 @@ class StockCache:
             all_rows = existing + [{k: r[k] for k in CSV_FIELDS} for r in new_rows]
             _write_csv(csv_path, all_rows)
 
-        # 更新 meta：記錄快取中的最新日期
+        # 更新 meta：記錄快取的起始與結束日期
         final = _read_csv(csv_path) if new_rows or not existing else existing
         if final:
-            self._meta[stock_id] = final[-1]["date"]
+            self._meta[stock_id] = {"start": final[0]["date"], "end": final[-1]["date"]}
         else:
-            self._meta[stock_id] = datetime.now().strftime("%Y-%m-%d")
+            today = datetime.now().strftime("%Y-%m-%d")
+            self._meta[stock_id] = {"start": today, "end": today}
         _save_meta(self._meta)
 
     def update_all(self, progress: bool = True):
