@@ -160,7 +160,7 @@ ec.timeScale().fitContent();
 
 // Trades table
 const tb = document.getElementById('trades-tbody');
-const allT = [...D.tradesA.map(t=>{...t,st:'A'}),...D.tradesB.map(t=>{...t,st:'B'}),...D.tradesC.map(t=>{...t,st:'C'})].sort((a,b)=>a.buy_date<b.buy_date?-1:1);
+const allT = [...D.tradesA.map(t=>({...t,st:'A'})),...D.tradesB.map(t=>({...t,st:'B'})),...D.tradesC.map(t=>({...t,st:'C'}))].sort((a,b)=>a.buy_date<b.buy_date?-1:1);
 tb.innerHTML = allT.map((t,i)=>{
   const days = Math.round((new Date(t.sell_date)-new Date(t.buy_date))/86400000);
   const rc = t.ret_pct>0?'win':'lose';
