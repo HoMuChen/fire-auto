@@ -1,117 +1,16 @@
 # Fire-Auto
 
-交易策略研究專案，使用 Supabase 儲存台股股票列表與歷史股價資料。
+台股交易策略研究專案，透過 FinMind API 取得股價與籌碼資料，本地 CSV 快取。
 
 ## 環境設定
 
-- `.env.local` — Supabase credentials、FinMind API token、Cron secret
-
-## Supabase Database
-
-**URL**: `https://jnikspnudxhecsqthlbo.supabase.co`
-
-### `stocks` 表 — 股票列表（3,047 筆）
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `stock_id` | string (PK) | 股票代號（如 `2330`, `3687`, `00835B`） |
-| `stock_name` | string | 股票名稱 |
-| `industry_category` | string | 產業類別（如 數位雲端類、電子零組件業） |
-| `type` | string | 市場類型：`twse`（上市）/ `tpex`（上櫃） |
-| `sync_status` | string | 同步狀態（`synced`） |
-| `updated_at` | timestamp | 最後更新時間 |
-
-統計：上市 431、上櫃 522，其餘為 ETF 等。
-
-### `stock_prices` 表 — 日K線股價（~1,264,702 筆）
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | integer (PK) | 自增主鍵 |
-| `stock_id` | string (FK) | 股票代號，關聯 `stocks.stock_id` |
-| `date` | date | 交易日期 |
-| `open` | float | 開盤價 |
-| `high` | float | 最高價 |
-| `low` | float | 最低價 |
-| `close` | float | 收盤價 |
-| `volume` | integer | 成交股數 |
-| `trading_money` | integer | 成交金額 |
-| `trading_turnover` | integer | 成交筆數 |
-| `spread` | float | 漲跌幅 |
-
-日期範圍：2024-02-15 ~ 2026-02-25（約兩年日K線）。
-
-### `institutional_investors` 表 — 三大法人買賣超
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | integer (PK) | 自增主鍵 |
-| `stock_id` | string (FK) | 股票代號 |
-| `date` | date | 交易日期 |
-| `investor_name` | string | 法人類別 |
-| `buy` | integer | 買進股數 |
-| `sell` | integer | 賣出股數 |
-
-investor_name 值：`Foreign_Investor`（外資）、`Investment_Trust`（投信）、`Dealer_self`（自營商自行）、`Dealer_Hedging`（自營商避險）、`Foreign_Dealer_Self`
-日期範圍：2020-01-02 ~ 2026-02-25
-
-### `margin_trading` 表 — 融資融券
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | integer (PK) | 自增主鍵 |
-| `stock_id` | string (FK) | 股票代號 |
-| `date` | date | 交易日期 |
-| `margin_purchase_buy` | integer | 融資買進 |
-| `margin_purchase_sell` | integer | 融資賣出 |
-| `margin_purchase_cash_repayment` | integer | 融資現償 |
-| `margin_purchase_yesterday_balance` | integer | 融資前日餘額 |
-| `margin_purchase_today_balance` | integer | 融資今日餘額 |
-| `short_sale_buy` | integer | 融券買進 |
-| `short_sale_sell` | integer | 融券賣出 |
-| `short_sale_cash_repayment` | integer | 融券現償 |
-| `short_sale_yesterday_balance` | integer | 融券前日餘額 |
-| `short_sale_today_balance` | integer | 融券今日餘額 |
-
-日期範圍：2020-01-02 ~ 2026-02-25
-
-### `monthly_revenue` 表 — 月營收
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | integer (PK) | 自增主鍵 |
-| `stock_id` | string (FK) | 股票代號 |
-| `date` | date | 日期 |
-| `revenue_year` | integer | 營收年份 |
-| `revenue_month` | integer | 營收月份 |
-| `revenue` | bigint | 營收金額（元） |
-
-### `dividends` 表 — 除權息
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `stock_id` | string (FK) | 股票代號 |
-| `date` | date | 除權息日 |
-| `year` | integer | 年度 |
-| `cash_dividend` | float | 現金股利 |
-| `stock_dividend` | float | 股票股利 |
-
-### `financial_statements` 表 — 財報
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `stock_id` | string (FK) | 股票代號 |
-| `date` | date | 財報日期 |
-| `statement_type` | string | 報表類型（income, balance_sheet, ...） |
-| `item_name` | string | 科目名稱 |
-| `value` | float | 金額 |
+- `.env.local` — FinMind API token（`FINMIND_API_TOKEN`）
 
 ## 本地資料
 
 ### `individual_stocks.json` — 個股清單（2,518 檔）
 
-從 Supabase `stocks` 表篩選，排除以下非個股類別：
-ETF、上櫃ETF、上櫃指數股票型基金(ETF)、ETN、指數投資證券(ETN)、受益證券、存託憑證、所有證券、Index、大盤
+排除 ETF、ETN、受益證券、存託憑證等非個股類別。
 
 每筆欄位：`stock_id`, `stock_name`, `industry_category`, `type`, `avg_daily_vol_張`, `low_liquidity`
 
@@ -151,33 +50,41 @@ ETF、上櫃ETF、上櫃指數股票型基金(ETF)、ETN、指數投資證券(ET
 
 ## 股價快取模組 `stock_cache.py`
 
-從 Supabase 抓股價並快取在本地 CSV，下次直接讀本地檔案。
+透過 FinMind API 抓股價，快取在本地 CSV。
 
 ```python
 from stock_cache import StockCache
 cache = StockCache()
 
-# 取得股價（有快取讀快取，過期自動增量更新）
+# 讀取本地 CSV（不自動更新）
 rows = cache.get("2330")
 
-# 強制重新抓
-rows = cache.get("2330", force_update=True)
+# 更新今天全市場股價（1 個 API call，盤中/盤後皆可，同日 upsert）
+cache.update_today()
 
-# 批次更新全部
-cache.update_all()
+# 補抓指定日期範圍（每段 1 個 API call）
+cache.update_range("2026-02-27", "2026-03-02")
+
+# 更新單檔（增量，從本地最後日期接續）
+cache.update_one("2330")
 
 # 查看快取狀態
 cache.info()
 ```
 
-快取邏輯：
-- 本地最新日期 = 今天 → 直接讀 CSV
-- 本地最新日期 < 今天 → 增量更新（只抓缺少的日期）
-- 本地無資料 → 全量抓取
+CLI 用法：
+```bash
+python3 stock_cache.py today              # 更新今天全市場
+python3 stock_cache.py range 2026-02-27 2026-03-02  # 補抓日期範圍
+python3 stock_cache.py one 2330            # 增量更新單檔
+python3 stock_cache.py info                # 快取狀態
+```
+
+FinMind API 限制：600 req/hr（有 token）。全市場一天 = 1 call（~45,000 筆）。
 
 ## 籌碼快取模組 `chip_cache.py`
 
-從 Supabase 抓三大法人買賣超和融資融券，快取在本地 CSV。
+三大法人買賣超和融資融券的本地 CSV 快取。
 
 ```python
 from chip_cache import ChipCache
@@ -390,5 +297,5 @@ cache.info()
 
 ## 資料來源
 
-- **FinMind API** — token 存於 `.env.local`（`FINMIND_API_TOKEN`）
-- **Supabase** — 股票列表 + 歷史股價，本地快取於 `data/stock_prices/`
+- **FinMind API** — 股價、籌碼等每日資料的唯一來源，token 存於 `.env.local`（`FINMIND_API_TOKEN`）
+- **Supabase** — 僅保留歷史資料庫（不再用於每日更新），本地快取已完整
