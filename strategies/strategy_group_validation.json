@@ -1,0 +1,1844 @@
+{
+  "description": "策略 × 股票群組驗證框架",
+  "methodology": {
+    "stock_classification": "6 groups: {low_vol, med_vol, high_vol} x {trending, sideways}",
+    "volatility_split": "Terciles: low ≤ 0.3908 < med ≤ 0.5054 < high",
+    "trend_split": "R² of close vs time > 0.3 = trending",
+    "validation": "Positive avg per-trade return in BOTH Period A (2020-2022) and B (2023-2026)",
+    "min_trades_per_period": 30,
+    "transaction_costs": "Buy 0.14250000000000002% + Sell 0.14250000000000002% + Tax 0.3%"
+  },
+  "group_distribution": {
+    "high_vol/sideways": 209,
+    "high_vol/trending": 217,
+    "low_vol/sideways": 194,
+    "low_vol/trending": 234,
+    "med_vol/sideways": 220,
+    "med_vol/trending": 207
+  },
+  "summary": {
+    "total_stocks": 1281,
+    "total_strategies": 14,
+    "total_pairs_tested": 84,
+    "valid": 45,
+    "invalid": 39,
+    "insufficient_data": 0,
+    "total_trades_analyzed": 367220
+  },
+  "valid_pairs": [
+    {
+      "strategy": "唐奇安改良",
+      "category": "順勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 1297,
+        "avg_return_pct": 4.152,
+        "median_return_pct": -2.134,
+        "std_return_pct": 19.855,
+        "win_rate_pct": 43.6,
+        "profit_factor": 2.08,
+        "t_statistic": 7.53
+      },
+      "period_a": {
+        "trade_count": 691,
+        "avg_return_pct": 4.543,
+        "median_return_pct": -1.926,
+        "std_return_pct": 19.793,
+        "win_rate_pct": 45.3,
+        "profit_factor": 2.24,
+        "t_statistic": 6.03
+      },
+      "period_b": {
+        "trade_count": 606,
+        "avg_return_pct": 3.706,
+        "median_return_pct": -2.59,
+        "std_return_pct": 19.933,
+        "win_rate_pct": 41.6,
+        "profit_factor": 1.92,
+        "t_statistic": 4.58
+      }
+    },
+    {
+      "strategy": "AD背離",
+      "category": "量價",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 744,
+        "avg_return_pct": 3.68,
+        "median_return_pct": -2.276,
+        "std_return_pct": 18.347,
+        "win_rate_pct": 44.2,
+        "profit_factor": 1.94,
+        "t_statistic": 5.47
+      },
+      "period_a": {
+        "trade_count": 383,
+        "avg_return_pct": 2.71,
+        "median_return_pct": -3.263,
+        "std_return_pct": 14.89,
+        "win_rate_pct": 42.6,
+        "profit_factor": 1.69,
+        "t_statistic": 3.56
+      },
+      "period_b": {
+        "trade_count": 361,
+        "avg_return_pct": 4.71,
+        "median_return_pct": -1.456,
+        "std_return_pct": 21.387,
+        "win_rate_pct": 46.0,
+        "profit_factor": 2.21,
+        "t_statistic": 4.18
+      }
+    },
+    {
+      "strategy": "AD背離",
+      "category": "量價",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 549,
+        "avg_return_pct": 3.567,
+        "median_return_pct": -2.078,
+        "std_return_pct": 18.702,
+        "win_rate_pct": 43.2,
+        "profit_factor": 1.89,
+        "t_statistic": 4.47
+      },
+      "period_a": {
+        "trade_count": 284,
+        "avg_return_pct": 2.738,
+        "median_return_pct": -2.457,
+        "std_return_pct": 19.262,
+        "win_rate_pct": 40.8,
+        "profit_factor": 1.65,
+        "t_statistic": 2.4
+      },
+      "period_b": {
+        "trade_count": 265,
+        "avg_return_pct": 4.456,
+        "median_return_pct": -1.719,
+        "std_return_pct": 18.078,
+        "win_rate_pct": 45.7,
+        "profit_factor": 2.15,
+        "t_statistic": 4.01
+      }
+    },
+    {
+      "strategy": "MACD改良",
+      "category": "順勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 4244,
+        "avg_return_pct": 3.443,
+        "median_return_pct": -1.685,
+        "std_return_pct": 17.236,
+        "win_rate_pct": 44.1,
+        "profit_factor": 1.94,
+        "t_statistic": 13.01
+      },
+      "period_a": {
+        "trade_count": 2196,
+        "avg_return_pct": 4.268,
+        "median_return_pct": -1.039,
+        "std_return_pct": 17.975,
+        "win_rate_pct": 46.7,
+        "profit_factor": 2.19,
+        "t_statistic": 11.13
+      },
+      "period_b": {
+        "trade_count": 2048,
+        "avg_return_pct": 2.558,
+        "median_return_pct": -2.281,
+        "std_return_pct": 16.366,
+        "win_rate_pct": 41.4,
+        "profit_factor": 1.68,
+        "t_statistic": 7.07
+      }
+    },
+    {
+      "strategy": "MACD改良",
+      "category": "順勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 3975,
+        "avg_return_pct": 3.284,
+        "median_return_pct": -1.678,
+        "std_return_pct": 17.15,
+        "win_rate_pct": 44.0,
+        "profit_factor": 1.98,
+        "t_statistic": 12.07
+      },
+      "period_a": {
+        "trade_count": 1976,
+        "avg_return_pct": 4.522,
+        "median_return_pct": -0.584,
+        "std_return_pct": 18.131,
+        "win_rate_pct": 48.2,
+        "profit_factor": 2.48,
+        "t_statistic": 11.09
+      },
+      "period_b": {
+        "trade_count": 1999,
+        "avg_return_pct": 2.06,
+        "median_return_pct": -2.523,
+        "std_return_pct": 16.033,
+        "win_rate_pct": 39.8,
+        "profit_factor": 1.57,
+        "t_statistic": 5.74
+      }
+    },
+    {
+      "strategy": "波動率擠壓",
+      "category": "順勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 493,
+        "avg_return_pct": 2.916,
+        "median_return_pct": -2.274,
+        "std_return_pct": 15.003,
+        "win_rate_pct": 40.6,
+        "profit_factor": 2.07,
+        "t_statistic": 4.32
+      },
+      "period_a": {
+        "trade_count": 245,
+        "avg_return_pct": 2.567,
+        "median_return_pct": -1.984,
+        "std_return_pct": 14.202,
+        "win_rate_pct": 39.6,
+        "profit_factor": 1.92,
+        "t_statistic": 2.83
+      },
+      "period_b": {
+        "trade_count": 248,
+        "avg_return_pct": 3.261,
+        "median_return_pct": -2.533,
+        "std_return_pct": 15.776,
+        "win_rate_pct": 41.5,
+        "profit_factor": 2.22,
+        "t_statistic": 3.26
+      }
+    },
+    {
+      "strategy": "MACD改良",
+      "category": "順勢",
+      "group": "med_vol/sideways",
+      "overall": {
+        "trade_count": 4765,
+        "avg_return_pct": 2.829,
+        "median_return_pct": -2.316,
+        "std_return_pct": 16.895,
+        "win_rate_pct": 42.2,
+        "profit_factor": 1.75,
+        "t_statistic": 11.56
+      },
+      "period_a": {
+        "trade_count": 2542,
+        "avg_return_pct": 4.661,
+        "median_return_pct": -1.456,
+        "std_return_pct": 18.803,
+        "win_rate_pct": 46.2,
+        "profit_factor": 2.27,
+        "t_statistic": 12.5
+      },
+      "period_b": {
+        "trade_count": 2223,
+        "avg_return_pct": 0.734,
+        "median_return_pct": -3.207,
+        "std_return_pct": 14.122,
+        "win_rate_pct": 37.7,
+        "profit_factor": 1.19,
+        "t_statistic": 2.45
+      }
+    },
+    {
+      "strategy": "唐奇安+ADX",
+      "category": "順勢",
+      "group": "high_vol/trending",
+      "overall": {
+        "trade_count": 3056,
+        "avg_return_pct": 2.627,
+        "median_return_pct": -3.24,
+        "std_return_pct": 25.191,
+        "win_rate_pct": 39.8,
+        "profit_factor": 1.47,
+        "t_statistic": 5.76
+      },
+      "period_a": {
+        "trade_count": 1340,
+        "avg_return_pct": 1.119,
+        "median_return_pct": -3.48,
+        "std_return_pct": 24.749,
+        "win_rate_pct": 38.1,
+        "profit_factor": 1.18,
+        "t_statistic": 1.65
+      },
+      "period_b": {
+        "trade_count": 1716,
+        "avg_return_pct": 3.804,
+        "median_return_pct": -2.974,
+        "std_return_pct": 25.476,
+        "win_rate_pct": 41.0,
+        "profit_factor": 1.74,
+        "t_statistic": 6.19
+      }
+    },
+    {
+      "strategy": "唐奇安+ADX",
+      "category": "順勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 2752,
+        "avg_return_pct": 2.612,
+        "median_return_pct": -2.989,
+        "std_return_pct": 18.098,
+        "win_rate_pct": 39.5,
+        "profit_factor": 1.61,
+        "t_statistic": 7.57
+      },
+      "period_a": {
+        "trade_count": 1283,
+        "avg_return_pct": 2.632,
+        "median_return_pct": -2.889,
+        "std_return_pct": 17.762,
+        "win_rate_pct": 40.6,
+        "profit_factor": 1.63,
+        "t_statistic": 5.31
+      },
+      "period_b": {
+        "trade_count": 1469,
+        "avg_return_pct": 2.594,
+        "median_return_pct": -3.22,
+        "std_return_pct": 18.392,
+        "win_rate_pct": 38.5,
+        "profit_factor": 1.58,
+        "t_statistic": 5.41
+      }
+    },
+    {
+      "strategy": "唐奇安改良",
+      "category": "順勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 2147,
+        "avg_return_pct": 2.511,
+        "median_return_pct": -2.21,
+        "std_return_pct": 17.627,
+        "win_rate_pct": 39.2,
+        "profit_factor": 1.75,
+        "t_statistic": 6.6
+      },
+      "period_a": {
+        "trade_count": 1099,
+        "avg_return_pct": 2.418,
+        "median_return_pct": -1.859,
+        "std_return_pct": 17.72,
+        "win_rate_pct": 41.0,
+        "profit_factor": 1.76,
+        "t_statistic": 4.52
+      },
+      "period_b": {
+        "trade_count": 1048,
+        "avg_return_pct": 2.609,
+        "median_return_pct": -2.547,
+        "std_return_pct": 17.538,
+        "win_rate_pct": 37.2,
+        "profit_factor": 1.74,
+        "t_statistic": 4.82
+      }
+    },
+    {
+      "strategy": "唐奇安+ADX",
+      "category": "順勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 2520,
+        "avg_return_pct": 2.499,
+        "median_return_pct": -2.559,
+        "std_return_pct": 18.315,
+        "win_rate_pct": 40.1,
+        "profit_factor": 1.65,
+        "t_statistic": 6.85
+      },
+      "period_a": {
+        "trade_count": 1238,
+        "avg_return_pct": 2.534,
+        "median_return_pct": -2.083,
+        "std_return_pct": 18.491,
+        "win_rate_pct": 41.5,
+        "profit_factor": 1.71,
+        "t_statistic": 4.82
+      },
+      "period_b": {
+        "trade_count": 1282,
+        "avg_return_pct": 2.466,
+        "median_return_pct": -2.947,
+        "std_return_pct": 18.152,
+        "win_rate_pct": 38.7,
+        "profit_factor": 1.61,
+        "t_statistic": 4.86
+      }
+    },
+    {
+      "strategy": "N日新高改良",
+      "category": "順勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 2714,
+        "avg_return_pct": 2.183,
+        "median_return_pct": -2.641,
+        "std_return_pct": 17.173,
+        "win_rate_pct": 40.3,
+        "profit_factor": 1.59,
+        "t_statistic": 6.62
+      },
+      "period_a": {
+        "trade_count": 1295,
+        "avg_return_pct": 2.012,
+        "median_return_pct": -2.368,
+        "std_return_pct": 17.247,
+        "win_rate_pct": 40.7,
+        "profit_factor": 1.56,
+        "t_statistic": 4.2
+      },
+      "period_b": {
+        "trade_count": 1419,
+        "avg_return_pct": 2.34,
+        "median_return_pct": -3.017,
+        "std_return_pct": 17.11,
+        "win_rate_pct": 39.9,
+        "profit_factor": 1.61,
+        "t_statistic": 5.15
+      }
+    },
+    {
+      "strategy": "N日新高改良",
+      "category": "順勢",
+      "group": "high_vol/trending",
+      "overall": {
+        "trade_count": 3581,
+        "avg_return_pct": 2.106,
+        "median_return_pct": -3.286,
+        "std_return_pct": 22.46,
+        "win_rate_pct": 38.6,
+        "profit_factor": 1.41,
+        "t_statistic": 5.61
+      },
+      "period_a": {
+        "trade_count": 1556,
+        "avg_return_pct": 1.023,
+        "median_return_pct": -3.508,
+        "std_return_pct": 22.535,
+        "win_rate_pct": 36.9,
+        "profit_factor": 1.18,
+        "t_statistic": 1.79
+      },
+      "period_b": {
+        "trade_count": 2025,
+        "avg_return_pct": 2.938,
+        "median_return_pct": -3.166,
+        "std_return_pct": 22.372,
+        "win_rate_pct": 40.0,
+        "profit_factor": 1.61,
+        "t_statistic": 5.91
+      }
+    },
+    {
+      "strategy": "AD背離",
+      "category": "量價",
+      "group": "low_vol/sideways",
+      "overall": {
+        "trade_count": 533,
+        "avg_return_pct": 1.981,
+        "median_return_pct": -2.823,
+        "std_return_pct": 15.681,
+        "win_rate_pct": 40.7,
+        "profit_factor": 1.48,
+        "t_statistic": 2.92
+      },
+      "period_a": {
+        "trade_count": 260,
+        "avg_return_pct": 2.601,
+        "median_return_pct": -2.523,
+        "std_return_pct": 15.95,
+        "win_rate_pct": 41.2,
+        "profit_factor": 1.65,
+        "t_statistic": 2.63
+      },
+      "period_b": {
+        "trade_count": 273,
+        "avg_return_pct": 1.389,
+        "median_return_pct": -3.157,
+        "std_return_pct": 15.427,
+        "win_rate_pct": 40.3,
+        "profit_factor": 1.33,
+        "t_statistic": 1.49
+      }
+    },
+    {
+      "strategy": "唐奇安+ADX",
+      "category": "順勢",
+      "group": "med_vol/sideways",
+      "overall": {
+        "trade_count": 2937,
+        "avg_return_pct": 1.972,
+        "median_return_pct": -3.267,
+        "std_return_pct": 16.884,
+        "win_rate_pct": 38.8,
+        "profit_factor": 1.46,
+        "t_statistic": 6.33
+      },
+      "period_a": {
+        "trade_count": 1554,
+        "avg_return_pct": 3.49,
+        "median_return_pct": -2.339,
+        "std_return_pct": 18.271,
+        "win_rate_pct": 43.0,
+        "profit_factor": 1.87,
+        "t_statistic": 7.53
+      },
+      "period_b": {
+        "trade_count": 1383,
+        "avg_return_pct": 0.267,
+        "median_return_pct": -4.283,
+        "std_return_pct": 14.998,
+        "win_rate_pct": 34.1,
+        "profit_factor": 1.06,
+        "t_statistic": 0.66
+      }
+    },
+    {
+      "strategy": "N日新高改良",
+      "category": "順勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 3397,
+        "avg_return_pct": 1.891,
+        "median_return_pct": -3.288,
+        "std_return_pct": 16.051,
+        "win_rate_pct": 38.6,
+        "profit_factor": 1.46,
+        "t_statistic": 6.87
+      },
+      "period_a": {
+        "trade_count": 1586,
+        "avg_return_pct": 1.679,
+        "median_return_pct": -3.152,
+        "std_return_pct": 14.817,
+        "win_rate_pct": 39.0,
+        "profit_factor": 1.42,
+        "t_statistic": 4.51
+      },
+      "period_b": {
+        "trade_count": 1811,
+        "avg_return_pct": 2.076,
+        "median_return_pct": -3.354,
+        "std_return_pct": 17.061,
+        "win_rate_pct": 38.3,
+        "profit_factor": 1.49,
+        "t_statistic": 5.18
+      }
+    },
+    {
+      "strategy": "KD(9) 30/70",
+      "category": "逆勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 6778,
+        "avg_return_pct": 1.84,
+        "median_return_pct": -1.399,
+        "std_return_pct": 13.721,
+        "win_rate_pct": 46.3,
+        "profit_factor": 1.46,
+        "t_statistic": 11.04
+      },
+      "period_a": {
+        "trade_count": 3311,
+        "avg_return_pct": 1.771,
+        "median_return_pct": -1.075,
+        "std_return_pct": 13.053,
+        "win_rate_pct": 47.6,
+        "profit_factor": 1.45,
+        "t_statistic": 7.81
+      },
+      "period_b": {
+        "trade_count": 3467,
+        "avg_return_pct": 1.906,
+        "median_return_pct": -1.592,
+        "std_return_pct": 14.332,
+        "win_rate_pct": 45.0,
+        "profit_factor": 1.48,
+        "t_statistic": 7.83
+      }
+    },
+    {
+      "strategy": "雙均線改良",
+      "category": "順勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 2477,
+        "avg_return_pct": 1.752,
+        "median_return_pct": -2.025,
+        "std_return_pct": 13.02,
+        "win_rate_pct": 41.1,
+        "profit_factor": 1.57,
+        "t_statistic": 6.7
+      },
+      "period_a": {
+        "trade_count": 1293,
+        "avg_return_pct": 2.363,
+        "median_return_pct": -1.251,
+        "std_return_pct": 13.073,
+        "win_rate_pct": 45.6,
+        "profit_factor": 1.83,
+        "t_statistic": 6.5
+      },
+      "period_b": {
+        "trade_count": 1184,
+        "avg_return_pct": 1.085,
+        "median_return_pct": -2.822,
+        "std_return_pct": 12.934,
+        "win_rate_pct": 36.1,
+        "profit_factor": 1.33,
+        "t_statistic": 2.89
+      }
+    },
+    {
+      "strategy": "唐奇安+ADX",
+      "category": "順勢",
+      "group": "high_vol/sideways",
+      "overall": {
+        "trade_count": 2762,
+        "avg_return_pct": 1.75,
+        "median_return_pct": -4.157,
+        "std_return_pct": 23.094,
+        "win_rate_pct": 37.6,
+        "profit_factor": 1.3,
+        "t_statistic": 3.98
+      },
+      "period_a": {
+        "trade_count": 1432,
+        "avg_return_pct": 3.058,
+        "median_return_pct": -3.674,
+        "std_return_pct": 25.355,
+        "win_rate_pct": 40.8,
+        "profit_factor": 1.53,
+        "t_statistic": 4.56
+      },
+      "period_b": {
+        "trade_count": 1330,
+        "avg_return_pct": 0.341,
+        "median_return_pct": -4.504,
+        "std_return_pct": 20.296,
+        "win_rate_pct": 34.2,
+        "profit_factor": 1.06,
+        "t_statistic": 0.61
+      }
+    },
+    {
+      "strategy": "雙均線改良",
+      "category": "順勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 2683,
+        "avg_return_pct": 1.661,
+        "median_return_pct": -1.578,
+        "std_return_pct": 10.498,
+        "win_rate_pct": 41.9,
+        "profit_factor": 1.63,
+        "t_statistic": 8.19
+      },
+      "period_a": {
+        "trade_count": 1373,
+        "avg_return_pct": 2.488,
+        "median_return_pct": -0.584,
+        "std_return_pct": 10.7,
+        "win_rate_pct": 47.7,
+        "profit_factor": 2.05,
+        "t_statistic": 8.62
+      },
+      "period_b": {
+        "trade_count": 1310,
+        "avg_return_pct": 0.794,
+        "median_return_pct": -2.344,
+        "std_return_pct": 10.214,
+        "win_rate_pct": 35.9,
+        "profit_factor": 1.27,
+        "t_statistic": 2.81
+      }
+    },
+    {
+      "strategy": "超跌反彈",
+      "category": "逆勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 1762,
+        "avg_return_pct": 1.651,
+        "median_return_pct": -3.663,
+        "std_return_pct": 17.064,
+        "win_rate_pct": 37.4,
+        "profit_factor": 1.36,
+        "t_statistic": 4.06
+      },
+      "period_a": {
+        "trade_count": 772,
+        "avg_return_pct": 0.367,
+        "median_return_pct": -5.288,
+        "std_return_pct": 15.138,
+        "win_rate_pct": 34.7,
+        "profit_factor": 1.07,
+        "t_statistic": 0.67
+      },
+      "period_b": {
+        "trade_count": 990,
+        "avg_return_pct": 2.653,
+        "median_return_pct": -2.696,
+        "std_return_pct": 18.372,
+        "win_rate_pct": 39.5,
+        "profit_factor": 1.63,
+        "t_statistic": 4.54
+      }
+    },
+    {
+      "strategy": "波動率擠壓",
+      "category": "順勢",
+      "group": "high_vol/trending",
+      "overall": {
+        "trade_count": 594,
+        "avg_return_pct": 1.477,
+        "median_return_pct": -2.237,
+        "std_return_pct": 16.029,
+        "win_rate_pct": 38.6,
+        "profit_factor": 1.43,
+        "t_statistic": 2.25
+      },
+      "period_a": {
+        "trade_count": 277,
+        "avg_return_pct": 0.562,
+        "median_return_pct": -1.841,
+        "std_return_pct": 16.346,
+        "win_rate_pct": 38.3,
+        "profit_factor": 1.16,
+        "t_statistic": 0.57
+      },
+      "period_b": {
+        "trade_count": 317,
+        "avg_return_pct": 2.277,
+        "median_return_pct": -2.392,
+        "std_return_pct": 15.728,
+        "win_rate_pct": 38.8,
+        "profit_factor": 1.68,
+        "t_statistic": 2.58
+      }
+    },
+    {
+      "strategy": "KD(5)快速",
+      "category": "逆勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 3519,
+        "avg_return_pct": 1.444,
+        "median_return_pct": -2.107,
+        "std_return_pct": 12.48,
+        "win_rate_pct": 42.0,
+        "profit_factor": 1.42,
+        "t_statistic": 6.86
+      },
+      "period_a": {
+        "trade_count": 1548,
+        "avg_return_pct": 1.601,
+        "median_return_pct": -2.359,
+        "std_return_pct": 12.744,
+        "win_rate_pct": 42.5,
+        "profit_factor": 1.44,
+        "t_statistic": 4.94
+      },
+      "period_b": {
+        "trade_count": 1971,
+        "avg_return_pct": 1.32,
+        "median_return_pct": -1.98,
+        "std_return_pct": 12.271,
+        "win_rate_pct": 41.7,
+        "profit_factor": 1.39,
+        "t_statistic": 4.78
+      }
+    },
+    {
+      "strategy": "N日新高改良",
+      "category": "順勢",
+      "group": "med_vol/sideways",
+      "overall": {
+        "trade_count": 3593,
+        "avg_return_pct": 1.434,
+        "median_return_pct": -3.672,
+        "std_return_pct": 15.12,
+        "win_rate_pct": 38.0,
+        "profit_factor": 1.35,
+        "t_statistic": 5.69
+      },
+      "period_a": {
+        "trade_count": 1888,
+        "avg_return_pct": 2.559,
+        "median_return_pct": -2.688,
+        "std_return_pct": 16.165,
+        "win_rate_pct": 41.4,
+        "profit_factor": 1.65,
+        "t_statistic": 6.88
+      },
+      "period_b": {
+        "trade_count": 1705,
+        "avg_return_pct": 0.188,
+        "median_return_pct": -4.364,
+        "std_return_pct": 13.77,
+        "win_rate_pct": 34.3,
+        "profit_factor": 1.04,
+        "t_statistic": 0.57
+      }
+    },
+    {
+      "strategy": "N日新高改良",
+      "category": "順勢",
+      "group": "high_vol/sideways",
+      "overall": {
+        "trade_count": 3298,
+        "avg_return_pct": 1.417,
+        "median_return_pct": -3.898,
+        "std_return_pct": 21.164,
+        "win_rate_pct": 37.4,
+        "profit_factor": 1.27,
+        "t_statistic": 3.84
+      },
+      "period_a": {
+        "trade_count": 1657,
+        "avg_return_pct": 2.793,
+        "median_return_pct": -3.247,
+        "std_return_pct": 23.391,
+        "win_rate_pct": 40.4,
+        "profit_factor": 1.53,
+        "t_statistic": 4.86
+      },
+      "period_b": {
+        "trade_count": 1641,
+        "avg_return_pct": 0.027,
+        "median_return_pct": -4.543,
+        "std_return_pct": 18.552,
+        "win_rate_pct": 34.3,
+        "profit_factor": 1.0,
+        "t_statistic": 0.06
+      }
+    },
+    {
+      "strategy": "MACD改良",
+      "category": "順勢",
+      "group": "high_vol/trending",
+      "overall": {
+        "trade_count": 3992,
+        "avg_return_pct": 1.331,
+        "median_return_pct": -2.282,
+        "std_return_pct": 24.944,
+        "win_rate_pct": 42.7,
+        "profit_factor": 1.22,
+        "t_statistic": 3.37
+      },
+      "period_a": {
+        "trade_count": 1952,
+        "avg_return_pct": 0.029,
+        "median_return_pct": -2.139,
+        "std_return_pct": 27.841,
+        "win_rate_pct": 43.2,
+        "profit_factor": 1.0,
+        "t_statistic": 0.05
+      },
+      "period_b": {
+        "trade_count": 2040,
+        "avg_return_pct": 2.578,
+        "median_return_pct": -2.536,
+        "std_return_pct": 21.749,
+        "win_rate_pct": 42.2,
+        "profit_factor": 1.54,
+        "t_statistic": 5.35
+      }
+    },
+    {
+      "strategy": "N日新高+量",
+      "category": "順勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 6764,
+        "avg_return_pct": 1.322,
+        "median_return_pct": -2.539,
+        "std_return_pct": 13.146,
+        "win_rate_pct": 36.1,
+        "profit_factor": 1.41,
+        "t_statistic": 8.27
+      },
+      "period_a": {
+        "trade_count": 3156,
+        "avg_return_pct": 0.79,
+        "median_return_pct": -2.514,
+        "std_return_pct": 11.638,
+        "win_rate_pct": 36.2,
+        "profit_factor": 1.25,
+        "t_statistic": 3.81
+      },
+      "period_b": {
+        "trade_count": 3608,
+        "avg_return_pct": 1.788,
+        "median_return_pct": -2.549,
+        "std_return_pct": 14.321,
+        "win_rate_pct": 36.0,
+        "profit_factor": 1.54,
+        "t_statistic": 7.5
+      }
+    },
+    {
+      "strategy": "量價突破",
+      "category": "量價",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 5066,
+        "avg_return_pct": 1.256,
+        "median_return_pct": -2.496,
+        "std_return_pct": 12.698,
+        "win_rate_pct": 36.4,
+        "profit_factor": 1.4,
+        "t_statistic": 7.04
+      },
+      "period_a": {
+        "trade_count": 2357,
+        "avg_return_pct": 0.672,
+        "median_return_pct": -2.533,
+        "std_return_pct": 11.019,
+        "win_rate_pct": 36.2,
+        "profit_factor": 1.22,
+        "t_statistic": 2.96
+      },
+      "period_b": {
+        "trade_count": 2709,
+        "avg_return_pct": 1.764,
+        "median_return_pct": -2.425,
+        "std_return_pct": 13.977,
+        "win_rate_pct": 36.6,
+        "profit_factor": 1.56,
+        "t_statistic": 6.57
+      }
+    },
+    {
+      "strategy": "量價突破",
+      "category": "量價",
+      "group": "high_vol/trending",
+      "overall": {
+        "trade_count": 4523,
+        "avg_return_pct": 1.249,
+        "median_return_pct": -2.539,
+        "std_return_pct": 18.549,
+        "win_rate_pct": 36.3,
+        "profit_factor": 1.31,
+        "t_statistic": 4.53
+      },
+      "period_a": {
+        "trade_count": 2076,
+        "avg_return_pct": 0.076,
+        "median_return_pct": -2.536,
+        "std_return_pct": 18.816,
+        "win_rate_pct": 35.0,
+        "profit_factor": 1.02,
+        "t_statistic": 0.18
+      },
+      "period_b": {
+        "trade_count": 2447,
+        "avg_return_pct": 2.245,
+        "median_return_pct": -2.55,
+        "std_return_pct": 18.264,
+        "win_rate_pct": 37.4,
+        "profit_factor": 1.62,
+        "t_statistic": 6.08
+      }
+    },
+    {
+      "strategy": "雙均線改良",
+      "category": "順勢",
+      "group": "med_vol/sideways",
+      "overall": {
+        "trade_count": 2836,
+        "avg_return_pct": 1.232,
+        "median_return_pct": -2.413,
+        "std_return_pct": 12.139,
+        "win_rate_pct": 39.2,
+        "profit_factor": 1.39,
+        "t_statistic": 5.41
+      },
+      "period_a": {
+        "trade_count": 1506,
+        "avg_return_pct": 2.135,
+        "median_return_pct": -1.768,
+        "std_return_pct": 12.502,
+        "win_rate_pct": 42.5,
+        "profit_factor": 1.73,
+        "t_statistic": 6.63
+      },
+      "period_b": {
+        "trade_count": 1330,
+        "avg_return_pct": 0.21,
+        "median_return_pct": -3.145,
+        "std_return_pct": 11.635,
+        "win_rate_pct": 35.6,
+        "profit_factor": 1.06,
+        "t_statistic": 0.66
+      }
+    },
+    {
+      "strategy": "KD(5)快速",
+      "category": "逆勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 2778,
+        "avg_return_pct": 1.083,
+        "median_return_pct": -0.584,
+        "std_return_pct": 9.499,
+        "win_rate_pct": 47.3,
+        "profit_factor": 1.37,
+        "t_statistic": 6.01
+      },
+      "period_a": {
+        "trade_count": 1191,
+        "avg_return_pct": 1.843,
+        "median_return_pct": 0.141,
+        "std_return_pct": 10.09,
+        "win_rate_pct": 50.8,
+        "profit_factor": 1.66,
+        "t_statistic": 6.3
+      },
+      "period_b": {
+        "trade_count": 1587,
+        "avg_return_pct": 0.513,
+        "median_return_pct": -1.123,
+        "std_return_pct": 8.99,
+        "win_rate_pct": 44.7,
+        "profit_factor": 1.17,
+        "t_statistic": 2.27
+      }
+    },
+    {
+      "strategy": "雙均線(5/20)",
+      "category": "順勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 9470,
+        "avg_return_pct": 1.004,
+        "median_return_pct": -2.033,
+        "std_return_pct": 11.082,
+        "win_rate_pct": 34.9,
+        "profit_factor": 1.37,
+        "t_statistic": 8.81
+      },
+      "period_a": {
+        "trade_count": 4449,
+        "avg_return_pct": 0.875,
+        "median_return_pct": -1.882,
+        "std_return_pct": 10.265,
+        "win_rate_pct": 36.0,
+        "profit_factor": 1.33,
+        "t_statistic": 5.69
+      },
+      "period_b": {
+        "trade_count": 5021,
+        "avg_return_pct": 1.117,
+        "median_return_pct": -2.147,
+        "std_return_pct": 11.759,
+        "win_rate_pct": 33.9,
+        "profit_factor": 1.41,
+        "t_statistic": 6.73
+      }
+    },
+    {
+      "strategy": "MACD快速(8,17,9)",
+      "category": "順勢",
+      "group": "med_vol/trending",
+      "overall": {
+        "trade_count": 15008,
+        "avg_return_pct": 0.96,
+        "median_return_pct": -1.965,
+        "std_return_pct": 10.488,
+        "win_rate_pct": 35.7,
+        "profit_factor": 1.37,
+        "t_statistic": 11.21
+      },
+      "period_a": {
+        "trade_count": 7079,
+        "avg_return_pct": 0.905,
+        "median_return_pct": -1.854,
+        "std_return_pct": 9.823,
+        "win_rate_pct": 36.7,
+        "profit_factor": 1.35,
+        "t_statistic": 7.75
+      },
+      "period_b": {
+        "trade_count": 7929,
+        "avg_return_pct": 1.01,
+        "median_return_pct": -2.079,
+        "std_return_pct": 11.049,
+        "win_rate_pct": 34.7,
+        "profit_factor": 1.37,
+        "t_statistic": 8.14
+      }
+    },
+    {
+      "strategy": "KD(9) 30/70",
+      "category": "逆勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 5756,
+        "avg_return_pct": 0.841,
+        "median_return_pct": 0.251,
+        "std_return_pct": 10.028,
+        "win_rate_pct": 51.2,
+        "profit_factor": 1.25,
+        "t_statistic": 6.36
+      },
+      "period_a": {
+        "trade_count": 2737,
+        "avg_return_pct": 1.261,
+        "median_return_pct": 1.059,
+        "std_return_pct": 9.795,
+        "win_rate_pct": 54.3,
+        "profit_factor": 1.4,
+        "t_statistic": 6.74
+      },
+      "period_b": {
+        "trade_count": 3019,
+        "avg_return_pct": 0.46,
+        "median_return_pct": -0.584,
+        "std_return_pct": 10.221,
+        "win_rate_pct": 48.5,
+        "profit_factor": 1.13,
+        "t_statistic": 2.48
+      }
+    },
+    {
+      "strategy": "N日新高+量",
+      "category": "順勢",
+      "group": "med_vol/sideways",
+      "overall": {
+        "trade_count": 7144,
+        "avg_return_pct": 0.821,
+        "median_return_pct": -2.904,
+        "std_return_pct": 12.663,
+        "win_rate_pct": 33.8,
+        "profit_factor": 1.24,
+        "t_statistic": 5.48
+      },
+      "period_a": {
+        "trade_count": 3503,
+        "avg_return_pct": 1.565,
+        "median_return_pct": -2.844,
+        "std_return_pct": 14.022,
+        "win_rate_pct": 36.6,
+        "profit_factor": 1.45,
+        "t_statistic": 6.61
+      },
+      "period_b": {
+        "trade_count": 3641,
+        "avg_return_pct": 0.104,
+        "median_return_pct": -2.923,
+        "std_return_pct": 11.156,
+        "win_rate_pct": 31.1,
+        "profit_factor": 1.03,
+        "t_statistic": 0.56
+      }
+    },
+    {
+      "strategy": "MACD快速(8,17,9)",
+      "category": "順勢",
+      "group": "med_vol/sideways",
+      "overall": {
+        "trade_count": 15797,
+        "avg_return_pct": 0.698,
+        "median_return_pct": -2.122,
+        "std_return_pct": 10.272,
+        "win_rate_pct": 33.7,
+        "profit_factor": 1.26,
+        "t_statistic": 8.55
+      },
+      "period_a": {
+        "trade_count": 7365,
+        "avg_return_pct": 1.454,
+        "median_return_pct": -2.09,
+        "std_return_pct": 11.683,
+        "win_rate_pct": 36.1,
+        "profit_factor": 1.51,
+        "t_statistic": 10.68
+      },
+      "period_b": {
+        "trade_count": 8432,
+        "avg_return_pct": 0.038,
+        "median_return_pct": -2.15,
+        "std_return_pct": 8.806,
+        "win_rate_pct": 31.5,
+        "profit_factor": 1.01,
+        "t_statistic": 0.4
+      }
+    },
+    {
+      "strategy": "MACD改良",
+      "category": "順勢",
+      "group": "high_vol/sideways",
+      "overall": {
+        "trade_count": 4185,
+        "avg_return_pct": 0.654,
+        "median_return_pct": -3.11,
+        "std_return_pct": 22.514,
+        "win_rate_pct": 39.5,
+        "profit_factor": 1.11,
+        "t_statistic": 1.88
+      },
+      "period_a": {
+        "trade_count": 2182,
+        "avg_return_pct": 1.072,
+        "median_return_pct": -2.806,
+        "std_return_pct": 26.553,
+        "win_rate_pct": 42.2,
+        "profit_factor": 1.16,
+        "t_statistic": 1.89
+      },
+      "period_b": {
+        "trade_count": 2003,
+        "avg_return_pct": 0.199,
+        "median_return_pct": -3.237,
+        "std_return_pct": 17.055,
+        "win_rate_pct": 36.5,
+        "profit_factor": 1.04,
+        "t_statistic": 0.52
+      }
+    },
+    {
+      "strategy": "KD(9) 30/70",
+      "category": "逆勢",
+      "group": "med_vol/sideways",
+      "overall": {
+        "trade_count": 7708,
+        "avg_return_pct": 0.612,
+        "median_return_pct": -3.085,
+        "std_return_pct": 13.01,
+        "win_rate_pct": 41.3,
+        "profit_factor": 1.14,
+        "t_statistic": 4.13
+      },
+      "period_a": {
+        "trade_count": 3903,
+        "avg_return_pct": 1.082,
+        "median_return_pct": -3.296,
+        "std_return_pct": 14.098,
+        "win_rate_pct": 41.9,
+        "profit_factor": 1.24,
+        "t_statistic": 4.8
+      },
+      "period_b": {
+        "trade_count": 3805,
+        "avg_return_pct": 0.129,
+        "median_return_pct": -2.935,
+        "std_return_pct": 11.774,
+        "win_rate_pct": 40.6,
+        "profit_factor": 1.03,
+        "t_statistic": 0.68
+      }
+    },
+    {
+      "strategy": "超跌反彈",
+      "category": "逆勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 913,
+        "avg_return_pct": 0.607,
+        "median_return_pct": -4.05,
+        "std_return_pct": 15.096,
+        "win_rate_pct": 35.7,
+        "profit_factor": 1.14,
+        "t_statistic": 1.22
+      },
+      "period_a": {
+        "trade_count": 405,
+        "avg_return_pct": 0.354,
+        "median_return_pct": -4.408,
+        "std_return_pct": 13.728,
+        "win_rate_pct": 35.3,
+        "profit_factor": 1.08,
+        "t_statistic": 0.52
+      },
+      "period_b": {
+        "trade_count": 508,
+        "avg_return_pct": 0.81,
+        "median_return_pct": -3.898,
+        "std_return_pct": 16.114,
+        "win_rate_pct": 36.0,
+        "profit_factor": 1.18,
+        "t_statistic": 1.13
+      }
+    },
+    {
+      "strategy": "波動率擠壓",
+      "category": "順勢",
+      "group": "med_vol/sideways",
+      "overall": {
+        "trade_count": 516,
+        "avg_return_pct": 0.558,
+        "median_return_pct": -3.271,
+        "std_return_pct": 10.085,
+        "win_rate_pct": 35.3,
+        "profit_factor": 1.18,
+        "t_statistic": 1.26
+      },
+      "period_a": {
+        "trade_count": 255,
+        "avg_return_pct": 0.324,
+        "median_return_pct": -4.185,
+        "std_return_pct": 10.941,
+        "win_rate_pct": 33.7,
+        "profit_factor": 1.09,
+        "t_statistic": 0.47
+      },
+      "period_b": {
+        "trade_count": 261,
+        "avg_return_pct": 0.787,
+        "median_return_pct": -2.068,
+        "std_return_pct": 9.188,
+        "win_rate_pct": 36.8,
+        "profit_factor": 1.29,
+        "t_statistic": 1.38
+      }
+    },
+    {
+      "strategy": "量價突破",
+      "category": "量價",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 5216,
+        "avg_return_pct": 0.54,
+        "median_return_pct": -1.982,
+        "std_return_pct": 10.123,
+        "win_rate_pct": 34.5,
+        "profit_factor": 1.21,
+        "t_statistic": 3.85
+      },
+      "period_a": {
+        "trade_count": 2449,
+        "avg_return_pct": 0.055,
+        "median_return_pct": -2.053,
+        "std_return_pct": 9.15,
+        "win_rate_pct": 32.9,
+        "profit_factor": 1.02,
+        "t_statistic": 0.3
+      },
+      "period_b": {
+        "trade_count": 2767,
+        "avg_return_pct": 0.969,
+        "median_return_pct": -1.915,
+        "std_return_pct": 10.896,
+        "win_rate_pct": 35.9,
+        "profit_factor": 1.38,
+        "t_statistic": 4.68
+      }
+    },
+    {
+      "strategy": "N日新高+量",
+      "category": "順勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 6649,
+        "avg_return_pct": 0.531,
+        "median_return_pct": -1.917,
+        "std_return_pct": 10.545,
+        "win_rate_pct": 34.0,
+        "profit_factor": 1.21,
+        "t_statistic": 4.11
+      },
+      "period_a": {
+        "trade_count": 3124,
+        "avg_return_pct": 0.233,
+        "median_return_pct": -1.916,
+        "std_return_pct": 9.104,
+        "win_rate_pct": 33.7,
+        "profit_factor": 1.09,
+        "t_statistic": 1.43
+      },
+      "period_b": {
+        "trade_count": 3525,
+        "avg_return_pct": 0.796,
+        "median_return_pct": -1.917,
+        "std_return_pct": 11.67,
+        "win_rate_pct": 34.2,
+        "profit_factor": 1.31,
+        "t_statistic": 4.05
+      }
+    },
+    {
+      "strategy": "雙均線(5/20)",
+      "category": "順勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 10677,
+        "avg_return_pct": 0.479,
+        "median_return_pct": -1.464,
+        "std_return_pct": 8.025,
+        "win_rate_pct": 32.8,
+        "profit_factor": 1.23,
+        "t_statistic": 6.17
+      },
+      "period_a": {
+        "trade_count": 5035,
+        "avg_return_pct": 0.571,
+        "median_return_pct": -1.392,
+        "std_return_pct": 7.587,
+        "win_rate_pct": 33.8,
+        "profit_factor": 1.29,
+        "t_statistic": 5.34
+      },
+      "period_b": {
+        "trade_count": 5642,
+        "avg_return_pct": 0.397,
+        "median_return_pct": -1.512,
+        "std_return_pct": 8.396,
+        "win_rate_pct": 31.9,
+        "profit_factor": 1.18,
+        "t_statistic": 3.55
+      }
+    },
+    {
+      "strategy": "MACD快速(8,17,9)",
+      "category": "順勢",
+      "group": "low_vol/trending",
+      "overall": {
+        "trade_count": 16821,
+        "avg_return_pct": 0.294,
+        "median_return_pct": -1.373,
+        "std_return_pct": 6.913,
+        "win_rate_pct": 34.0,
+        "profit_factor": 1.15,
+        "t_statistic": 5.51
+      },
+      "period_a": {
+        "trade_count": 7917,
+        "avg_return_pct": 0.415,
+        "median_return_pct": -1.325,
+        "std_return_pct": 6.815,
+        "win_rate_pct": 34.7,
+        "profit_factor": 1.23,
+        "t_statistic": 5.42
+      },
+      "period_b": {
+        "trade_count": 8904,
+        "avg_return_pct": 0.186,
+        "median_return_pct": -1.413,
+        "std_return_pct": 6.998,
+        "win_rate_pct": 33.3,
+        "profit_factor": 1.09,
+        "t_statistic": 2.5
+      }
+    },
+    {
+      "strategy": "MACD快速(8,17,9)",
+      "category": "順勢",
+      "group": "high_vol/sideways",
+      "overall": {
+        "trade_count": 12505,
+        "avg_return_pct": 0.015,
+        "median_return_pct": -2.359,
+        "std_return_pct": 16.383,
+        "win_rate_pct": 32.5,
+        "profit_factor": 1.0,
+        "t_statistic": 0.1
+      },
+      "period_a": {
+        "trade_count": 6208,
+        "avg_return_pct": 0.007,
+        "median_return_pct": -2.298,
+        "std_return_pct": 19.652,
+        "win_rate_pct": 34.1,
+        "profit_factor": 1.0,
+        "t_statistic": 0.03
+      },
+      "period_b": {
+        "trade_count": 6297,
+        "avg_return_pct": 0.023,
+        "median_return_pct": -2.425,
+        "std_return_pct": 12.341,
+        "win_rate_pct": 31.0,
+        "profit_factor": 1.01,
+        "t_statistic": 0.15
+      }
+    }
+  ],
+  "recommended_per_group": {
+    "high_vol/sideways": [
+      {
+        "strategy": "唐奇安+ADX",
+        "category": "順勢",
+        "avg_return_pct": 1.75,
+        "win_rate_pct": 37.6,
+        "profit_factor": 1.3,
+        "trade_count": 2762
+      },
+      {
+        "strategy": "N日新高改良",
+        "category": "順勢",
+        "avg_return_pct": 1.417,
+        "win_rate_pct": 37.4,
+        "profit_factor": 1.27,
+        "trade_count": 3298
+      },
+      {
+        "strategy": "MACD改良",
+        "category": "順勢",
+        "avg_return_pct": 0.654,
+        "win_rate_pct": 39.5,
+        "profit_factor": 1.11,
+        "trade_count": 4185
+      },
+      {
+        "strategy": "MACD快速(8,17,9)",
+        "category": "順勢",
+        "avg_return_pct": 0.015,
+        "win_rate_pct": 32.5,
+        "profit_factor": 1.0,
+        "trade_count": 12505
+      }
+    ],
+    "high_vol/trending": [
+      {
+        "strategy": "唐奇安+ADX",
+        "category": "順勢",
+        "avg_return_pct": 2.627,
+        "win_rate_pct": 39.8,
+        "profit_factor": 1.47,
+        "trade_count": 3056
+      },
+      {
+        "strategy": "N日新高改良",
+        "category": "順勢",
+        "avg_return_pct": 2.106,
+        "win_rate_pct": 38.6,
+        "profit_factor": 1.41,
+        "trade_count": 3581
+      },
+      {
+        "strategy": "波動率擠壓",
+        "category": "順勢",
+        "avg_return_pct": 1.477,
+        "win_rate_pct": 38.6,
+        "profit_factor": 1.43,
+        "trade_count": 594
+      },
+      {
+        "strategy": "MACD改良",
+        "category": "順勢",
+        "avg_return_pct": 1.331,
+        "win_rate_pct": 42.7,
+        "profit_factor": 1.22,
+        "trade_count": 3992
+      },
+      {
+        "strategy": "量價突破",
+        "category": "量價",
+        "avg_return_pct": 1.249,
+        "win_rate_pct": 36.3,
+        "profit_factor": 1.31,
+        "trade_count": 4523
+      }
+    ],
+    "low_vol/sideways": [
+      {
+        "strategy": "AD背離",
+        "category": "量價",
+        "avg_return_pct": 1.981,
+        "win_rate_pct": 40.7,
+        "profit_factor": 1.48,
+        "trade_count": 533
+      }
+    ],
+    "low_vol/trending": [
+      {
+        "strategy": "AD背離",
+        "category": "量價",
+        "avg_return_pct": 3.68,
+        "win_rate_pct": 44.2,
+        "profit_factor": 1.94,
+        "trade_count": 744
+      },
+      {
+        "strategy": "MACD改良",
+        "category": "順勢",
+        "avg_return_pct": 3.284,
+        "win_rate_pct": 44.0,
+        "profit_factor": 1.98,
+        "trade_count": 3975
+      },
+      {
+        "strategy": "唐奇安改良",
+        "category": "順勢",
+        "avg_return_pct": 2.511,
+        "win_rate_pct": 39.2,
+        "profit_factor": 1.75,
+        "trade_count": 2147
+      },
+      {
+        "strategy": "唐奇安+ADX",
+        "category": "順勢",
+        "avg_return_pct": 2.499,
+        "win_rate_pct": 40.1,
+        "profit_factor": 1.65,
+        "trade_count": 2520
+      },
+      {
+        "strategy": "N日新高改良",
+        "category": "順勢",
+        "avg_return_pct": 2.183,
+        "win_rate_pct": 40.3,
+        "profit_factor": 1.59,
+        "trade_count": 2714
+      },
+      {
+        "strategy": "雙均線改良",
+        "category": "順勢",
+        "avg_return_pct": 1.661,
+        "win_rate_pct": 41.9,
+        "profit_factor": 1.63,
+        "trade_count": 2683
+      },
+      {
+        "strategy": "KD(5)快速",
+        "category": "逆勢",
+        "avg_return_pct": 1.083,
+        "win_rate_pct": 47.3,
+        "profit_factor": 1.37,
+        "trade_count": 2778
+      },
+      {
+        "strategy": "KD(9) 30/70",
+        "category": "逆勢",
+        "avg_return_pct": 0.841,
+        "win_rate_pct": 51.2,
+        "profit_factor": 1.25,
+        "trade_count": 5756
+      },
+      {
+        "strategy": "超跌反彈",
+        "category": "逆勢",
+        "avg_return_pct": 0.607,
+        "win_rate_pct": 35.7,
+        "profit_factor": 1.14,
+        "trade_count": 913
+      },
+      {
+        "strategy": "量價突破",
+        "category": "量價",
+        "avg_return_pct": 0.54,
+        "win_rate_pct": 34.5,
+        "profit_factor": 1.21,
+        "trade_count": 5216
+      },
+      {
+        "strategy": "N日新高+量",
+        "category": "順勢",
+        "avg_return_pct": 0.531,
+        "win_rate_pct": 34.0,
+        "profit_factor": 1.21,
+        "trade_count": 6649
+      },
+      {
+        "strategy": "雙均線(5/20)",
+        "category": "順勢",
+        "avg_return_pct": 0.479,
+        "win_rate_pct": 32.8,
+        "profit_factor": 1.23,
+        "trade_count": 10677
+      },
+      {
+        "strategy": "MACD快速(8,17,9)",
+        "category": "順勢",
+        "avg_return_pct": 0.294,
+        "win_rate_pct": 34.0,
+        "profit_factor": 1.15,
+        "trade_count": 16821
+      }
+    ],
+    "med_vol/sideways": [
+      {
+        "strategy": "MACD改良",
+        "category": "順勢",
+        "avg_return_pct": 2.829,
+        "win_rate_pct": 42.2,
+        "profit_factor": 1.75,
+        "trade_count": 4765
+      },
+      {
+        "strategy": "唐奇安+ADX",
+        "category": "順勢",
+        "avg_return_pct": 1.972,
+        "win_rate_pct": 38.8,
+        "profit_factor": 1.46,
+        "trade_count": 2937
+      },
+      {
+        "strategy": "N日新高改良",
+        "category": "順勢",
+        "avg_return_pct": 1.434,
+        "win_rate_pct": 38.0,
+        "profit_factor": 1.35,
+        "trade_count": 3593
+      },
+      {
+        "strategy": "雙均線改良",
+        "category": "順勢",
+        "avg_return_pct": 1.232,
+        "win_rate_pct": 39.2,
+        "profit_factor": 1.39,
+        "trade_count": 2836
+      },
+      {
+        "strategy": "N日新高+量",
+        "category": "順勢",
+        "avg_return_pct": 0.821,
+        "win_rate_pct": 33.8,
+        "profit_factor": 1.24,
+        "trade_count": 7144
+      },
+      {
+        "strategy": "MACD快速(8,17,9)",
+        "category": "順勢",
+        "avg_return_pct": 0.698,
+        "win_rate_pct": 33.7,
+        "profit_factor": 1.26,
+        "trade_count": 15797
+      },
+      {
+        "strategy": "KD(9) 30/70",
+        "category": "逆勢",
+        "avg_return_pct": 0.612,
+        "win_rate_pct": 41.3,
+        "profit_factor": 1.14,
+        "trade_count": 7708
+      },
+      {
+        "strategy": "波動率擠壓",
+        "category": "順勢",
+        "avg_return_pct": 0.558,
+        "win_rate_pct": 35.3,
+        "profit_factor": 1.18,
+        "trade_count": 516
+      }
+    ],
+    "med_vol/trending": [
+      {
+        "strategy": "唐奇安改良",
+        "category": "順勢",
+        "avg_return_pct": 4.152,
+        "win_rate_pct": 43.6,
+        "profit_factor": 2.08,
+        "trade_count": 1297
+      },
+      {
+        "strategy": "AD背離",
+        "category": "量價",
+        "avg_return_pct": 3.567,
+        "win_rate_pct": 43.2,
+        "profit_factor": 1.89,
+        "trade_count": 549
+      },
+      {
+        "strategy": "MACD改良",
+        "category": "順勢",
+        "avg_return_pct": 3.443,
+        "win_rate_pct": 44.1,
+        "profit_factor": 1.94,
+        "trade_count": 4244
+      },
+      {
+        "strategy": "波動率擠壓",
+        "category": "順勢",
+        "avg_return_pct": 2.916,
+        "win_rate_pct": 40.6,
+        "profit_factor": 2.07,
+        "trade_count": 493
+      },
+      {
+        "strategy": "唐奇安+ADX",
+        "category": "順勢",
+        "avg_return_pct": 2.612,
+        "win_rate_pct": 39.5,
+        "profit_factor": 1.61,
+        "trade_count": 2752
+      },
+      {
+        "strategy": "N日新高改良",
+        "category": "順勢",
+        "avg_return_pct": 1.891,
+        "win_rate_pct": 38.6,
+        "profit_factor": 1.46,
+        "trade_count": 3397
+      },
+      {
+        "strategy": "KD(9) 30/70",
+        "category": "逆勢",
+        "avg_return_pct": 1.84,
+        "win_rate_pct": 46.3,
+        "profit_factor": 1.46,
+        "trade_count": 6778
+      },
+      {
+        "strategy": "雙均線改良",
+        "category": "順勢",
+        "avg_return_pct": 1.752,
+        "win_rate_pct": 41.1,
+        "profit_factor": 1.57,
+        "trade_count": 2477
+      },
+      {
+        "strategy": "超跌反彈",
+        "category": "逆勢",
+        "avg_return_pct": 1.651,
+        "win_rate_pct": 37.4,
+        "profit_factor": 1.36,
+        "trade_count": 1762
+      },
+      {
+        "strategy": "KD(5)快速",
+        "category": "逆勢",
+        "avg_return_pct": 1.444,
+        "win_rate_pct": 42.0,
+        "profit_factor": 1.42,
+        "trade_count": 3519
+      },
+      {
+        "strategy": "N日新高+量",
+        "category": "順勢",
+        "avg_return_pct": 1.322,
+        "win_rate_pct": 36.1,
+        "profit_factor": 1.41,
+        "trade_count": 6764
+      },
+      {
+        "strategy": "量價突破",
+        "category": "量價",
+        "avg_return_pct": 1.256,
+        "win_rate_pct": 36.4,
+        "profit_factor": 1.4,
+        "trade_count": 5066
+      },
+      {
+        "strategy": "雙均線(5/20)",
+        "category": "順勢",
+        "avg_return_pct": 1.004,
+        "win_rate_pct": 34.9,
+        "profit_factor": 1.37,
+        "trade_count": 9470
+      },
+      {
+        "strategy": "MACD快速(8,17,9)",
+        "category": "順勢",
+        "avg_return_pct": 0.96,
+        "win_rate_pct": 35.7,
+        "profit_factor": 1.37,
+        "trade_count": 15008
+      }
+    ]
+  }
+}

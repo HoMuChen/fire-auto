@@ -1,0 +1,5678 @@
+{
+  "generated": "2026-03-02",
+  "filter_rule": "Period A (2020-2022) per-strategy avg return > 0",
+  "group": "med_vol/trending",
+  "group_total": 209,
+  "strategies": {
+    "squeeze": {
+      "label": "波動率擠壓",
+      "kept_count": 125,
+      "excluded_count": 84,
+      "kept": [
+        {
+          "stock_id": "1101",
+          "stock_name": "台泥",
+          "industry": "水泥工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1514",
+          "stock_name": "亞力",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.041678
+        },
+        {
+          "stock_id": "1529",
+          "stock_name": "樂事綠能",
+          "industry": "電機機械",
+          "trades_a": 3,
+          "avg_return_a": 0.076866,
+          "trades_b": 3,
+          "avg_return_b": 0.080814
+        },
+        {
+          "stock_id": "1560",
+          "stock_name": "中砂",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.22431
+        },
+        {
+          "stock_id": "1569",
+          "stock_name": "濱川",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": 0.04027,
+          "trades_b": 3,
+          "avg_return_b": -0.041723
+        },
+        {
+          "stock_id": "1584",
+          "stock_name": "精剛",
+          "industry": "其他",
+          "trades_a": 2,
+          "avg_return_a": 0.188924,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1587",
+          "stock_name": "吉茂",
+          "industry": "汽車工業",
+          "trades_a": 1,
+          "avg_return_a": 0.35567,
+          "trades_b": 1,
+          "avg_return_b": -0.049156
+        },
+        {
+          "stock_id": "1608",
+          "stock_name": "華榮",
+          "industry": "電器電纜",
+          "trades_a": 1,
+          "avg_return_a": 1.183049,
+          "trades_b": 3,
+          "avg_return_b": -0.055875
+        },
+        {
+          "stock_id": "1609",
+          "stock_name": "大亞",
+          "industry": "電器電纜",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": -0.001829
+        },
+        {
+          "stock_id": "1616",
+          "stock_name": "億泰",
+          "industry": "電器電纜",
+          "trades_a": 4,
+          "avg_return_a": 0.139655,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1720",
+          "stock_name": "生達",
+          "industry": "生技醫療業",
+          "trades_a": 1,
+          "avg_return_a": 0.047298,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1784",
+          "stock_name": "訊聯",
+          "industry": "生技醫療業",
+          "trades_a": 1,
+          "avg_return_a": 0.044233,
+          "trades_b": 3,
+          "avg_return_b": 0.05751
+        },
+        {
+          "stock_id": "1785",
+          "stock_name": "光洋科",
+          "industry": "其他電子類",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1795",
+          "stock_name": "美時",
+          "industry": "生技醫療業",
+          "trades_a": 2,
+          "avg_return_a": 0.009905,
+          "trades_b": 2,
+          "avg_return_b": -0.057121
+        },
+        {
+          "stock_id": "1815",
+          "stock_name": "富喬",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": 0.081295,
+          "trades_b": 2,
+          "avg_return_b": 0.052829
+        },
+        {
+          "stock_id": "2049",
+          "stock_name": "上銀",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2059",
+          "stock_name": "川湖",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2233",
+          "stock_name": "宇隆",
+          "industry": "汽車工業",
+          "trades_a": 2,
+          "avg_return_a": 0.082529,
+          "trades_b": 1,
+          "avg_return_b": 0.042654
+        },
+        {
+          "stock_id": "2312",
+          "stock_name": "金寶",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.043166,
+          "trades_b": 2,
+          "avg_return_b": 0.089747
+        },
+        {
+          "stock_id": "2313",
+          "stock_name": "華通",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.196018
+        },
+        {
+          "stock_id": "2345",
+          "stock_name": "智邦",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.017669,
+          "trades_b": 3,
+          "avg_return_b": 0.028157
+        },
+        {
+          "stock_id": "2359",
+          "stock_name": "所羅門",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": -0.061108
+        },
+        {
+          "stock_id": "2365",
+          "stock_name": "昆盈",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.059607
+        },
+        {
+          "stock_id": "2371",
+          "stock_name": "大同",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2376",
+          "stock_name": "技嘉",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.000646
+        },
+        {
+          "stock_id": "2383",
+          "stock_name": "台光電",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2405",
+          "stock_name": "輔信",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": 0.460648,
+          "trades_b": 4,
+          "avg_return_b": 0.03205
+        },
+        {
+          "stock_id": "2454",
+          "stock_name": "聯發科",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.008997,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2455",
+          "stock_name": "全新",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.027729,
+          "trades_b": 2,
+          "avg_return_b": -0.042971
+        },
+        {
+          "stock_id": "2467",
+          "stock_name": "志聖",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": -0.031351
+        },
+        {
+          "stock_id": "2468",
+          "stock_name": "華經",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.049146,
+          "trades_b": 2,
+          "avg_return_b": -0.063611
+        },
+        {
+          "stock_id": "2476",
+          "stock_name": "鉅祥",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.200737,
+          "trades_b": 1,
+          "avg_return_b": -0.027176
+        },
+        {
+          "stock_id": "2492",
+          "stock_name": "華新科",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.060638
+        },
+        {
+          "stock_id": "2610",
+          "stock_name": "華航",
+          "industry": "航運業",
+          "trades_a": 2,
+          "avg_return_a": 0.202643,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2618",
+          "stock_name": "長榮航",
+          "industry": "航運業",
+          "trades_a": 2,
+          "avg_return_a": 0.136412,
+          "trades_b": 1,
+          "avg_return_b": -0.026662
+        },
+        {
+          "stock_id": "2630",
+          "stock_name": "亞航",
+          "industry": "航運業",
+          "trades_a": 2,
+          "avg_return_a": 0.029694,
+          "trades_b": 2,
+          "avg_return_b": 0.030069
+        },
+        {
+          "stock_id": "2887",
+          "stock_name": "台新新光金",
+          "industry": "金融保險",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3011",
+          "stock_name": "今皓",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3019",
+          "stock_name": "亞光",
+          "industry": "光電業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3049",
+          "stock_name": "精金",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.059502,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3059",
+          "stock_name": "華晶科",
+          "industry": "電子工業",
+          "trades_a": 3,
+          "avg_return_a": 0.046243,
+          "trades_b": 1,
+          "avg_return_b": 0.086055
+        },
+        {
+          "stock_id": "3062",
+          "stock_name": "建漢",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3083",
+          "stock_name": "網龍",
+          "industry": "文化創意業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.043682
+        },
+        {
+          "stock_id": "3092",
+          "stock_name": "鴻碩",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3128",
+          "stock_name": "昇銳",
+          "industry": "光電業",
+          "trades_a": 3,
+          "avg_return_a": 0.030952,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3152",
+          "stock_name": "璟德",
+          "industry": "通信網路業",
+          "trades_a": 1,
+          "avg_return_a": 0.00308,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3202",
+          "stock_name": "樺晟",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3217",
+          "stock_name": "優群",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": -0.015598
+        },
+        {
+          "stock_id": "3265",
+          "stock_name": "台星科",
+          "industry": "半導體業",
+          "trades_a": 2,
+          "avg_return_a": 0.066767,
+          "trades_b": 1,
+          "avg_return_b": -0.012492
+        },
+        {
+          "stock_id": "3305",
+          "stock_name": "昇貿",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.097613,
+          "trades_b": 3,
+          "avg_return_b": 0.000854
+        },
+        {
+          "stock_id": "3356",
+          "stock_name": "奇偶",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.057767
+        },
+        {
+          "stock_id": "3390",
+          "stock_name": "旭軟",
+          "industry": "電子零組件業",
+          "trades_a": 5,
+          "avg_return_a": 0.002498,
+          "trades_b": 1,
+          "avg_return_b": 0.057447
+        },
+        {
+          "stock_id": "3444",
+          "stock_name": "利機",
+          "industry": "電子通路業",
+          "trades_a": 1,
+          "avg_return_a": 0.37906,
+          "trades_b": 2,
+          "avg_return_b": 0.08305
+        },
+        {
+          "stock_id": "3450",
+          "stock_name": "聯鈞",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.047555
+        },
+        {
+          "stock_id": "3455",
+          "stock_name": "由田",
+          "industry": "光電業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3533",
+          "stock_name": "嘉澤",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": 0.036488,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3548",
+          "stock_name": "兆利",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.046697
+        },
+        {
+          "stock_id": "3551",
+          "stock_name": "世禾",
+          "industry": "綠能環保類",
+          "trades_a": 1,
+          "avg_return_a": 0.098807,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3583",
+          "stock_name": "辛耘",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.104373,
+          "trades_b": 2,
+          "avg_return_b": 0.001389
+        },
+        {
+          "stock_id": "3587",
+          "stock_name": "閎康",
+          "industry": "其他電子類",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3605",
+          "stock_name": "宏致",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.052884
+        },
+        {
+          "stock_id": "3622",
+          "stock_name": "洋華",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.119326,
+          "trades_b": 5,
+          "avg_return_b": 0.046311
+        },
+        {
+          "stock_id": "3652",
+          "stock_name": "精聯",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": 0.006346,
+          "trades_b": 2,
+          "avg_return_b": 0.065921
+        },
+        {
+          "stock_id": "3663",
+          "stock_name": "鑫科",
+          "industry": "其他電子類",
+          "trades_a": 2,
+          "avg_return_a": 0.060285,
+          "trades_b": 2,
+          "avg_return_b": 0.098345
+        },
+        {
+          "stock_id": "3680",
+          "stock_name": "家登",
+          "industry": "半導體業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.029991
+        },
+        {
+          "stock_id": "3691",
+          "stock_name": "碩禾",
+          "industry": "光電業",
+          "trades_a": 2,
+          "avg_return_a": 0.059175,
+          "trades_b": 2,
+          "avg_return_b": 0.026246
+        },
+        {
+          "stock_id": "4127",
+          "stock_name": "天良",
+          "industry": "生技醫療業",
+          "trades_a": 2,
+          "avg_return_a": 0.013215,
+          "trades_b": 2,
+          "avg_return_b": 0.065084
+        },
+        {
+          "stock_id": "4157",
+          "stock_name": "太景*-KY",
+          "industry": "生技醫療業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.0594
+        },
+        {
+          "stock_id": "4167",
+          "stock_name": "松瑞藥",
+          "industry": "生技醫療業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": -0.038386
+        },
+        {
+          "stock_id": "4510",
+          "stock_name": "高鋒",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": 0.009484,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4513",
+          "stock_name": "福裕",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": 0.032447,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4564",
+          "stock_name": "元翎",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.049585
+        },
+        {
+          "stock_id": "4714",
+          "stock_name": "永捷",
+          "industry": "化學工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": -0.038197
+        },
+        {
+          "stock_id": "4927",
+          "stock_name": "泰鼎-KY",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.013411
+        },
+        {
+          "stock_id": "4951",
+          "stock_name": "精拓科",
+          "industry": "半導體業",
+          "trades_a": 3,
+          "avg_return_a": 0.146792,
+          "trades_b": 2,
+          "avg_return_b": -0.008312
+        },
+        {
+          "stock_id": "5234",
+          "stock_name": "達興材料",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.464653
+        },
+        {
+          "stock_id": "5392",
+          "stock_name": "能率",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": 0.021647,
+          "trades_b": 3,
+          "avg_return_b": -0.038611
+        },
+        {
+          "stock_id": "5426",
+          "stock_name": "振發",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 2,
+          "avg_return_a": 0.056013,
+          "trades_b": 2,
+          "avg_return_b": 0.044861
+        },
+        {
+          "stock_id": "5439",
+          "stock_name": "高技",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "5443",
+          "stock_name": "均豪",
+          "industry": "半導體業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": 0.134107
+        },
+        {
+          "stock_id": "5457",
+          "stock_name": "宣德",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "5488",
+          "stock_name": "松普",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": 0.020673,
+          "trades_b": 1,
+          "avg_return_b": -0.048448
+        },
+        {
+          "stock_id": "5511",
+          "stock_name": "德昌",
+          "industry": "建材營造",
+          "trades_a": 2,
+          "avg_return_a": 0.35156,
+          "trades_b": 1,
+          "avg_return_b": -0.060536
+        },
+        {
+          "stock_id": "5536",
+          "stock_name": "聖暉*",
+          "industry": "其他電子類",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.098163
+        },
+        {
+          "stock_id": "6122",
+          "stock_name": "擎邦",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6138",
+          "stock_name": "茂達",
+          "industry": "半導體業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.053159
+        },
+        {
+          "stock_id": "6156",
+          "stock_name": "松上",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6160",
+          "stock_name": "欣技",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": 0.084209,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6161",
+          "stock_name": "捷波",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6167",
+          "stock_name": "久正",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": 0.240059,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6170",
+          "stock_name": "統振",
+          "industry": "通信網路業",
+          "trades_a": 2,
+          "avg_return_a": 0.204185,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6188",
+          "stock_name": "廣明",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6196",
+          "stock_name": "帆宣",
+          "industry": "其他電子業",
+          "trades_a": 1,
+          "avg_return_a": 0.109455,
+          "trades_b": 3,
+          "avg_return_b": 0.025169
+        },
+        {
+          "stock_id": "6197",
+          "stock_name": "佳必琪",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.050665
+        },
+        {
+          "stock_id": "6207",
+          "stock_name": "雷科",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.025139
+        },
+        {
+          "stock_id": "6213",
+          "stock_name": "聯茂",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.060838
+        },
+        {
+          "stock_id": "6215",
+          "stock_name": "和椿",
+          "industry": "其他電子業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.011524
+        },
+        {
+          "stock_id": "6227",
+          "stock_name": "茂綸",
+          "industry": "電子通路業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6274",
+          "stock_name": "台燿",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.077364
+        },
+        {
+          "stock_id": "6284",
+          "stock_name": "佳邦",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.005063
+        },
+        {
+          "stock_id": "6552",
+          "stock_name": "易華電",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.218589,
+          "trades_b": 1,
+          "avg_return_b": -0.00769
+        },
+        {
+          "stock_id": "6669",
+          "stock_name": "緯穎",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": 0.004649,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6689",
+          "stock_name": "伊雲谷",
+          "industry": "數位雲端",
+          "trades_a": 4,
+          "avg_return_a": 0.099319,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6732",
+          "stock_name": "昇佳電子",
+          "industry": "半導體業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6743",
+          "stock_name": "安普新",
+          "industry": "其他電子業",
+          "trades_a": 1,
+          "avg_return_a": 0.070632,
+          "trades_b": 1,
+          "avg_return_b": 0.285224
+        },
+        {
+          "stock_id": "6757",
+          "stock_name": "台灣虎航",
+          "industry": "航運業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8011",
+          "stock_name": "台通",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 4,
+          "avg_return_b": -0.044256
+        },
+        {
+          "stock_id": "8028",
+          "stock_name": "昇陽半導體",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": -0.04769
+        },
+        {
+          "stock_id": "8064",
+          "stock_name": "東捷",
+          "industry": "光電業",
+          "trades_a": 2,
+          "avg_return_a": 0.051285,
+          "trades_b": 3,
+          "avg_return_b": 0.170496
+        },
+        {
+          "stock_id": "8069",
+          "stock_name": "元太",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": 0.020065,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8071",
+          "stock_name": "能率網通",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": 0.020233,
+          "trades_b": 2,
+          "avg_return_b": 0.18171
+        },
+        {
+          "stock_id": "8092",
+          "stock_name": "建暐",
+          "industry": "其他電子類",
+          "trades_a": 4,
+          "avg_return_a": 0.139082,
+          "trades_b": 1,
+          "avg_return_b": -0.005842
+        },
+        {
+          "stock_id": "8099",
+          "stock_name": "大世科",
+          "industry": "資訊服務業",
+          "trades_a": 3,
+          "avg_return_a": 0.062337,
+          "trades_b": 2,
+          "avg_return_b": 0.34626
+        },
+        {
+          "stock_id": "8103",
+          "stock_name": "瀚荃",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": 0.018028,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8111",
+          "stock_name": "立碁",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": 0.147894,
+          "trades_b": 1,
+          "avg_return_b": -0.05757
+        },
+        {
+          "stock_id": "8210",
+          "stock_name": "勤誠",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.224361
+        },
+        {
+          "stock_id": "8249",
+          "stock_name": "菱光",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": 0.075371,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8299",
+          "stock_name": "群聯",
+          "industry": "半導體業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8436",
+          "stock_name": "大江",
+          "industry": "生技醫療業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.009572
+        },
+        {
+          "stock_id": "8936",
+          "stock_name": "國統",
+          "industry": "其他",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.05839
+        },
+        {
+          "stock_id": "9906",
+          "stock_name": "欣巴巴",
+          "industry": "建材營造",
+          "trades_a": 3,
+          "avg_return_a": 0.012218,
+          "trades_b": 2,
+          "avg_return_b": 0.08815
+        },
+        {
+          "stock_id": "9914",
+          "stock_name": "美利達",
+          "industry": "運動休閒",
+          "trades_a": 1,
+          "avg_return_a": 0.040759,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "9919",
+          "stock_name": "康那香",
+          "industry": "其他",
+          "trades_a": 2,
+          "avg_return_a": 0.037754,
+          "trades_b": 2,
+          "avg_return_b": -0.02874
+        },
+        {
+          "stock_id": "9955",
+          "stock_name": "佳龍",
+          "industry": "綠能環保",
+          "trades_a": 4,
+          "avg_return_a": 0.073118,
+          "trades_b": 2,
+          "avg_return_b": 0.025858
+        },
+        {
+          "stock_id": "9958",
+          "stock_name": "世紀鋼",
+          "industry": "鋼鐵工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.016212
+        }
+      ],
+      "excluded": [
+        {
+          "stock_id": "1503",
+          "stock_name": "士電",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.018792,
+          "trades_b": 3,
+          "avg_return_b": 0.042683
+        },
+        {
+          "stock_id": "1513",
+          "stock_name": "中興電",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.011158,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1515",
+          "stock_name": "力山",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.039327,
+          "trades_b": 2,
+          "avg_return_b": -0.055642
+        },
+        {
+          "stock_id": "1524",
+          "stock_name": "耿鼎",
+          "industry": "汽車工業",
+          "trades_a": 3,
+          "avg_return_a": -0.052337,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1528",
+          "stock_name": "恩德",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.014524,
+          "trades_b": 1,
+          "avg_return_b": 0.504468
+        },
+        {
+          "stock_id": "1618",
+          "stock_name": "合機",
+          "industry": "電器電纜",
+          "trades_a": 1,
+          "avg_return_a": -0.034045,
+          "trades_b": 2,
+          "avg_return_b": 0.021234
+        },
+        {
+          "stock_id": "1713",
+          "stock_name": "國化",
+          "industry": "化學生技醫療",
+          "trades_a": 2,
+          "avg_return_a": -0.021528,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1727",
+          "stock_name": "中華化",
+          "industry": "化學生技醫療",
+          "trades_a": 1,
+          "avg_return_a": -0.059917,
+          "trades_b": 2,
+          "avg_return_b": -0.049036
+        },
+        {
+          "stock_id": "1736",
+          "stock_name": "喬山",
+          "industry": "運動休閒",
+          "trades_a": 1,
+          "avg_return_a": -0.049315,
+          "trades_b": 2,
+          "avg_return_b": 0.063038
+        },
+        {
+          "stock_id": "1810",
+          "stock_name": "和成",
+          "industry": "玻璃陶瓷",
+          "trades_a": 1,
+          "avg_return_a": -0.08031,
+          "trades_b": 1,
+          "avg_return_b": -0.048716
+        },
+        {
+          "stock_id": "2231",
+          "stock_name": "為升",
+          "industry": "汽車工業",
+          "trades_a": 1,
+          "avg_return_a": -0.05155,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2241",
+          "stock_name": "艾姆勒",
+          "industry": "汽車工業",
+          "trades_a": 1,
+          "avg_return_a": -0.041005,
+          "trades_b": 2,
+          "avg_return_b": 0.183294
+        },
+        {
+          "stock_id": "2316",
+          "stock_name": "楠梓電",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.02395,
+          "trades_b": 1,
+          "avg_return_b": -0.069106
+        },
+        {
+          "stock_id": "2328",
+          "stock_name": "廣宇",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.071159,
+          "trades_b": 2,
+          "avg_return_b": -0.028322
+        },
+        {
+          "stock_id": "2329",
+          "stock_name": "華泰",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.035313,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2360",
+          "stock_name": "致茂",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.052819,
+          "trades_b": 1,
+          "avg_return_b": -0.056858
+        },
+        {
+          "stock_id": "2374",
+          "stock_name": "佳能",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": -0.053371,
+          "trades_b": 1,
+          "avg_return_b": 0.229442
+        },
+        {
+          "stock_id": "2402",
+          "stock_name": "毅嘉",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.049626,
+          "trades_b": 2,
+          "avg_return_b": 0.002983
+        },
+        {
+          "stock_id": "2421",
+          "stock_name": "建準",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.085498,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2453",
+          "stock_name": "凌群",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.010915,
+          "trades_b": 2,
+          "avg_return_b": 0.581365
+        },
+        {
+          "stock_id": "2472",
+          "stock_name": "立隆電",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.05179,
+          "trades_b": 2,
+          "avg_return_b": -0.035407
+        },
+        {
+          "stock_id": "2495",
+          "stock_name": "普安",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.016766,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2606",
+          "stock_name": "裕民",
+          "industry": "航運業",
+          "trades_a": 1,
+          "avg_return_a": -0.041347,
+          "trades_b": 2,
+          "avg_return_b": -0.018471
+        },
+        {
+          "stock_id": "2607",
+          "stock_name": "榮運",
+          "industry": "航運業",
+          "trades_a": 3,
+          "avg_return_a": -0.034221,
+          "trades_b": 2,
+          "avg_return_b": -0.053599
+        },
+        {
+          "stock_id": "2739",
+          "stock_name": "寒舍",
+          "industry": "觀光餐旅",
+          "trades_a": 2,
+          "avg_return_a": -0.006818,
+          "trades_b": 1,
+          "avg_return_b": 0.720098
+        },
+        {
+          "stock_id": "2867",
+          "stock_name": "三商壽",
+          "industry": "金融保險",
+          "trades_a": 1,
+          "avg_return_a": -0.048657,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2905",
+          "stock_name": "三商",
+          "industry": "貿易百貨",
+          "trades_a": 1,
+          "avg_return_a": -0.060721,
+          "trades_b": 2,
+          "avg_return_b": -0.001431
+        },
+        {
+          "stock_id": "3004",
+          "stock_name": "豐達科",
+          "industry": "鋼鐵工業",
+          "trades_a": 1,
+          "avg_return_a": -0.025335,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3013",
+          "stock_name": "晟銘電",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": -0.03716,
+          "trades_b": 3,
+          "avg_return_b": 0.027493
+        },
+        {
+          "stock_id": "3027",
+          "stock_name": "盛達",
+          "industry": "通信網路業",
+          "trades_a": 1,
+          "avg_return_a": -0.04576,
+          "trades_b": 1,
+          "avg_return_b": 0.015481
+        },
+        {
+          "stock_id": "3047",
+          "stock_name": "訊舟",
+          "industry": "通信網路業",
+          "trades_a": 1,
+          "avg_return_a": -0.057128,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3055",
+          "stock_name": "蔚華科",
+          "industry": "電子通路業",
+          "trades_a": 1,
+          "avg_return_a": -0.049724,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3060",
+          "stock_name": "銘異",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.049987,
+          "trades_b": 3,
+          "avg_return_b": -0.011325
+        },
+        {
+          "stock_id": "3078",
+          "stock_name": "僑威",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.06498,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3105",
+          "stock_name": "穩懋",
+          "industry": "半導體業",
+          "trades_a": 1,
+          "avg_return_a": -0.046128,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3147",
+          "stock_name": "大綜",
+          "industry": "資訊服務業",
+          "trades_a": 2,
+          "avg_return_a": -0.059531,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3167",
+          "stock_name": "大量",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.000373,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3176",
+          "stock_name": "基亞",
+          "industry": "生技醫療業",
+          "trades_a": 1,
+          "avg_return_a": -0.063721,
+          "trades_b": 3,
+          "avg_return_b": 0.026968
+        },
+        {
+          "stock_id": "3289",
+          "stock_name": "宜特",
+          "industry": "其他電子類",
+          "trades_a": 1,
+          "avg_return_a": -0.099422,
+          "trades_b": 1,
+          "avg_return_b": -0.064817
+        },
+        {
+          "stock_id": "3296",
+          "stock_name": "勝德",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.03693,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3312",
+          "stock_name": "弘憶股",
+          "industry": "電子通路業",
+          "trades_a": 2,
+          "avg_return_a": -0.022836,
+          "trades_b": 1,
+          "avg_return_b": -0.02001
+        },
+        {
+          "stock_id": "3376",
+          "stock_name": "新日興",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.033362,
+          "trades_b": 1,
+          "avg_return_b": -0.0103
+        },
+        {
+          "stock_id": "3526",
+          "stock_name": "凡甲",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.040214,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3580",
+          "stock_name": "友威科",
+          "industry": "其他電子類",
+          "trades_a": 2,
+          "avg_return_a": -0.042942,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3594",
+          "stock_name": "磐儀",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 2,
+          "avg_return_a": -0.049927,
+          "trades_b": 1,
+          "avg_return_b": 0.010193
+        },
+        {
+          "stock_id": "3615",
+          "stock_name": "安可",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": -0.072249,
+          "trades_b": 1,
+          "avg_return_b": -0.058344
+        },
+        {
+          "stock_id": "3617",
+          "stock_name": "碩天",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.041636,
+          "trades_b": 1,
+          "avg_return_b": -0.090651
+        },
+        {
+          "stock_id": "3689",
+          "stock_name": "湧德",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.004251,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4142",
+          "stock_name": "國光生",
+          "industry": "生技醫療業",
+          "trades_a": 1,
+          "avg_return_a": -0.046117,
+          "trades_b": 1,
+          "avg_return_b": -0.037441
+        },
+        {
+          "stock_id": "4526",
+          "stock_name": "東台",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": -0.004964,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4541",
+          "stock_name": "晟田",
+          "industry": "其他",
+          "trades_a": 2,
+          "avg_return_a": -0.025577,
+          "trades_b": 2,
+          "avg_return_b": 0.032843
+        },
+        {
+          "stock_id": "4551",
+          "stock_name": "智伸科",
+          "industry": "汽車工業",
+          "trades_a": 1,
+          "avg_return_a": -0.090451,
+          "trades_b": 1,
+          "avg_return_b": -0.04941
+        },
+        {
+          "stock_id": "4566",
+          "stock_name": "時碩工業",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.022742,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4755",
+          "stock_name": "三福化",
+          "industry": "化學生技醫療",
+          "trades_a": 2,
+          "avg_return_a": -0.062549,
+          "trades_b": 3,
+          "avg_return_b": -0.019692
+        },
+        {
+          "stock_id": "4916",
+          "stock_name": "事欣科",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.054385,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4938",
+          "stock_name": "和碩",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.053449,
+          "trades_b": 1,
+          "avg_return_b": 0.08152
+        },
+        {
+          "stock_id": "4991",
+          "stock_name": "環宇-KY",
+          "industry": "半導體業",
+          "trades_a": 1,
+          "avg_return_a": -0.048623,
+          "trades_b": 1,
+          "avg_return_b": 0.464081
+        },
+        {
+          "stock_id": "5243",
+          "stock_name": "乙盛-KY",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.027509,
+          "trades_b": 2,
+          "avg_return_b": -0.057797
+        },
+        {
+          "stock_id": "5258",
+          "stock_name": "虹堡",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.052286,
+          "trades_b": 1,
+          "avg_return_b": 0.012731
+        },
+        {
+          "stock_id": "5289",
+          "stock_name": "宜鼎",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 2,
+          "avg_return_a": -0.001515,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "5328",
+          "stock_name": "華容",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.012426,
+          "trades_b": 4,
+          "avg_return_b": 0.059159
+        },
+        {
+          "stock_id": "5371",
+          "stock_name": "中光電",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": -0.054258,
+          "trades_b": 1,
+          "avg_return_b": 0.028085
+        },
+        {
+          "stock_id": "5452",
+          "stock_name": "佶優",
+          "industry": "其他電子類",
+          "trades_a": 1,
+          "avg_return_a": -0.05958,
+          "trades_b": 1,
+          "avg_return_b": -0.061285
+        },
+        {
+          "stock_id": "5706",
+          "stock_name": "鳳凰",
+          "industry": "觀光餐旅",
+          "trades_a": 3,
+          "avg_return_a": -0.053126,
+          "trades_b": 3,
+          "avg_return_b": -0.036299
+        },
+        {
+          "stock_id": "6125",
+          "stock_name": "廣運",
+          "industry": "光電業",
+          "trades_a": 2,
+          "avg_return_a": -0.072341,
+          "trades_b": 1,
+          "avg_return_b": -0.051376
+        },
+        {
+          "stock_id": "6133",
+          "stock_name": "金橋",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.012331,
+          "trades_b": 1,
+          "avg_return_b": 0.320598
+        },
+        {
+          "stock_id": "6139",
+          "stock_name": "亞翔",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.047997,
+          "trades_b": 1,
+          "avg_return_b": -0.017139
+        },
+        {
+          "stock_id": "6141",
+          "stock_name": "柏承",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.050389,
+          "trades_b": 3,
+          "avg_return_b": -0.018642
+        },
+        {
+          "stock_id": "6143",
+          "stock_name": "振曜",
+          "industry": "通信網路業",
+          "trades_a": 1,
+          "avg_return_a": -0.066774,
+          "trades_b": 1,
+          "avg_return_b": -0.048601
+        },
+        {
+          "stock_id": "6153",
+          "stock_name": "嘉聯益",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.068747,
+          "trades_b": 2,
+          "avg_return_b": -0.005767
+        },
+        {
+          "stock_id": "6163",
+          "stock_name": "華電網",
+          "industry": "通信網路業",
+          "trades_a": 2,
+          "avg_return_a": -0.044054,
+          "trades_b": 2,
+          "avg_return_b": 0.071957
+        },
+        {
+          "stock_id": "6190",
+          "stock_name": "萬泰科",
+          "industry": "通信網路業",
+          "trades_a": 1,
+          "avg_return_a": -0.051948,
+          "trades_b": 1,
+          "avg_return_b": -0.062357
+        },
+        {
+          "stock_id": "6245",
+          "stock_name": "立端",
+          "industry": "通信網路業",
+          "trades_a": 2,
+          "avg_return_a": -0.017011,
+          "trades_b": 2,
+          "avg_return_b": -0.039255
+        },
+        {
+          "stock_id": "6290",
+          "stock_name": "良維",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.056472,
+          "trades_b": 2,
+          "avg_return_b": -0.036447
+        },
+        {
+          "stock_id": "6449",
+          "stock_name": "鈺邦",
+          "industry": "電子工業",
+          "trades_a": 5,
+          "avg_return_a": -0.048868,
+          "trades_b": 1,
+          "avg_return_b": -0.005842
+        },
+        {
+          "stock_id": "6667",
+          "stock_name": "信紘科",
+          "industry": "其他電子類",
+          "trades_a": 1,
+          "avg_return_a": -0.064322,
+          "trades_b": 3,
+          "avg_return_b": 0.02341
+        },
+        {
+          "stock_id": "6698",
+          "stock_name": "旭暉應材",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.06392,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8027",
+          "stock_name": "鈦昇",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.05958,
+          "trades_b": 1,
+          "avg_return_b": 0.039143
+        },
+        {
+          "stock_id": "8096",
+          "stock_name": "擎亞",
+          "industry": "電子通路業",
+          "trades_a": 3,
+          "avg_return_a": -0.014674,
+          "trades_b": 4,
+          "avg_return_b": 0.054751
+        },
+        {
+          "stock_id": "8176",
+          "stock_name": "智捷",
+          "industry": "通信網路業",
+          "trades_a": 2,
+          "avg_return_a": -0.048591,
+          "trades_b": 3,
+          "avg_return_b": -0.059633
+        },
+        {
+          "stock_id": "8222",
+          "stock_name": "寶一",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": -0.026939,
+          "trades_b": 2,
+          "avg_return_b": -0.052866
+        },
+        {
+          "stock_id": "8234",
+          "stock_name": "新漢",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.043787,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8374",
+          "stock_name": "羅昇",
+          "industry": "電機機械",
+          "trades_a": 5,
+          "avg_return_a": -0.030658,
+          "trades_b": 4,
+          "avg_return_b": 0.218923
+        },
+        {
+          "stock_id": "8390",
+          "stock_name": "金益鼎",
+          "industry": "綠能環保類",
+          "trades_a": 1,
+          "avg_return_a": -0.085278,
+          "trades_b": 2,
+          "avg_return_b": 0.036564
+        }
+      ]
+    },
+    "oversold": {
+      "label": "超跌反彈",
+      "kept_count": 100,
+      "excluded_count": 109,
+      "kept": [
+        {
+          "stock_id": "1101",
+          "stock_name": "台泥",
+          "industry": "水泥工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1503",
+          "stock_name": "士電",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 5,
+          "avg_return_b": 0.111142
+        },
+        {
+          "stock_id": "1513",
+          "stock_name": "中興電",
+          "industry": "電機機械",
+          "trades_a": 5,
+          "avg_return_a": 0.141648,
+          "trades_b": 2,
+          "avg_return_b": 0.303751
+        },
+        {
+          "stock_id": "1514",
+          "stock_name": "亞力",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": 0.179476,
+          "trades_b": 4,
+          "avg_return_b": 0.032667
+        },
+        {
+          "stock_id": "1524",
+          "stock_name": "耿鼎",
+          "industry": "汽車工業",
+          "trades_a": 2,
+          "avg_return_a": 0.077671,
+          "trades_b": 3,
+          "avg_return_b": -0.038724
+        },
+        {
+          "stock_id": "1528",
+          "stock_name": "恩德",
+          "industry": "電機機械",
+          "trades_a": 3,
+          "avg_return_a": 0.038788,
+          "trades_b": 11,
+          "avg_return_b": -0.032459
+        },
+        {
+          "stock_id": "1560",
+          "stock_name": "中砂",
+          "industry": "電機機械",
+          "trades_a": 5,
+          "avg_return_a": 0.029718,
+          "trades_b": 5,
+          "avg_return_b": 0.042395
+        },
+        {
+          "stock_id": "1584",
+          "stock_name": "精剛",
+          "industry": "其他",
+          "trades_a": 4,
+          "avg_return_a": 0.085393,
+          "trades_b": 5,
+          "avg_return_b": 0.123418
+        },
+        {
+          "stock_id": "1587",
+          "stock_name": "吉茂",
+          "industry": "汽車工業",
+          "trades_a": 2,
+          "avg_return_a": 0.221924,
+          "trades_b": 2,
+          "avg_return_b": 0.159118
+        },
+        {
+          "stock_id": "1608",
+          "stock_name": "華榮",
+          "industry": "電器電纜",
+          "trades_a": 7,
+          "avg_return_a": 0.044058,
+          "trades_b": 4,
+          "avg_return_b": 0.015878
+        },
+        {
+          "stock_id": "1609",
+          "stock_name": "大亞",
+          "industry": "電器電纜",
+          "trades_a": 2,
+          "avg_return_a": 0.050698,
+          "trades_b": 4,
+          "avg_return_b": -0.005425
+        },
+        {
+          "stock_id": "1616",
+          "stock_name": "億泰",
+          "industry": "電器電纜",
+          "trades_a": 4,
+          "avg_return_a": 0.064717,
+          "trades_b": 8,
+          "avg_return_b": 0.08145
+        },
+        {
+          "stock_id": "1618",
+          "stock_name": "合機",
+          "industry": "電器電纜",
+          "trades_a": 4,
+          "avg_return_a": 0.074838,
+          "trades_b": 7,
+          "avg_return_b": 0.066468
+        },
+        {
+          "stock_id": "1713",
+          "stock_name": "國化",
+          "industry": "化學生技醫療",
+          "trades_a": 1,
+          "avg_return_a": 0.092174,
+          "trades_b": 1,
+          "avg_return_b": 0.239384
+        },
+        {
+          "stock_id": "1727",
+          "stock_name": "中華化",
+          "industry": "化學生技醫療",
+          "trades_a": 5,
+          "avg_return_a": 0.090792,
+          "trades_b": 7,
+          "avg_return_b": -0.025824
+        },
+        {
+          "stock_id": "1784",
+          "stock_name": "訊聯",
+          "industry": "生技醫療業",
+          "trades_a": 3,
+          "avg_return_a": 0.074905,
+          "trades_b": 7,
+          "avg_return_b": 0.084622
+        },
+        {
+          "stock_id": "1795",
+          "stock_name": "美時",
+          "industry": "生技醫療業",
+          "trades_a": 7,
+          "avg_return_a": 0.079884,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1810",
+          "stock_name": "和成",
+          "industry": "玻璃陶瓷",
+          "trades_a": 4,
+          "avg_return_a": 0.064968,
+          "trades_b": 5,
+          "avg_return_b": -0.033746
+        },
+        {
+          "stock_id": "1815",
+          "stock_name": "富喬",
+          "industry": "電子零組件業",
+          "trades_a": 4,
+          "avg_return_a": 0.034318,
+          "trades_b": 10,
+          "avg_return_b": 0.154341
+        },
+        {
+          "stock_id": "2049",
+          "stock_name": "上銀",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": 0.109549
+        },
+        {
+          "stock_id": "2059",
+          "stock_name": "川湖",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 5,
+          "avg_return_b": 0.356378
+        },
+        {
+          "stock_id": "2231",
+          "stock_name": "為升",
+          "industry": "汽車工業",
+          "trades_a": 4,
+          "avg_return_a": 0.049798,
+          "trades_b": 5,
+          "avg_return_b": -0.060614
+        },
+        {
+          "stock_id": "2233",
+          "stock_name": "宇隆",
+          "industry": "汽車工業",
+          "trades_a": 3,
+          "avg_return_a": 0.094172,
+          "trades_b": 7,
+          "avg_return_b": -0.044442
+        },
+        {
+          "stock_id": "2241",
+          "stock_name": "艾姆勒",
+          "industry": "汽車工業",
+          "trades_a": 4,
+          "avg_return_a": 0.004786,
+          "trades_b": 4,
+          "avg_return_b": 0.014412
+        },
+        {
+          "stock_id": "2312",
+          "stock_name": "金寶",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.057346,
+          "trades_b": 5,
+          "avg_return_b": -0.090194
+        },
+        {
+          "stock_id": "2328",
+          "stock_name": "廣宇",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": 0.022583,
+          "trades_b": 6,
+          "avg_return_b": -0.029292
+        },
+        {
+          "stock_id": "2329",
+          "stock_name": "華泰",
+          "industry": "電子工業",
+          "trades_a": 4,
+          "avg_return_a": 0.020528,
+          "trades_b": 7,
+          "avg_return_b": 0.213255
+        },
+        {
+          "stock_id": "2345",
+          "stock_name": "智邦",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.190022
+        },
+        {
+          "stock_id": "2374",
+          "stock_name": "佳能",
+          "industry": "光電業",
+          "trades_a": 6,
+          "avg_return_a": 0.083543,
+          "trades_b": 5,
+          "avg_return_b": -0.048622
+        },
+        {
+          "stock_id": "2383",
+          "stock_name": "台光電",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.04536
+        },
+        {
+          "stock_id": "2421",
+          "stock_name": "建準",
+          "industry": "電子零組件業",
+          "trades_a": 5,
+          "avg_return_a": 0.033442,
+          "trades_b": 5,
+          "avg_return_b": 0.172523
+        },
+        {
+          "stock_id": "2454",
+          "stock_name": "聯發科",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2472",
+          "stock_name": "立隆電",
+          "industry": "電子零組件業",
+          "trades_a": 5,
+          "avg_return_a": 0.076604,
+          "trades_b": 7,
+          "avg_return_b": 0.016334
+        },
+        {
+          "stock_id": "2476",
+          "stock_name": "鉅祥",
+          "industry": "電子工業",
+          "trades_a": 5,
+          "avg_return_a": 0.166821,
+          "trades_b": 4,
+          "avg_return_b": -0.100179
+        },
+        {
+          "stock_id": "2887",
+          "stock_name": "台新新光金",
+          "industry": "金融保險",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3011",
+          "stock_name": "今皓",
+          "industry": "電子零組件業",
+          "trades_a": 11,
+          "avg_return_a": 0.086721,
+          "trades_b": 4,
+          "avg_return_b": -0.008651
+        },
+        {
+          "stock_id": "3019",
+          "stock_name": "亞光",
+          "industry": "光電業",
+          "trades_a": 3,
+          "avg_return_a": 0.036036,
+          "trades_b": 6,
+          "avg_return_b": -0.056247
+        },
+        {
+          "stock_id": "3027",
+          "stock_name": "盛達",
+          "industry": "通信網路業",
+          "trades_a": 7,
+          "avg_return_a": 0.068206,
+          "trades_b": 6,
+          "avg_return_b": -0.037914
+        },
+        {
+          "stock_id": "3055",
+          "stock_name": "蔚華科",
+          "industry": "電子通路業",
+          "trades_a": 4,
+          "avg_return_a": 0.011554,
+          "trades_b": 9,
+          "avg_return_b": 0.088663
+        },
+        {
+          "stock_id": "3060",
+          "stock_name": "銘異",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 4,
+          "avg_return_a": 0.034743,
+          "trades_b": 6,
+          "avg_return_b": -0.070413
+        },
+        {
+          "stock_id": "3092",
+          "stock_name": "鴻碩",
+          "industry": "電子零組件業",
+          "trades_a": 5,
+          "avg_return_a": 0.07181,
+          "trades_b": 2,
+          "avg_return_b": 0.144782
+        },
+        {
+          "stock_id": "3128",
+          "stock_name": "昇銳",
+          "industry": "光電業",
+          "trades_a": 8,
+          "avg_return_a": 0.076994,
+          "trades_b": 3,
+          "avg_return_b": -0.0307
+        },
+        {
+          "stock_id": "3147",
+          "stock_name": "大綜",
+          "industry": "資訊服務業",
+          "trades_a": 3,
+          "avg_return_a": 0.078282,
+          "trades_b": 11,
+          "avg_return_b": 0.033487
+        },
+        {
+          "stock_id": "3152",
+          "stock_name": "璟德",
+          "industry": "通信網路業",
+          "trades_a": 6,
+          "avg_return_a": 0.032709,
+          "trades_b": 4,
+          "avg_return_b": -0.03678
+        },
+        {
+          "stock_id": "3167",
+          "stock_name": "大量",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": 0.344786,
+          "trades_b": 6,
+          "avg_return_b": 0.117742
+        },
+        {
+          "stock_id": "3176",
+          "stock_name": "基亞",
+          "industry": "生技醫療業",
+          "trades_a": 5,
+          "avg_return_a": 0.029637,
+          "trades_b": 3,
+          "avg_return_b": -0.064826
+        },
+        {
+          "stock_id": "3202",
+          "stock_name": "樺晟",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": 0.052543,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3217",
+          "stock_name": "優群",
+          "industry": "電子零組件業",
+          "trades_a": 6,
+          "avg_return_a": 0.090904,
+          "trades_b": 2,
+          "avg_return_b": 0.162678
+        },
+        {
+          "stock_id": "3296",
+          "stock_name": "勝德",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": 0.00287,
+          "trades_b": 4,
+          "avg_return_b": -0.089095
+        },
+        {
+          "stock_id": "3305",
+          "stock_name": "昇貿",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.068601,
+          "trades_b": 4,
+          "avg_return_b": -0.065183
+        },
+        {
+          "stock_id": "3376",
+          "stock_name": "新日興",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 6,
+          "avg_return_b": 0.085583
+        },
+        {
+          "stock_id": "3444",
+          "stock_name": "利機",
+          "industry": "電子通路業",
+          "trades_a": 10,
+          "avg_return_a": 0.006967,
+          "trades_b": 4,
+          "avg_return_b": 0.106516
+        },
+        {
+          "stock_id": "3455",
+          "stock_name": "由田",
+          "industry": "光電業",
+          "trades_a": 4,
+          "avg_return_a": 0.044827,
+          "trades_b": 4,
+          "avg_return_b": -0.002269
+        },
+        {
+          "stock_id": "3548",
+          "stock_name": "兆利",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": 0.053563,
+          "trades_b": 6,
+          "avg_return_b": -0.024838
+        },
+        {
+          "stock_id": "3551",
+          "stock_name": "世禾",
+          "industry": "綠能環保類",
+          "trades_a": 6,
+          "avg_return_a": 0.037861,
+          "trades_b": 5,
+          "avg_return_b": -0.049327
+        },
+        {
+          "stock_id": "3587",
+          "stock_name": "閎康",
+          "industry": "其他電子類",
+          "trades_a": 6,
+          "avg_return_a": 0.005258,
+          "trades_b": 6,
+          "avg_return_b": 0.02094
+        },
+        {
+          "stock_id": "3594",
+          "stock_name": "磐儀",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": 0.195674,
+          "trades_b": 3,
+          "avg_return_b": 0.004962
+        },
+        {
+          "stock_id": "3605",
+          "stock_name": "宏致",
+          "industry": "電子工業",
+          "trades_a": 7,
+          "avg_return_a": 0.056888,
+          "trades_b": 9,
+          "avg_return_b": 0.034719
+        },
+        {
+          "stock_id": "3615",
+          "stock_name": "安可",
+          "industry": "光電業",
+          "trades_a": 5,
+          "avg_return_a": 0.038207,
+          "trades_b": 3,
+          "avg_return_b": -0.063992
+        },
+        {
+          "stock_id": "3689",
+          "stock_name": "湧德",
+          "industry": "電子零組件業",
+          "trades_a": 6,
+          "avg_return_a": 0.036,
+          "trades_b": 10,
+          "avg_return_b": 0.024208
+        },
+        {
+          "stock_id": "4127",
+          "stock_name": "天良",
+          "industry": "生技醫療業",
+          "trades_a": 6,
+          "avg_return_a": 0.060465,
+          "trades_b": 3,
+          "avg_return_b": -0.041093
+        },
+        {
+          "stock_id": "4142",
+          "stock_name": "國光生",
+          "industry": "生技醫療業",
+          "trades_a": 1,
+          "avg_return_a": 0.125387,
+          "trades_b": 1,
+          "avg_return_b": 0.03884
+        },
+        {
+          "stock_id": "4510",
+          "stock_name": "高鋒",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 8,
+          "avg_return_b": 0.017712
+        },
+        {
+          "stock_id": "4541",
+          "stock_name": "晟田",
+          "industry": "其他",
+          "trades_a": 3,
+          "avg_return_a": 0.036467,
+          "trades_b": 7,
+          "avg_return_b": -0.027235
+        },
+        {
+          "stock_id": "4564",
+          "stock_name": "元翎",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4566",
+          "stock_name": "時碩工業",
+          "industry": "電機機械",
+          "trades_a": 3,
+          "avg_return_a": 0.054857,
+          "trades_b": 3,
+          "avg_return_b": -0.069386
+        },
+        {
+          "stock_id": "4755",
+          "stock_name": "三福化",
+          "industry": "化學生技醫療",
+          "trades_a": 6,
+          "avg_return_a": 0.00041,
+          "trades_b": 5,
+          "avg_return_b": -0.046247
+        },
+        {
+          "stock_id": "4927",
+          "stock_name": "泰鼎-KY",
+          "industry": "電子零組件業",
+          "trades_a": 6,
+          "avg_return_a": 0.11627,
+          "trades_b": 4,
+          "avg_return_b": 0.082255
+        },
+        {
+          "stock_id": "5234",
+          "stock_name": "達興材料",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.166149,
+          "trades_b": 10,
+          "avg_return_b": 0.098521
+        },
+        {
+          "stock_id": "5328",
+          "stock_name": "華容",
+          "industry": "電子零組件業",
+          "trades_a": 5,
+          "avg_return_a": 0.000762,
+          "trades_b": 9,
+          "avg_return_b": 0.043413
+        },
+        {
+          "stock_id": "5426",
+          "stock_name": "振發",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 4,
+          "avg_return_a": 0.082781,
+          "trades_b": 7,
+          "avg_return_b": 0.115738
+        },
+        {
+          "stock_id": "5439",
+          "stock_name": "高技",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": 0.175765,
+          "trades_b": 6,
+          "avg_return_b": 0.23716
+        },
+        {
+          "stock_id": "5452",
+          "stock_name": "佶優",
+          "industry": "其他電子類",
+          "trades_a": 3,
+          "avg_return_a": 0.03723,
+          "trades_b": 7,
+          "avg_return_b": -0.045237
+        },
+        {
+          "stock_id": "5511",
+          "stock_name": "德昌",
+          "industry": "建材營造",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": -0.038034
+        },
+        {
+          "stock_id": "5706",
+          "stock_name": "鳳凰",
+          "industry": "觀光餐旅",
+          "trades_a": 5,
+          "avg_return_a": 0.000112,
+          "trades_b": 1,
+          "avg_return_b": -0.052799
+        },
+        {
+          "stock_id": "6125",
+          "stock_name": "廣運",
+          "industry": "光電業",
+          "trades_a": 3,
+          "avg_return_a": 0.075478,
+          "trades_b": 6,
+          "avg_return_b": 0.248207
+        },
+        {
+          "stock_id": "6139",
+          "stock_name": "亞翔",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.023971,
+          "trades_b": 8,
+          "avg_return_b": 0.164423
+        },
+        {
+          "stock_id": "6141",
+          "stock_name": "柏承",
+          "industry": "電子零組件業",
+          "trades_a": 6,
+          "avg_return_a": 0.100877,
+          "trades_b": 6,
+          "avg_return_b": 0.010844
+        },
+        {
+          "stock_id": "6161",
+          "stock_name": "捷波",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 5,
+          "avg_return_a": 0.013441,
+          "trades_b": 5,
+          "avg_return_b": -0.023401
+        },
+        {
+          "stock_id": "6170",
+          "stock_name": "統振",
+          "industry": "通信網路業",
+          "trades_a": 4,
+          "avg_return_a": 0.077804,
+          "trades_b": 1,
+          "avg_return_b": -0.026957
+        },
+        {
+          "stock_id": "6197",
+          "stock_name": "佳必琪",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": 0.012492,
+          "trades_b": 7,
+          "avg_return_b": -0.037267
+        },
+        {
+          "stock_id": "6227",
+          "stock_name": "茂綸",
+          "industry": "電子通路業",
+          "trades_a": 1,
+          "avg_return_a": 0.135883,
+          "trades_b": 7,
+          "avg_return_b": -0.011247
+        },
+        {
+          "stock_id": "6245",
+          "stock_name": "立端",
+          "industry": "通信網路業",
+          "trades_a": 2,
+          "avg_return_a": 0.028059,
+          "trades_b": 3,
+          "avg_return_b": -0.006682
+        },
+        {
+          "stock_id": "6284",
+          "stock_name": "佳邦",
+          "industry": "電子零組件業",
+          "trades_a": 6,
+          "avg_return_a": 0.006779,
+          "trades_b": 6,
+          "avg_return_b": 0.01234
+        },
+        {
+          "stock_id": "6290",
+          "stock_name": "良維",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": 0.065536,
+          "trades_b": 5,
+          "avg_return_b": -0.056894
+        },
+        {
+          "stock_id": "6449",
+          "stock_name": "鈺邦",
+          "industry": "電子工業",
+          "trades_a": 3,
+          "avg_return_a": 0.065118,
+          "trades_b": 7,
+          "avg_return_b": 0.180753
+        },
+        {
+          "stock_id": "6552",
+          "stock_name": "易華電",
+          "industry": "電子工業",
+          "trades_a": 3,
+          "avg_return_a": 0.067574,
+          "trades_b": 6,
+          "avg_return_b": -0.017719
+        },
+        {
+          "stock_id": "6669",
+          "stock_name": "緯穎",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": 0.010767,
+          "trades_b": 6,
+          "avg_return_b": 0.182367
+        },
+        {
+          "stock_id": "6689",
+          "stock_name": "伊雲谷",
+          "industry": "數位雲端",
+          "trades_a": 2,
+          "avg_return_a": 0.224033,
+          "trades_b": 4,
+          "avg_return_b": -0.050321
+        },
+        {
+          "stock_id": "6757",
+          "stock_name": "台灣虎航",
+          "industry": "航運業",
+          "trades_a": 4,
+          "avg_return_a": 0.039606,
+          "trades_b": 7,
+          "avg_return_b": 0.084645
+        },
+        {
+          "stock_id": "8028",
+          "stock_name": "昇陽半導體",
+          "industry": "電子工業",
+          "trades_a": 7,
+          "avg_return_a": 0.007924,
+          "trades_b": 3,
+          "avg_return_b": 0.1199
+        },
+        {
+          "stock_id": "8064",
+          "stock_name": "東捷",
+          "industry": "光電業",
+          "trades_a": 2,
+          "avg_return_a": 0.0052,
+          "trades_b": 8,
+          "avg_return_b": 0.022202
+        },
+        {
+          "stock_id": "8069",
+          "stock_name": "元太",
+          "industry": "光電業",
+          "trades_a": 6,
+          "avg_return_a": 0.109226,
+          "trades_b": 1,
+          "avg_return_b": -0.056624
+        },
+        {
+          "stock_id": "8071",
+          "stock_name": "能率網通",
+          "industry": "電子零組件業",
+          "trades_a": 5,
+          "avg_return_a": 0.039042,
+          "trades_b": 3,
+          "avg_return_b": 0.065903
+        },
+        {
+          "stock_id": "8099",
+          "stock_name": "大世科",
+          "industry": "資訊服務業",
+          "trades_a": 8,
+          "avg_return_a": 0.033974,
+          "trades_b": 4,
+          "avg_return_b": 0.024866
+        },
+        {
+          "stock_id": "8111",
+          "stock_name": "立碁",
+          "industry": "光電業",
+          "trades_a": 4,
+          "avg_return_a": 0.007407,
+          "trades_b": 12,
+          "avg_return_b": 0.021553
+        },
+        {
+          "stock_id": "8222",
+          "stock_name": "寶一",
+          "industry": "電機機械",
+          "trades_a": 5,
+          "avg_return_a": 0.214665,
+          "trades_b": 6,
+          "avg_return_b": 0.001778
+        },
+        {
+          "stock_id": "8299",
+          "stock_name": "群聯",
+          "industry": "半導體業",
+          "trades_a": 5,
+          "avg_return_a": 0.02293,
+          "trades_b": 7,
+          "avg_return_b": -0.010803
+        },
+        {
+          "stock_id": "9906",
+          "stock_name": "欣巴巴",
+          "industry": "建材營造",
+          "trades_a": 1,
+          "avg_return_a": 0.244186,
+          "trades_b": 5,
+          "avg_return_b": 0.17752
+        },
+        {
+          "stock_id": "9919",
+          "stock_name": "康那香",
+          "industry": "其他",
+          "trades_a": 4,
+          "avg_return_a": 0.045343,
+          "trades_b": 4,
+          "avg_return_b": -0.029959
+        }
+      ],
+      "excluded": [
+        {
+          "stock_id": "1515",
+          "stock_name": "力山",
+          "industry": "電機機械",
+          "trades_a": 4,
+          "avg_return_a": -0.030433,
+          "trades_b": 2,
+          "avg_return_b": -0.050266
+        },
+        {
+          "stock_id": "1529",
+          "stock_name": "樂事綠能",
+          "industry": "電機機械",
+          "trades_a": 3,
+          "avg_return_a": -0.053777,
+          "trades_b": 6,
+          "avg_return_b": -0.004191
+        },
+        {
+          "stock_id": "1569",
+          "stock_name": "濱川",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 5,
+          "avg_return_a": -0.039603,
+          "trades_b": 5,
+          "avg_return_b": -0.041579
+        },
+        {
+          "stock_id": "1720",
+          "stock_name": "生達",
+          "industry": "生技醫療業",
+          "trades_a": 1,
+          "avg_return_a": -0.085769,
+          "trades_b": 2,
+          "avg_return_b": 0.009705
+        },
+        {
+          "stock_id": "1736",
+          "stock_name": "喬山",
+          "industry": "運動休閒",
+          "trades_a": 2,
+          "avg_return_a": -0.019081,
+          "trades_b": 4,
+          "avg_return_b": 0.017025
+        },
+        {
+          "stock_id": "1785",
+          "stock_name": "光洋科",
+          "industry": "其他電子類",
+          "trades_a": 4,
+          "avg_return_a": -0.065841,
+          "trades_b": 5,
+          "avg_return_b": 0.018739
+        },
+        {
+          "stock_id": "2313",
+          "stock_name": "華通",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": -0.030279,
+          "trades_b": 5,
+          "avg_return_b": -0.060103
+        },
+        {
+          "stock_id": "2316",
+          "stock_name": "楠梓電",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": -0.008441,
+          "trades_b": 7,
+          "avg_return_b": -0.020334
+        },
+        {
+          "stock_id": "2359",
+          "stock_name": "所羅門",
+          "industry": "電子工業",
+          "trades_a": 3,
+          "avg_return_a": -0.047202,
+          "trades_b": 4,
+          "avg_return_b": 0.026466
+        },
+        {
+          "stock_id": "2360",
+          "stock_name": "致茂",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.070458,
+          "trades_b": 2,
+          "avg_return_b": -0.070346
+        },
+        {
+          "stock_id": "2365",
+          "stock_name": "昆盈",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 4,
+          "avg_return_a": -0.025954,
+          "trades_b": 6,
+          "avg_return_b": 0.085296
+        },
+        {
+          "stock_id": "2371",
+          "stock_name": "大同",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": -0.000677,
+          "trades_b": 4,
+          "avg_return_b": 0.079435
+        },
+        {
+          "stock_id": "2376",
+          "stock_name": "技嘉",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": -0.021304,
+          "trades_b": 3,
+          "avg_return_b": -0.11029
+        },
+        {
+          "stock_id": "2402",
+          "stock_name": "毅嘉",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": -0.007822,
+          "trades_b": 8,
+          "avg_return_b": 0.01764
+        },
+        {
+          "stock_id": "2405",
+          "stock_name": "輔信",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 4,
+          "avg_return_a": -0.035384,
+          "trades_b": 7,
+          "avg_return_b": 0.026321
+        },
+        {
+          "stock_id": "2453",
+          "stock_name": "凌群",
+          "industry": "電子工業",
+          "trades_a": 5,
+          "avg_return_a": -0.060369,
+          "trades_b": 7,
+          "avg_return_b": -0.007649
+        },
+        {
+          "stock_id": "2455",
+          "stock_name": "全新",
+          "industry": "電子工業",
+          "trades_a": 4,
+          "avg_return_a": -0.064885,
+          "trades_b": 5,
+          "avg_return_b": 0.032913
+        },
+        {
+          "stock_id": "2467",
+          "stock_name": "志聖",
+          "industry": "電子零組件業",
+          "trades_a": 4,
+          "avg_return_a": -0.074501,
+          "trades_b": 7,
+          "avg_return_b": 0.172652
+        },
+        {
+          "stock_id": "2468",
+          "stock_name": "華經",
+          "industry": "電子工業",
+          "trades_a": 4,
+          "avg_return_a": -0.068631,
+          "trades_b": 7,
+          "avg_return_b": 0.134
+        },
+        {
+          "stock_id": "2492",
+          "stock_name": "華新科",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.046766,
+          "trades_b": 3,
+          "avg_return_b": 0.118548
+        },
+        {
+          "stock_id": "2495",
+          "stock_name": "普安",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": -0.040709,
+          "trades_b": 5,
+          "avg_return_b": -0.050536
+        },
+        {
+          "stock_id": "2606",
+          "stock_name": "裕民",
+          "industry": "航運業",
+          "trades_a": 3,
+          "avg_return_a": -0.031454,
+          "trades_b": 3,
+          "avg_return_b": 0.119706
+        },
+        {
+          "stock_id": "2607",
+          "stock_name": "榮運",
+          "industry": "航運業",
+          "trades_a": 4,
+          "avg_return_a": -0.051542,
+          "trades_b": 1,
+          "avg_return_b": 0.055621
+        },
+        {
+          "stock_id": "2610",
+          "stock_name": "華航",
+          "industry": "航運業",
+          "trades_a": 5,
+          "avg_return_a": -0.115739,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2618",
+          "stock_name": "長榮航",
+          "industry": "航運業",
+          "trades_a": 4,
+          "avg_return_a": -0.029513,
+          "trades_b": 2,
+          "avg_return_b": -0.04682
+        },
+        {
+          "stock_id": "2630",
+          "stock_name": "亞航",
+          "industry": "航運業",
+          "trades_a": 3,
+          "avg_return_a": -0.079492,
+          "trades_b": 1,
+          "avg_return_b": -0.004024
+        },
+        {
+          "stock_id": "2739",
+          "stock_name": "寒舍",
+          "industry": "觀光餐旅",
+          "trades_a": 1,
+          "avg_return_a": -0.074725,
+          "trades_b": 6,
+          "avg_return_b": -0.007086
+        },
+        {
+          "stock_id": "2867",
+          "stock_name": "三商壽",
+          "industry": "金融保險",
+          "trades_a": 1,
+          "avg_return_a": -0.082152,
+          "trades_b": 1,
+          "avg_return_b": -1.0
+        },
+        {
+          "stock_id": "2905",
+          "stock_name": "三商",
+          "industry": "貿易百貨",
+          "trades_a": 2,
+          "avg_return_a": -0.084297,
+          "trades_b": 2,
+          "avg_return_b": 0.007105
+        },
+        {
+          "stock_id": "3004",
+          "stock_name": "豐達科",
+          "industry": "鋼鐵工業",
+          "trades_a": 2,
+          "avg_return_a": -0.080389,
+          "trades_b": 10,
+          "avg_return_b": -0.02058
+        },
+        {
+          "stock_id": "3013",
+          "stock_name": "晟銘電",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 4,
+          "avg_return_a": -0.102039,
+          "trades_b": 8,
+          "avg_return_b": 0.049312
+        },
+        {
+          "stock_id": "3047",
+          "stock_name": "訊舟",
+          "industry": "通信網路業",
+          "trades_a": 8,
+          "avg_return_a": -0.005341,
+          "trades_b": 3,
+          "avg_return_b": 0.065963
+        },
+        {
+          "stock_id": "3049",
+          "stock_name": "精金",
+          "industry": "電子工業",
+          "trades_a": 5,
+          "avg_return_a": -0.055128,
+          "trades_b": 5,
+          "avg_return_b": 0.013079
+        },
+        {
+          "stock_id": "3059",
+          "stock_name": "華晶科",
+          "industry": "電子工業",
+          "trades_a": 6,
+          "avg_return_a": -0.055412,
+          "trades_b": 2,
+          "avg_return_b": 0.069024
+        },
+        {
+          "stock_id": "3062",
+          "stock_name": "建漢",
+          "industry": "電子工業",
+          "trades_a": 5,
+          "avg_return_a": -0.057461,
+          "trades_b": 3,
+          "avg_return_b": -0.078298
+        },
+        {
+          "stock_id": "3078",
+          "stock_name": "僑威",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.010598,
+          "trades_b": 4,
+          "avg_return_b": -0.009354
+        },
+        {
+          "stock_id": "3083",
+          "stock_name": "網龍",
+          "industry": "文化創意業",
+          "trades_a": 6,
+          "avg_return_a": -0.002208,
+          "trades_b": 1,
+          "avg_return_b": 0.096019
+        },
+        {
+          "stock_id": "3105",
+          "stock_name": "穩懋",
+          "industry": "半導體業",
+          "trades_a": 4,
+          "avg_return_a": -0.092035,
+          "trades_b": 4,
+          "avg_return_b": 0.0359
+        },
+        {
+          "stock_id": "3265",
+          "stock_name": "台星科",
+          "industry": "半導體業",
+          "trades_a": 2,
+          "avg_return_a": -0.038453,
+          "trades_b": 4,
+          "avg_return_b": 0.074806
+        },
+        {
+          "stock_id": "3289",
+          "stock_name": "宜特",
+          "industry": "其他電子類",
+          "trades_a": 4,
+          "avg_return_a": -0.077146,
+          "trades_b": 8,
+          "avg_return_b": -0.025666
+        },
+        {
+          "stock_id": "3312",
+          "stock_name": "弘憶股",
+          "industry": "電子通路業",
+          "trades_a": 2,
+          "avg_return_a": -0.094302,
+          "trades_b": 5,
+          "avg_return_b": 0.150177
+        },
+        {
+          "stock_id": "3356",
+          "stock_name": "奇偶",
+          "industry": "電子工業",
+          "trades_a": 10,
+          "avg_return_a": -0.012718,
+          "trades_b": 4,
+          "avg_return_b": -0.03461
+        },
+        {
+          "stock_id": "3390",
+          "stock_name": "旭軟",
+          "industry": "電子零組件業",
+          "trades_a": 5,
+          "avg_return_a": -0.096211,
+          "trades_b": 6,
+          "avg_return_b": 0.004473
+        },
+        {
+          "stock_id": "3450",
+          "stock_name": "聯鈞",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.111679,
+          "trades_b": 6,
+          "avg_return_b": 0.014074
+        },
+        {
+          "stock_id": "3526",
+          "stock_name": "凡甲",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": -0.008246,
+          "trades_b": 3,
+          "avg_return_b": 0.009214
+        },
+        {
+          "stock_id": "3533",
+          "stock_name": "嘉澤",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.10117,
+          "trades_b": 2,
+          "avg_return_b": 0.109073
+        },
+        {
+          "stock_id": "3580",
+          "stock_name": "友威科",
+          "industry": "其他電子類",
+          "trades_a": 8,
+          "avg_return_a": -0.028215,
+          "trades_b": 3,
+          "avg_return_b": -0.018316
+        },
+        {
+          "stock_id": "3583",
+          "stock_name": "辛耘",
+          "industry": "電子工業",
+          "trades_a": 7,
+          "avg_return_a": -0.019595,
+          "trades_b": 6,
+          "avg_return_b": 0.047502
+        },
+        {
+          "stock_id": "3617",
+          "stock_name": "碩天",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.094939,
+          "trades_b": 5,
+          "avg_return_b": 0.171275
+        },
+        {
+          "stock_id": "3622",
+          "stock_name": "洋華",
+          "industry": "電子工業",
+          "trades_a": 4,
+          "avg_return_a": -0.066576,
+          "trades_b": 5,
+          "avg_return_b": 0.041093
+        },
+        {
+          "stock_id": "3652",
+          "stock_name": "精聯",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 6,
+          "avg_return_a": -0.033884,
+          "trades_b": 3,
+          "avg_return_b": 0.095819
+        },
+        {
+          "stock_id": "3663",
+          "stock_name": "鑫科",
+          "industry": "其他電子類",
+          "trades_a": 3,
+          "avg_return_a": -0.003121,
+          "trades_b": 5,
+          "avg_return_b": -0.044086
+        },
+        {
+          "stock_id": "3680",
+          "stock_name": "家登",
+          "industry": "半導體業",
+          "trades_a": 7,
+          "avg_return_a": -0.086152,
+          "trades_b": 5,
+          "avg_return_b": -0.041214
+        },
+        {
+          "stock_id": "3691",
+          "stock_name": "碩禾",
+          "industry": "光電業",
+          "trades_a": 4,
+          "avg_return_a": -0.02425,
+          "trades_b": 3,
+          "avg_return_b": 0.211882
+        },
+        {
+          "stock_id": "4157",
+          "stock_name": "太景*-KY",
+          "industry": "生技醫療業",
+          "trades_a": 3,
+          "avg_return_a": -0.069517,
+          "trades_b": 3,
+          "avg_return_b": -0.074333
+        },
+        {
+          "stock_id": "4167",
+          "stock_name": "松瑞藥",
+          "industry": "生技醫療業",
+          "trades_a": 3,
+          "avg_return_a": -0.105949,
+          "trades_b": 6,
+          "avg_return_b": -0.0264
+        },
+        {
+          "stock_id": "4513",
+          "stock_name": "福裕",
+          "industry": "電機機械",
+          "trades_a": 3,
+          "avg_return_a": -0.072079,
+          "trades_b": 5,
+          "avg_return_b": -0.049412
+        },
+        {
+          "stock_id": "4526",
+          "stock_name": "東台",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.124463,
+          "trades_b": 7,
+          "avg_return_b": -0.009694
+        },
+        {
+          "stock_id": "4551",
+          "stock_name": "智伸科",
+          "industry": "汽車工業",
+          "trades_a": 4,
+          "avg_return_a": -0.023287,
+          "trades_b": 1,
+          "avg_return_b": -0.030174
+        },
+        {
+          "stock_id": "4714",
+          "stock_name": "永捷",
+          "industry": "化學工業",
+          "trades_a": 4,
+          "avg_return_a": -0.017586,
+          "trades_b": 6,
+          "avg_return_b": -0.017095
+        },
+        {
+          "stock_id": "4916",
+          "stock_name": "事欣科",
+          "industry": "電子工業",
+          "trades_a": 3,
+          "avg_return_a": -0.06876,
+          "trades_b": 9,
+          "avg_return_b": -0.032028
+        },
+        {
+          "stock_id": "4938",
+          "stock_name": "和碩",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.091571,
+          "trades_b": 2,
+          "avg_return_b": 0.028332
+        },
+        {
+          "stock_id": "4951",
+          "stock_name": "精拓科",
+          "industry": "半導體業",
+          "trades_a": 4,
+          "avg_return_a": -0.04711,
+          "trades_b": 3,
+          "avg_return_b": 0.011148
+        },
+        {
+          "stock_id": "4991",
+          "stock_name": "環宇-KY",
+          "industry": "半導體業",
+          "trades_a": 2,
+          "avg_return_a": -0.041582,
+          "trades_b": 7,
+          "avg_return_b": -0.005351
+        },
+        {
+          "stock_id": "5243",
+          "stock_name": "乙盛-KY",
+          "industry": "電子工業",
+          "trades_a": 6,
+          "avg_return_a": -0.063503,
+          "trades_b": 4,
+          "avg_return_b": 0.077175
+        },
+        {
+          "stock_id": "5258",
+          "stock_name": "虹堡",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 8,
+          "avg_return_a": -0.031067,
+          "trades_b": 4,
+          "avg_return_b": -0.008716
+        },
+        {
+          "stock_id": "5289",
+          "stock_name": "宜鼎",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.017012,
+          "trades_b": 6,
+          "avg_return_b": 0.173572
+        },
+        {
+          "stock_id": "5371",
+          "stock_name": "中光電",
+          "industry": "光電業",
+          "trades_a": 2,
+          "avg_return_a": -0.101789,
+          "trades_b": 2,
+          "avg_return_b": -0.014082
+        },
+        {
+          "stock_id": "5392",
+          "stock_name": "能率",
+          "industry": "光電業",
+          "trades_a": 2,
+          "avg_return_a": -0.112968,
+          "trades_b": 4,
+          "avg_return_b": -0.040463
+        },
+        {
+          "stock_id": "5443",
+          "stock_name": "均豪",
+          "industry": "半導體業",
+          "trades_a": 9,
+          "avg_return_a": -0.018708,
+          "trades_b": 7,
+          "avg_return_b": 0.07477
+        },
+        {
+          "stock_id": "5457",
+          "stock_name": "宣德",
+          "industry": "電子零組件業",
+          "trades_a": 6,
+          "avg_return_a": -0.070742,
+          "trades_b": 6,
+          "avg_return_b": -0.014579
+        },
+        {
+          "stock_id": "5488",
+          "stock_name": "松普",
+          "industry": "電子零組件業",
+          "trades_a": 5,
+          "avg_return_a": -0.022859,
+          "trades_b": 3,
+          "avg_return_b": -0.061723
+        },
+        {
+          "stock_id": "5536",
+          "stock_name": "聖暉*",
+          "industry": "其他電子類",
+          "trades_a": 1,
+          "avg_return_a": -0.091055,
+          "trades_b": 4,
+          "avg_return_b": 0.067
+        },
+        {
+          "stock_id": "6122",
+          "stock_name": "擎邦",
+          "industry": "電機機械",
+          "trades_a": 3,
+          "avg_return_a": -0.076993,
+          "trades_b": 6,
+          "avg_return_b": 0.019065
+        },
+        {
+          "stock_id": "6133",
+          "stock_name": "金橋",
+          "industry": "電子工業",
+          "trades_a": 6,
+          "avg_return_a": -0.037868,
+          "trades_b": 5,
+          "avg_return_b": 0.013017
+        },
+        {
+          "stock_id": "6138",
+          "stock_name": "茂達",
+          "industry": "半導體業",
+          "trades_a": 4,
+          "avg_return_a": -0.065966,
+          "trades_b": 3,
+          "avg_return_b": 0.054001
+        },
+        {
+          "stock_id": "6143",
+          "stock_name": "振曜",
+          "industry": "通信網路業",
+          "trades_a": 6,
+          "avg_return_a": -0.021241,
+          "trades_b": 4,
+          "avg_return_b": -0.019833
+        },
+        {
+          "stock_id": "6153",
+          "stock_name": "嘉聯益",
+          "industry": "電子零組件業",
+          "trades_a": 4,
+          "avg_return_a": -0.057969,
+          "trades_b": 4,
+          "avg_return_b": -0.032538
+        },
+        {
+          "stock_id": "6156",
+          "stock_name": "松上",
+          "industry": "電子零組件業",
+          "trades_a": 5,
+          "avg_return_a": -0.047446,
+          "trades_b": 7,
+          "avg_return_b": -0.026018
+        },
+        {
+          "stock_id": "6160",
+          "stock_name": "欣技",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 6,
+          "avg_return_a": -0.051917,
+          "trades_b": 3,
+          "avg_return_b": -0.016309
+        },
+        {
+          "stock_id": "6163",
+          "stock_name": "華電網",
+          "industry": "通信網路業",
+          "trades_a": 5,
+          "avg_return_a": -0.004375,
+          "trades_b": 5,
+          "avg_return_b": -0.051628
+        },
+        {
+          "stock_id": "6167",
+          "stock_name": "久正",
+          "industry": "光電業",
+          "trades_a": 4,
+          "avg_return_a": -0.070956,
+          "trades_b": 5,
+          "avg_return_b": -0.027125
+        },
+        {
+          "stock_id": "6188",
+          "stock_name": "廣明",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 2,
+          "avg_return_a": -0.091692,
+          "trades_b": 8,
+          "avg_return_b": -0.004453
+        },
+        {
+          "stock_id": "6190",
+          "stock_name": "萬泰科",
+          "industry": "通信網路業",
+          "trades_a": 3,
+          "avg_return_a": -0.031738,
+          "trades_b": 4,
+          "avg_return_b": -0.014
+        },
+        {
+          "stock_id": "6196",
+          "stock_name": "帆宣",
+          "industry": "其他電子業",
+          "trades_a": 6,
+          "avg_return_a": -0.048691,
+          "trades_b": 5,
+          "avg_return_b": -0.020419
+        },
+        {
+          "stock_id": "6207",
+          "stock_name": "雷科",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.111018,
+          "trades_b": 4,
+          "avg_return_b": 0.087073
+        },
+        {
+          "stock_id": "6213",
+          "stock_name": "聯茂",
+          "industry": "電子零組件業",
+          "trades_a": 4,
+          "avg_return_a": -0.05494,
+          "trades_b": 6,
+          "avg_return_b": 0.055388
+        },
+        {
+          "stock_id": "6215",
+          "stock_name": "和椿",
+          "industry": "其他電子業",
+          "trades_a": 5,
+          "avg_return_a": -0.041435,
+          "trades_b": 10,
+          "avg_return_b": 0.020249
+        },
+        {
+          "stock_id": "6274",
+          "stock_name": "台燿",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": -0.045922,
+          "trades_b": 6,
+          "avg_return_b": -0.011557
+        },
+        {
+          "stock_id": "6667",
+          "stock_name": "信紘科",
+          "industry": "其他電子類",
+          "trades_a": 8,
+          "avg_return_a": -0.045186,
+          "trades_b": 7,
+          "avg_return_b": 0.086694
+        },
+        {
+          "stock_id": "6698",
+          "stock_name": "旭暉應材",
+          "industry": "電子工業",
+          "trades_a": 3,
+          "avg_return_a": -0.01473,
+          "trades_b": 9,
+          "avg_return_b": -0.025828
+        },
+        {
+          "stock_id": "6732",
+          "stock_name": "昇佳電子",
+          "industry": "半導體業",
+          "trades_a": 3,
+          "avg_return_a": -0.075168,
+          "trades_b": 4,
+          "avg_return_b": 0.02852
+        },
+        {
+          "stock_id": "6743",
+          "stock_name": "安普新",
+          "industry": "其他電子業",
+          "trades_a": 4,
+          "avg_return_a": -0.061366,
+          "trades_b": 4,
+          "avg_return_b": 0.017945
+        },
+        {
+          "stock_id": "8011",
+          "stock_name": "台通",
+          "industry": "電子工業",
+          "trades_a": 4,
+          "avg_return_a": -0.015974,
+          "trades_b": 8,
+          "avg_return_b": -0.007507
+        },
+        {
+          "stock_id": "8027",
+          "stock_name": "鈦昇",
+          "industry": "電機機械",
+          "trades_a": 5,
+          "avg_return_a": -0.000732,
+          "trades_b": 7,
+          "avg_return_b": -0.043561
+        },
+        {
+          "stock_id": "8092",
+          "stock_name": "建暐",
+          "industry": "其他電子類",
+          "trades_a": 2,
+          "avg_return_a": -0.038322,
+          "trades_b": 5,
+          "avg_return_b": -0.072538
+        },
+        {
+          "stock_id": "8096",
+          "stock_name": "擎亞",
+          "industry": "電子通路業",
+          "trades_a": 7,
+          "avg_return_a": -0.058381,
+          "trades_b": 6,
+          "avg_return_b": -0.002606
+        },
+        {
+          "stock_id": "8103",
+          "stock_name": "瀚荃",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": -0.049478,
+          "trades_b": 7,
+          "avg_return_b": 0.006546
+        },
+        {
+          "stock_id": "8176",
+          "stock_name": "智捷",
+          "industry": "通信網路業",
+          "trades_a": 2,
+          "avg_return_a": -0.109169,
+          "trades_b": 5,
+          "avg_return_b": 0.002333
+        },
+        {
+          "stock_id": "8210",
+          "stock_name": "勤誠",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.093134,
+          "trades_b": 5,
+          "avg_return_b": -0.009004
+        },
+        {
+          "stock_id": "8234",
+          "stock_name": "新漢",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 5,
+          "avg_return_a": -0.037127,
+          "trades_b": 9,
+          "avg_return_b": 0.075486
+        },
+        {
+          "stock_id": "8249",
+          "stock_name": "菱光",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.037069,
+          "trades_b": 4,
+          "avg_return_b": 0.00467
+        },
+        {
+          "stock_id": "8374",
+          "stock_name": "羅昇",
+          "industry": "電機機械",
+          "trades_a": 4,
+          "avg_return_a": -0.041752,
+          "trades_b": 7,
+          "avg_return_b": -0.038919
+        },
+        {
+          "stock_id": "8390",
+          "stock_name": "金益鼎",
+          "industry": "綠能環保類",
+          "trades_a": 6,
+          "avg_return_a": -0.006228,
+          "trades_b": 2,
+          "avg_return_b": -0.015079
+        },
+        {
+          "stock_id": "8436",
+          "stock_name": "大江",
+          "industry": "生技醫療業",
+          "trades_a": 3,
+          "avg_return_a": -0.034543,
+          "trades_b": 3,
+          "avg_return_b": -0.093547
+        },
+        {
+          "stock_id": "8936",
+          "stock_name": "國統",
+          "industry": "其他",
+          "trades_a": 4,
+          "avg_return_a": -0.043526,
+          "trades_b": 5,
+          "avg_return_b": 0.144612
+        },
+        {
+          "stock_id": "9914",
+          "stock_name": "美利達",
+          "industry": "運動休閒",
+          "trades_a": 1,
+          "avg_return_a": -0.096504,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "9955",
+          "stock_name": "佳龍",
+          "industry": "綠能環保",
+          "trades_a": 6,
+          "avg_return_a": -0.062701,
+          "trades_b": 5,
+          "avg_return_b": 0.018844
+        },
+        {
+          "stock_id": "9958",
+          "stock_name": "世紀鋼",
+          "industry": "鋼鐵工業",
+          "trades_a": 3,
+          "avg_return_a": -0.053437,
+          "trades_b": 4,
+          "avg_return_b": 0.093946
+        }
+      ]
+    },
+    "ad_divergence": {
+      "label": "AD背離",
+      "kept_count": 116,
+      "excluded_count": 93,
+      "kept": [
+        {
+          "stock_id": "1503",
+          "stock_name": "士電",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": 0.10967,
+          "trades_b": 1,
+          "avg_return_b": 0.033699
+        },
+        {
+          "stock_id": "1513",
+          "stock_name": "中興電",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": 0.772275,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1514",
+          "stock_name": "亞力",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": 0.083362,
+          "trades_b": 1,
+          "avg_return_b": -0.114155
+        },
+        {
+          "stock_id": "1524",
+          "stock_name": "耿鼎",
+          "industry": "汽車工業",
+          "trades_a": 2,
+          "avg_return_a": 0.129799,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1529",
+          "stock_name": "樂事綠能",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.065194
+        },
+        {
+          "stock_id": "1560",
+          "stock_name": "中砂",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": 0.144304,
+          "trades_b": 3,
+          "avg_return_b": 0.086226
+        },
+        {
+          "stock_id": "1584",
+          "stock_name": "精剛",
+          "industry": "其他",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.001722
+        },
+        {
+          "stock_id": "1587",
+          "stock_name": "吉茂",
+          "industry": "汽車工業",
+          "trades_a": 3,
+          "avg_return_a": 0.117594,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1608",
+          "stock_name": "華榮",
+          "industry": "電器電纜",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1609",
+          "stock_name": "大亞",
+          "industry": "電器電纜",
+          "trades_a": 1,
+          "avg_return_a": 0.042654,
+          "trades_b": 1,
+          "avg_return_b": -0.086082
+        },
+        {
+          "stock_id": "1618",
+          "stock_name": "合機",
+          "industry": "電器電纜",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.146453
+        },
+        {
+          "stock_id": "1713",
+          "stock_name": "國化",
+          "industry": "化學生技醫療",
+          "trades_a": 1,
+          "avg_return_a": 0.004645,
+          "trades_b": 2,
+          "avg_return_b": -0.045402
+        },
+        {
+          "stock_id": "1720",
+          "stock_name": "生達",
+          "industry": "生技醫療業",
+          "trades_a": 2,
+          "avg_return_a": 0.019034,
+          "trades_b": 3,
+          "avg_return_b": -0.003172
+        },
+        {
+          "stock_id": "1727",
+          "stock_name": "中華化",
+          "industry": "化學生技醫療",
+          "trades_a": 1,
+          "avg_return_a": 0.00803,
+          "trades_b": 1,
+          "avg_return_b": -0.063434
+        },
+        {
+          "stock_id": "1784",
+          "stock_name": "訊聯",
+          "industry": "生技醫療業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.128469
+        },
+        {
+          "stock_id": "1810",
+          "stock_name": "和成",
+          "industry": "玻璃陶瓷",
+          "trades_a": 2,
+          "avg_return_a": 0.056505,
+          "trades_b": 2,
+          "avg_return_b": 0.019943
+        },
+        {
+          "stock_id": "1815",
+          "stock_name": "富喬",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": 0.408391,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2049",
+          "stock_name": "上銀",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.330677
+        },
+        {
+          "stock_id": "2241",
+          "stock_name": "艾姆勒",
+          "industry": "汽車工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2328",
+          "stock_name": "廣宇",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": -0.0197
+        },
+        {
+          "stock_id": "2359",
+          "stock_name": "所羅門",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2371",
+          "stock_name": "大同",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": 0.150344,
+          "trades_b": 1,
+          "avg_return_b": 0.481432
+        },
+        {
+          "stock_id": "2374",
+          "stock_name": "佳能",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": 0.036826,
+          "trades_b": 2,
+          "avg_return_b": 0.061606
+        },
+        {
+          "stock_id": "2383",
+          "stock_name": "台光電",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": 0.018378,
+          "trades_b": 4,
+          "avg_return_b": 0.018659
+        },
+        {
+          "stock_id": "2402",
+          "stock_name": "毅嘉",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": 0.019521,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2405",
+          "stock_name": "輔信",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": 0.045277,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2454",
+          "stock_name": "聯發科",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.067967,
+          "trades_b": 1,
+          "avg_return_b": -0.114636
+        },
+        {
+          "stock_id": "2455",
+          "stock_name": "全新",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.189778,
+          "trades_b": 2,
+          "avg_return_b": 0.091481
+        },
+        {
+          "stock_id": "2472",
+          "stock_name": "立隆電",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2476",
+          "stock_name": "鉅祥",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.006526,
+          "trades_b": 3,
+          "avg_return_b": -0.019856
+        },
+        {
+          "stock_id": "2492",
+          "stock_name": "華新科",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.039104
+        },
+        {
+          "stock_id": "2607",
+          "stock_name": "榮運",
+          "industry": "航運業",
+          "trades_a": 3,
+          "avg_return_a": 0.076619,
+          "trades_b": 1,
+          "avg_return_b": -0.02277
+        },
+        {
+          "stock_id": "2618",
+          "stock_name": "長榮航",
+          "industry": "航運業",
+          "trades_a": 1,
+          "avg_return_a": 0.342505,
+          "trades_b": 2,
+          "avg_return_b": -0.088011
+        },
+        {
+          "stock_id": "2630",
+          "stock_name": "亞航",
+          "industry": "航運業",
+          "trades_a": 1,
+          "avg_return_a": 0.269327,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2739",
+          "stock_name": "寒舍",
+          "industry": "觀光餐旅",
+          "trades_a": 3,
+          "avg_return_a": 0.389411,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2887",
+          "stock_name": "台新新光金",
+          "industry": "金融保險",
+          "trades_a": 1,
+          "avg_return_a": 0.058569,
+          "trades_b": 1,
+          "avg_return_b": 0.10706
+        },
+        {
+          "stock_id": "3004",
+          "stock_name": "豐達科",
+          "industry": "鋼鐵工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": -0.010945
+        },
+        {
+          "stock_id": "3011",
+          "stock_name": "今皓",
+          "industry": "電子零組件業",
+          "trades_a": 4,
+          "avg_return_a": 0.028518,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3047",
+          "stock_name": "訊舟",
+          "industry": "通信網路業",
+          "trades_a": 1,
+          "avg_return_a": 0.255533,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3059",
+          "stock_name": "華晶科",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": -0.013328
+        },
+        {
+          "stock_id": "3060",
+          "stock_name": "銘異",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": 0.095128,
+          "trades_b": 1,
+          "avg_return_b": -0.010739
+        },
+        {
+          "stock_id": "3062",
+          "stock_name": "建漢",
+          "industry": "電子工業",
+          "trades_a": 3,
+          "avg_return_a": 0.079591,
+          "trades_b": 1,
+          "avg_return_b": -0.05281
+        },
+        {
+          "stock_id": "3083",
+          "stock_name": "網龍",
+          "industry": "文化創意業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3105",
+          "stock_name": "穩懋",
+          "industry": "半導體業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3128",
+          "stock_name": "昇銳",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": 0.054532,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3152",
+          "stock_name": "璟德",
+          "industry": "通信網路業",
+          "trades_a": 2,
+          "avg_return_a": 0.064885,
+          "trades_b": 2,
+          "avg_return_b": -0.005057
+        },
+        {
+          "stock_id": "3167",
+          "stock_name": "大量",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": 0.103211,
+          "trades_b": 3,
+          "avg_return_b": 0.147744
+        },
+        {
+          "stock_id": "3265",
+          "stock_name": "台星科",
+          "industry": "半導體業",
+          "trades_a": 3,
+          "avg_return_a": 0.143844,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3305",
+          "stock_name": "昇貿",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.064309,
+          "trades_b": 4,
+          "avg_return_b": -0.04461
+        },
+        {
+          "stock_id": "3356",
+          "stock_name": "奇偶",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": 0.023506,
+          "trades_b": 3,
+          "avg_return_b": 0.035042
+        },
+        {
+          "stock_id": "3450",
+          "stock_name": "聯鈞",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.057113
+        },
+        {
+          "stock_id": "3551",
+          "stock_name": "世禾",
+          "industry": "綠能環保類",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.695076
+        },
+        {
+          "stock_id": "3594",
+          "stock_name": "磐儀",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": 0.0759,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3605",
+          "stock_name": "宏致",
+          "industry": "電子工業",
+          "trades_a": 3,
+          "avg_return_a": 0.055633,
+          "trades_b": 4,
+          "avg_return_b": 0.057199
+        },
+        {
+          "stock_id": "3615",
+          "stock_name": "安可",
+          "industry": "光電業",
+          "trades_a": 2,
+          "avg_return_a": 0.046604,
+          "trades_b": 2,
+          "avg_return_b": 0.074863
+        },
+        {
+          "stock_id": "3617",
+          "stock_name": "碩天",
+          "industry": "電子工業",
+          "trades_a": 3,
+          "avg_return_a": 0.000639,
+          "trades_b": 1,
+          "avg_return_b": 0.157649
+        },
+        {
+          "stock_id": "3622",
+          "stock_name": "洋華",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.16777,
+          "trades_b": 1,
+          "avg_return_b": -0.023663
+        },
+        {
+          "stock_id": "3652",
+          "stock_name": "精聯",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": 0.232844,
+          "trades_b": 1,
+          "avg_return_b": -0.093649
+        },
+        {
+          "stock_id": "3680",
+          "stock_name": "家登",
+          "industry": "半導體業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.080907
+        },
+        {
+          "stock_id": "3689",
+          "stock_name": "湧德",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3691",
+          "stock_name": "碩禾",
+          "industry": "光電業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4127",
+          "stock_name": "天良",
+          "industry": "生技醫療業",
+          "trades_a": 2,
+          "avg_return_a": 0.124636,
+          "trades_b": 2,
+          "avg_return_b": 0.478057
+        },
+        {
+          "stock_id": "4157",
+          "stock_name": "太景*-KY",
+          "industry": "生技醫療業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4167",
+          "stock_name": "松瑞藥",
+          "industry": "生技醫療業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": -0.064584
+        },
+        {
+          "stock_id": "4513",
+          "stock_name": "福裕",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": 0.198973,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4526",
+          "stock_name": "東台",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.110583
+        },
+        {
+          "stock_id": "4566",
+          "stock_name": "時碩工業",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": 0.250113,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4714",
+          "stock_name": "永捷",
+          "industry": "化學工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4755",
+          "stock_name": "三福化",
+          "industry": "化學生技醫療",
+          "trades_a": 2,
+          "avg_return_a": 0.015594,
+          "trades_b": 1,
+          "avg_return_b": -0.047265
+        },
+        {
+          "stock_id": "4916",
+          "stock_name": "事欣科",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4991",
+          "stock_name": "環宇-KY",
+          "industry": "半導體業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": -0.091992
+        },
+        {
+          "stock_id": "5289",
+          "stock_name": "宜鼎",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": 0.207552,
+          "trades_b": 1,
+          "avg_return_b": 0.152725
+        },
+        {
+          "stock_id": "5328",
+          "stock_name": "華容",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": 0.098415,
+          "trades_b": 3,
+          "avg_return_b": 0.159586
+        },
+        {
+          "stock_id": "5426",
+          "stock_name": "振發",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "5439",
+          "stock_name": "高技",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 4,
+          "avg_return_b": 0.306883
+        },
+        {
+          "stock_id": "5443",
+          "stock_name": "均豪",
+          "industry": "半導體業",
+          "trades_a": 1,
+          "avg_return_a": 0.01581,
+          "trades_b": 1,
+          "avg_return_b": -0.058113
+        },
+        {
+          "stock_id": "5452",
+          "stock_name": "佶優",
+          "industry": "其他電子類",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.014375
+        },
+        {
+          "stock_id": "5488",
+          "stock_name": "松普",
+          "industry": "電子零組件業",
+          "trades_a": 4,
+          "avg_return_a": 0.014364,
+          "trades_b": 3,
+          "avg_return_b": -0.072145
+        },
+        {
+          "stock_id": "5511",
+          "stock_name": "德昌",
+          "industry": "建材營造",
+          "trades_a": 1,
+          "avg_return_a": 1.461109,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "5536",
+          "stock_name": "聖暉*",
+          "industry": "其他電子類",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": 0.176906
+        },
+        {
+          "stock_id": "6122",
+          "stock_name": "擎邦",
+          "industry": "電機機械",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.021645
+        },
+        {
+          "stock_id": "6138",
+          "stock_name": "茂達",
+          "industry": "半導體業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.064582
+        },
+        {
+          "stock_id": "6139",
+          "stock_name": "亞翔",
+          "industry": "電子工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.246998
+        },
+        {
+          "stock_id": "6143",
+          "stock_name": "振曜",
+          "industry": "通信網路業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": -0.079898
+        },
+        {
+          "stock_id": "6153",
+          "stock_name": "嘉聯益",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": 0.035155,
+          "trades_b": 1,
+          "avg_return_b": -0.056006
+        },
+        {
+          "stock_id": "6160",
+          "stock_name": "欣技",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": 0.107266,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6161",
+          "stock_name": "捷波",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 2,
+          "avg_return_a": 0.062507,
+          "trades_b": 2,
+          "avg_return_b": 0.049228
+        },
+        {
+          "stock_id": "6167",
+          "stock_name": "久正",
+          "industry": "光電業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": -0.065939
+        },
+        {
+          "stock_id": "6188",
+          "stock_name": "廣明",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 2,
+          "avg_return_a": 0.156859,
+          "trades_b": 4,
+          "avg_return_b": 0.050342
+        },
+        {
+          "stock_id": "6197",
+          "stock_name": "佳必琪",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": -0.071539
+        },
+        {
+          "stock_id": "6207",
+          "stock_name": "雷科",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": 0.028256,
+          "trades_b": 1,
+          "avg_return_b": -0.095244
+        },
+        {
+          "stock_id": "6213",
+          "stock_name": "聯茂",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": 0.037914,
+          "trades_b": 1,
+          "avg_return_b": 0.057902
+        },
+        {
+          "stock_id": "6215",
+          "stock_name": "和椿",
+          "industry": "其他電子業",
+          "trades_a": 3,
+          "avg_return_a": 2.4e-05,
+          "trades_b": 1,
+          "avg_return_b": -0.153622
+        },
+        {
+          "stock_id": "6227",
+          "stock_name": "茂綸",
+          "industry": "電子通路業",
+          "trades_a": 2,
+          "avg_return_a": 0.03711,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6274",
+          "stock_name": "台燿",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": 0.108869,
+          "trades_b": 1,
+          "avg_return_b": 0.046001
+        },
+        {
+          "stock_id": "6667",
+          "stock_name": "信紘科",
+          "industry": "其他電子類",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.038416
+        },
+        {
+          "stock_id": "6698",
+          "stock_name": "旭暉應材",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.010773,
+          "trades_b": 1,
+          "avg_return_b": 0.06495
+        },
+        {
+          "stock_id": "6732",
+          "stock_name": "昇佳電子",
+          "industry": "半導體業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": -0.091463
+        },
+        {
+          "stock_id": "6743",
+          "stock_name": "安普新",
+          "industry": "其他電子業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": -0.084165
+        },
+        {
+          "stock_id": "8028",
+          "stock_name": "昇陽半導體",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": 0.088513,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8071",
+          "stock_name": "能率網通",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": 0.407055,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8096",
+          "stock_name": "擎亞",
+          "industry": "電子通路業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.030406
+        },
+        {
+          "stock_id": "8099",
+          "stock_name": "大世科",
+          "industry": "資訊服務業",
+          "trades_a": 2,
+          "avg_return_a": 0.322748,
+          "trades_b": 4,
+          "avg_return_b": -0.001162
+        },
+        {
+          "stock_id": "8103",
+          "stock_name": "瀚荃",
+          "industry": "電子零組件業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 1,
+          "avg_return_b": 0.38056
+        },
+        {
+          "stock_id": "8111",
+          "stock_name": "立碁",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": 0.008463,
+          "trades_b": 1,
+          "avg_return_b": 0.128504
+        },
+        {
+          "stock_id": "8176",
+          "stock_name": "智捷",
+          "industry": "通信網路業",
+          "trades_a": 1,
+          "avg_return_a": 0.262695,
+          "trades_b": 1,
+          "avg_return_b": 0.262987
+        },
+        {
+          "stock_id": "8222",
+          "stock_name": "寶一",
+          "industry": "電機機械",
+          "trades_a": 3,
+          "avg_return_a": 0.258532,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8234",
+          "stock_name": "新漢",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 2,
+          "avg_return_a": 0.004523,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8299",
+          "stock_name": "群聯",
+          "industry": "半導體業",
+          "trades_a": 1,
+          "avg_return_a": 0.084233,
+          "trades_b": 2,
+          "avg_return_b": 0.215044
+        },
+        {
+          "stock_id": "8390",
+          "stock_name": "金益鼎",
+          "industry": "綠能環保類",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.053197
+        },
+        {
+          "stock_id": "8436",
+          "stock_name": "大江",
+          "industry": "生技醫療業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": -0.033513
+        },
+        {
+          "stock_id": "8936",
+          "stock_name": "國統",
+          "industry": "其他",
+          "trades_a": 4,
+          "avg_return_a": 0.056621,
+          "trades_b": 3,
+          "avg_return_b": -0.073372
+        },
+        {
+          "stock_id": "9906",
+          "stock_name": "欣巴巴",
+          "industry": "建材營造",
+          "trades_a": 4,
+          "avg_return_a": 0.23944,
+          "trades_b": 2,
+          "avg_return_b": 0.066131
+        },
+        {
+          "stock_id": "9919",
+          "stock_name": "康那香",
+          "industry": "其他",
+          "trades_a": 2,
+          "avg_return_a": 0.062095,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "9955",
+          "stock_name": "佳龍",
+          "industry": "綠能環保",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 2,
+          "avg_return_b": 0.106294
+        },
+        {
+          "stock_id": "9958",
+          "stock_name": "世紀鋼",
+          "industry": "鋼鐵工業",
+          "trades_a": 0,
+          "avg_return_a": null,
+          "trades_b": 3,
+          "avg_return_b": 0.08849
+        }
+      ],
+      "excluded": [
+        {
+          "stock_id": "1101",
+          "stock_name": "台泥",
+          "industry": "水泥工業",
+          "trades_a": 1,
+          "avg_return_a": -0.012068,
+          "trades_b": 2,
+          "avg_return_b": -0.097375
+        },
+        {
+          "stock_id": "1515",
+          "stock_name": "力山",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.066161,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1528",
+          "stock_name": "恩德",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.095698,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1569",
+          "stock_name": "濱川",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": -0.003452,
+          "trades_b": 2,
+          "avg_return_b": -0.099031
+        },
+        {
+          "stock_id": "1616",
+          "stock_name": "億泰",
+          "industry": "電器電纜",
+          "trades_a": 1,
+          "avg_return_a": -0.086474,
+          "trades_b": 2,
+          "avg_return_b": 0.735526
+        },
+        {
+          "stock_id": "1736",
+          "stock_name": "喬山",
+          "industry": "運動休閒",
+          "trades_a": 1,
+          "avg_return_a": -0.019795,
+          "trades_b": 2,
+          "avg_return_b": 0.130287
+        },
+        {
+          "stock_id": "1785",
+          "stock_name": "光洋科",
+          "industry": "其他電子類",
+          "trades_a": 1,
+          "avg_return_a": -0.003628,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "1795",
+          "stock_name": "美時",
+          "industry": "生技醫療業",
+          "trades_a": 2,
+          "avg_return_a": -0.011435,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2059",
+          "stock_name": "川湖",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.023674,
+          "trades_b": 2,
+          "avg_return_b": 0.160981
+        },
+        {
+          "stock_id": "2231",
+          "stock_name": "為升",
+          "industry": "汽車工業",
+          "trades_a": 2,
+          "avg_return_a": -0.047465,
+          "trades_b": 1,
+          "avg_return_b": -0.099044
+        },
+        {
+          "stock_id": "2233",
+          "stock_name": "宇隆",
+          "industry": "汽車工業",
+          "trades_a": 3,
+          "avg_return_a": -0.096781,
+          "trades_b": 3,
+          "avg_return_b": -0.038163
+        },
+        {
+          "stock_id": "2312",
+          "stock_name": "金寶",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.063012,
+          "trades_b": 2,
+          "avg_return_b": 0.234671
+        },
+        {
+          "stock_id": "2313",
+          "stock_name": "華通",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": -0.046352,
+          "trades_b": 2,
+          "avg_return_b": 0.027557
+        },
+        {
+          "stock_id": "2316",
+          "stock_name": "楠梓電",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.010863,
+          "trades_b": 3,
+          "avg_return_b": 0.023737
+        },
+        {
+          "stock_id": "2329",
+          "stock_name": "華泰",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.08579,
+          "trades_b": 4,
+          "avg_return_b": 0.191571
+        },
+        {
+          "stock_id": "2345",
+          "stock_name": "智邦",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.005842,
+          "trades_b": 2,
+          "avg_return_b": 0.010707
+        },
+        {
+          "stock_id": "2360",
+          "stock_name": "致茂",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.117965,
+          "trades_b": 2,
+          "avg_return_b": 0.142789
+        },
+        {
+          "stock_id": "2365",
+          "stock_name": "昆盈",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.070961,
+          "trades_b": 2,
+          "avg_return_b": 0.016533
+        },
+        {
+          "stock_id": "2376",
+          "stock_name": "技嘉",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.012892,
+          "trades_b": 1,
+          "avg_return_b": -0.04078
+        },
+        {
+          "stock_id": "2421",
+          "stock_name": "建準",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.081269,
+          "trades_b": 1,
+          "avg_return_b": -0.0916
+        },
+        {
+          "stock_id": "2453",
+          "stock_name": "凌群",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.074963,
+          "trades_b": 2,
+          "avg_return_b": 0.040381
+        },
+        {
+          "stock_id": "2467",
+          "stock_name": "志聖",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.087022,
+          "trades_b": 2,
+          "avg_return_b": -0.012311
+        },
+        {
+          "stock_id": "2468",
+          "stock_name": "華經",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.002348,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "2495",
+          "stock_name": "普安",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": -0.092211,
+          "trades_b": 2,
+          "avg_return_b": -0.023407
+        },
+        {
+          "stock_id": "2606",
+          "stock_name": "裕民",
+          "industry": "航運業",
+          "trades_a": 1,
+          "avg_return_a": -0.072614,
+          "trades_b": 3,
+          "avg_return_b": 0.111082
+        },
+        {
+          "stock_id": "2610",
+          "stock_name": "華航",
+          "industry": "航運業",
+          "trades_a": 2,
+          "avg_return_a": -0.088788,
+          "trades_b": 2,
+          "avg_return_b": -0.044828
+        },
+        {
+          "stock_id": "2867",
+          "stock_name": "三商壽",
+          "industry": "金融保險",
+          "trades_a": 1,
+          "avg_return_a": -0.085983,
+          "trades_b": 1,
+          "avg_return_b": -0.16538
+        },
+        {
+          "stock_id": "2905",
+          "stock_name": "三商",
+          "industry": "貿易百貨",
+          "trades_a": 2,
+          "avg_return_a": -0.077698,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3013",
+          "stock_name": "晟銘電",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 2,
+          "avg_return_a": -0.022288,
+          "trades_b": 1,
+          "avg_return_b": 0.081516
+        },
+        {
+          "stock_id": "3019",
+          "stock_name": "亞光",
+          "industry": "光電業",
+          "trades_a": 3,
+          "avg_return_a": -0.044782,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3027",
+          "stock_name": "盛達",
+          "industry": "通信網路業",
+          "trades_a": 1,
+          "avg_return_a": -0.052902,
+          "trades_b": 1,
+          "avg_return_b": -0.109131
+        },
+        {
+          "stock_id": "3049",
+          "stock_name": "精金",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.058512,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3055",
+          "stock_name": "蔚華科",
+          "industry": "電子通路業",
+          "trades_a": 1,
+          "avg_return_a": -0.087819,
+          "trades_b": 3,
+          "avg_return_b": 0.011103
+        },
+        {
+          "stock_id": "3078",
+          "stock_name": "僑威",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.079417,
+          "trades_b": 2,
+          "avg_return_b": -0.004854
+        },
+        {
+          "stock_id": "3092",
+          "stock_name": "鴻碩",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.148551,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3147",
+          "stock_name": "大綜",
+          "industry": "資訊服務業",
+          "trades_a": 1,
+          "avg_return_a": -0.065684,
+          "trades_b": 2,
+          "avg_return_b": 0.182087
+        },
+        {
+          "stock_id": "3176",
+          "stock_name": "基亞",
+          "industry": "生技醫療業",
+          "trades_a": 1,
+          "avg_return_a": -0.046286,
+          "trades_b": 2,
+          "avg_return_b": -0.066943
+        },
+        {
+          "stock_id": "3202",
+          "stock_name": "樺晟",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.012228,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3217",
+          "stock_name": "優群",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.030188,
+          "trades_b": 1,
+          "avg_return_b": 0.200674
+        },
+        {
+          "stock_id": "3289",
+          "stock_name": "宜特",
+          "industry": "其他電子類",
+          "trades_a": 2,
+          "avg_return_a": -0.008236,
+          "trades_b": 2,
+          "avg_return_b": -0.055547
+        },
+        {
+          "stock_id": "3296",
+          "stock_name": "勝德",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.101076,
+          "trades_b": 1,
+          "avg_return_b": 0.017376
+        },
+        {
+          "stock_id": "3312",
+          "stock_name": "弘憶股",
+          "industry": "電子通路業",
+          "trades_a": 2,
+          "avg_return_a": -0.031719,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3376",
+          "stock_name": "新日興",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.082975,
+          "trades_b": 2,
+          "avg_return_b": -0.033774
+        },
+        {
+          "stock_id": "3390",
+          "stock_name": "旭軟",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": -0.075855,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3444",
+          "stock_name": "利機",
+          "industry": "電子通路業",
+          "trades_a": 1,
+          "avg_return_a": -0.043903,
+          "trades_b": 1,
+          "avg_return_b": 0.127851
+        },
+        {
+          "stock_id": "3455",
+          "stock_name": "由田",
+          "industry": "光電業",
+          "trades_a": 3,
+          "avg_return_a": -0.027974,
+          "trades_b": 1,
+          "avg_return_b": 0.101007
+        },
+        {
+          "stock_id": "3526",
+          "stock_name": "凡甲",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.013574,
+          "trades_b": 3,
+          "avg_return_b": 0.049185
+        },
+        {
+          "stock_id": "3533",
+          "stock_name": "嘉澤",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.060498,
+          "trades_b": 4,
+          "avg_return_b": 0.168033
+        },
+        {
+          "stock_id": "3548",
+          "stock_name": "兆利",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.119415,
+          "trades_b": 1,
+          "avg_return_b": 0.007036
+        },
+        {
+          "stock_id": "3580",
+          "stock_name": "友威科",
+          "industry": "其他電子類",
+          "trades_a": 1,
+          "avg_return_a": -0.067507,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "3583",
+          "stock_name": "辛耘",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.073224,
+          "trades_b": 1,
+          "avg_return_b": -0.056638
+        },
+        {
+          "stock_id": "3587",
+          "stock_name": "閎康",
+          "industry": "其他電子類",
+          "trades_a": 3,
+          "avg_return_a": -0.01292,
+          "trades_b": 2,
+          "avg_return_b": -0.01412
+        },
+        {
+          "stock_id": "3663",
+          "stock_name": "鑫科",
+          "industry": "其他電子類",
+          "trades_a": 1,
+          "avg_return_a": -0.089925,
+          "trades_b": 2,
+          "avg_return_b": 0.078965
+        },
+        {
+          "stock_id": "4142",
+          "stock_name": "國光生",
+          "industry": "生技醫療業",
+          "trades_a": 1,
+          "avg_return_a": -0.014879,
+          "trades_b": 1,
+          "avg_return_b": -0.088688
+        },
+        {
+          "stock_id": "4510",
+          "stock_name": "高鋒",
+          "industry": "電機機械",
+          "trades_a": 3,
+          "avg_return_a": -0.010832,
+          "trades_b": 1,
+          "avg_return_b": -0.044421
+        },
+        {
+          "stock_id": "4541",
+          "stock_name": "晟田",
+          "industry": "其他",
+          "trades_a": 2,
+          "avg_return_a": -0.092574,
+          "trades_b": 1,
+          "avg_return_b": -0.061808
+        },
+        {
+          "stock_id": "4551",
+          "stock_name": "智伸科",
+          "industry": "汽車工業",
+          "trades_a": 1,
+          "avg_return_a": -0.101868,
+          "trades_b": 2,
+          "avg_return_b": -0.059347
+        },
+        {
+          "stock_id": "4564",
+          "stock_name": "元翎",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.1094,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4927",
+          "stock_name": "泰鼎-KY",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.014428,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "4938",
+          "stock_name": "和碩",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 1,
+          "avg_return_a": -0.024572,
+          "trades_b": 2,
+          "avg_return_b": 0.110906
+        },
+        {
+          "stock_id": "4951",
+          "stock_name": "精拓科",
+          "industry": "半導體業",
+          "trades_a": 3,
+          "avg_return_a": -0.009278,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "5234",
+          "stock_name": "達興材料",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.041068,
+          "trades_b": 2,
+          "avg_return_b": -0.072209
+        },
+        {
+          "stock_id": "5243",
+          "stock_name": "乙盛-KY",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.038781,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "5258",
+          "stock_name": "虹堡",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 2,
+          "avg_return_a": -0.052366,
+          "trades_b": 2,
+          "avg_return_b": -0.101269
+        },
+        {
+          "stock_id": "5371",
+          "stock_name": "中光電",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": -0.106107,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "5392",
+          "stock_name": "能率",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": -0.113953,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "5457",
+          "stock_name": "宣德",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.027136,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "5706",
+          "stock_name": "鳳凰",
+          "industry": "觀光餐旅",
+          "trades_a": 1,
+          "avg_return_a": -0.102772,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6125",
+          "stock_name": "廣運",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": -0.013504,
+          "trades_b": 2,
+          "avg_return_b": 0.276402
+        },
+        {
+          "stock_id": "6133",
+          "stock_name": "金橋",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.085691,
+          "trades_b": 3,
+          "avg_return_b": 0.049268
+        },
+        {
+          "stock_id": "6141",
+          "stock_name": "柏承",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.006287,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6156",
+          "stock_name": "松上",
+          "industry": "電子零組件業",
+          "trades_a": 3,
+          "avg_return_a": -0.021242,
+          "trades_b": 1,
+          "avg_return_b": -0.017191
+        },
+        {
+          "stock_id": "6163",
+          "stock_name": "華電網",
+          "industry": "通信網路業",
+          "trades_a": 1,
+          "avg_return_a": -0.005842,
+          "trades_b": 2,
+          "avg_return_b": 0.099409
+        },
+        {
+          "stock_id": "6170",
+          "stock_name": "統振",
+          "industry": "通信網路業",
+          "trades_a": 1,
+          "avg_return_a": -0.028082,
+          "trades_b": 1,
+          "avg_return_b": 0.067752
+        },
+        {
+          "stock_id": "6190",
+          "stock_name": "萬泰科",
+          "industry": "通信網路業",
+          "trades_a": 4,
+          "avg_return_a": -0.030817,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6196",
+          "stock_name": "帆宣",
+          "industry": "其他電子業",
+          "trades_a": 2,
+          "avg_return_a": -0.00552,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "6245",
+          "stock_name": "立端",
+          "industry": "通信網路業",
+          "trades_a": 3,
+          "avg_return_a": -0.001779,
+          "trades_b": 1,
+          "avg_return_b": -0.048858
+        },
+        {
+          "stock_id": "6284",
+          "stock_name": "佳邦",
+          "industry": "電子零組件業",
+          "trades_a": 1,
+          "avg_return_a": -0.09554,
+          "trades_b": 2,
+          "avg_return_b": 0.016017
+        },
+        {
+          "stock_id": "6290",
+          "stock_name": "良維",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.019487,
+          "trades_b": 1,
+          "avg_return_b": -0.091506
+        },
+        {
+          "stock_id": "6449",
+          "stock_name": "鈺邦",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.051917,
+          "trades_b": 3,
+          "avg_return_b": 0.305769
+        },
+        {
+          "stock_id": "6552",
+          "stock_name": "易華電",
+          "industry": "電子工業",
+          "trades_a": 2,
+          "avg_return_a": -0.057722,
+          "trades_b": 2,
+          "avg_return_b": -0.080744
+        },
+        {
+          "stock_id": "6669",
+          "stock_name": "緯穎",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 2,
+          "avg_return_a": -0.126835,
+          "trades_b": 1,
+          "avg_return_b": -0.014718
+        },
+        {
+          "stock_id": "6689",
+          "stock_name": "伊雲谷",
+          "industry": "數位雲端",
+          "trades_a": 2,
+          "avg_return_a": -0.091813,
+          "trades_b": 1,
+          "avg_return_b": 0.100372
+        },
+        {
+          "stock_id": "6757",
+          "stock_name": "台灣虎航",
+          "industry": "航運業",
+          "trades_a": 3,
+          "avg_return_a": -0.10395,
+          "trades_b": 2,
+          "avg_return_b": -0.003498
+        },
+        {
+          "stock_id": "8011",
+          "stock_name": "台通",
+          "industry": "電子工業",
+          "trades_a": 1,
+          "avg_return_a": -0.100628,
+          "trades_b": 1,
+          "avg_return_b": 0.288724
+        },
+        {
+          "stock_id": "8027",
+          "stock_name": "鈦昇",
+          "industry": "電機機械",
+          "trades_a": 1,
+          "avg_return_a": -0.094653,
+          "trades_b": 1,
+          "avg_return_b": -0.133298
+        },
+        {
+          "stock_id": "8064",
+          "stock_name": "東捷",
+          "industry": "光電業",
+          "trades_a": 1,
+          "avg_return_a": -0.088936,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8069",
+          "stock_name": "元太",
+          "industry": "光電業",
+          "trades_a": 4,
+          "avg_return_a": -0.025892,
+          "trades_b": 2,
+          "avg_return_b": -0.094061
+        },
+        {
+          "stock_id": "8092",
+          "stock_name": "建暐",
+          "industry": "其他電子類",
+          "trades_a": 2,
+          "avg_return_a": -0.000868,
+          "trades_b": 1,
+          "avg_return_b": -0.09077
+        },
+        {
+          "stock_id": "8210",
+          "stock_name": "勤誠",
+          "industry": "電腦及週邊設備業",
+          "trades_a": 3,
+          "avg_return_a": -0.015198,
+          "trades_b": 1,
+          "avg_return_b": 0.189235
+        },
+        {
+          "stock_id": "8249",
+          "stock_name": "菱光",
+          "industry": "電子零組件業",
+          "trades_a": 2,
+          "avg_return_a": -0.012254,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "8374",
+          "stock_name": "羅昇",
+          "industry": "電機機械",
+          "trades_a": 2,
+          "avg_return_a": -0.028096,
+          "trades_b": 0,
+          "avg_return_b": null
+        },
+        {
+          "stock_id": "9914",
+          "stock_name": "美利達",
+          "industry": "運動休閒",
+          "trades_a": 3,
+          "avg_return_a": -0.082293,
+          "trades_b": 0,
+          "avg_return_b": null
+        }
+      ]
+    }
+  }
+}
