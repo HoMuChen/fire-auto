@@ -1,15 +1,21 @@
 """
-每日信號掃描器 — 盤後更新股價，掃描三策略篩選名單
+每日信號掃描器 + 持倉追蹤
 
 用法：
-    python3 scan.py              # 更新股價 + 掃描
-    python3 scan.py --no-update  # 跳過股價更新（已更新過）
-    python3 scan.py --json       # 輸出 JSON 格式
+    python3 scan.py                          # 更新股價 + 持倉檢查 + 掃描
+    python3 scan.py --no-update              # 跳過股價更新
+    python3 scan.py --json                   # JSON 輸出
+
+    python3 scan.py add <代號> <策略> <進場價> [日期]  # 新增持倉
+    python3 scan.py close <代號> [賣出價]              # 關閉持倉
+    python3 scan.py positions                          # 只看持倉
+
+    策略簡寫：sq=波動率擠壓, os=超跌反彈, ad=AD背離
 """
 
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from backtest import (
@@ -20,6 +26,13 @@ from backtest import (
 BASE_DIR = Path(__file__).parent
 FILTERED_PATH = BASE_DIR / "strategies" / "filtered_stock_lists.json"
 STOCKS_PATH = BASE_DIR / "individual_stocks.json"
+POSITIONS_PATH = BASE_DIR / "positions.json"
+
+STRATEGY_MAP = {
+    "sq": {"name": "波動率擠壓", "stop_pct": 0.04},
+    "os": {"name": "超跌反彈", "stop_pct": 0.08},
+    "ad": {"name": "AD背離", "stop_pct": 0.08},
+}
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -485,6 +498,170 @@ def _ad_next_day(closes, i, ad, sma60_val, above_ma, ma_rising,
 
 
 # ═══════════════════════════════════════════════════════════════
+#  持倉追蹤
+# ═══════════════════════════════════════════════════════════════
+
+def _load_positions():
+    if POSITIONS_PATH.exists():
+        return json.loads(POSITIONS_PATH.read_text())
+    return []
+
+
+def _save_positions(positions):
+    POSITIONS_PATH.write_text(json.dumps(positions, ensure_ascii=False, indent=2))
+
+
+def add_position(stock_id, strategy_key, entry_price, entry_date=None):
+    """新增持倉"""
+    if strategy_key not in STRATEGY_MAP:
+        print(f"  錯誤：策略 '{strategy_key}' 不存在，可用：{', '.join(STRATEGY_MAP.keys())}")
+        return
+    if entry_date is None:
+        entry_date = datetime.now().strftime("%Y-%m-%d")
+    entry_price = float(entry_price)
+    positions = _load_positions()
+    # 檢查是否已有同股同策略
+    for p in positions:
+        if p["stock_id"] == stock_id and p["strategy"] == strategy_key:
+            print(f"  已有持倉：{stock_id}（{STRATEGY_MAP[strategy_key]['name']}）")
+            return
+    names = load_stock_names()
+    pos = {
+        "stock_id": stock_id,
+        "name": names.get(stock_id, ""),
+        "strategy": strategy_key,
+        "entry_date": entry_date,
+        "entry_price": entry_price,
+        "peak_price": entry_price,
+        "stop_pct": STRATEGY_MAP[strategy_key]["stop_pct"],
+    }
+    positions.append(pos)
+    _save_positions(positions)
+    stop_price = entry_price * (1 - pos["stop_pct"])
+    print(f"  新增持倉：{stock_id} {pos['name']}（{STRATEGY_MAP[strategy_key]['name']}）")
+    print(f"  進場 {entry_price} @ {entry_date}，停損 {stop_price:.1f}（-{pos['stop_pct']:.0%}）")
+
+
+def close_position(stock_id, close_price=None):
+    """關閉持倉"""
+    positions = _load_positions()
+    found = [p for p in positions if p["stock_id"] == stock_id]
+    if not found:
+        print(f"  找不到 {stock_id} 的持倉")
+        return
+    for p in found:
+        pnl_str = ""
+        if close_price is not None:
+            close_price = float(close_price)
+            pnl = (close_price / p["entry_price"] - 1) * 100
+            pnl_str = f"，損益 {pnl:+.1f}%"
+        print(f"  關閉持倉：{p['stock_id']} {p.get('name', '')}（{STRATEGY_MAP.get(p['strategy'], {}).get('name', p['strategy'])}）{pnl_str}")
+    positions = [p for p in positions if p["stock_id"] != stock_id]
+    _save_positions(positions)
+
+
+def check_positions(names):
+    """檢查所有持倉，更新 peak_price，回傳顯示資料"""
+    positions = _load_positions()
+    if not positions:
+        return []
+
+    results = []
+    updated = False
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    for pos in positions:
+        sid = pos["stock_id"]
+        try:
+            prices = read_prices(sid)
+        except Exception:
+            results.append({**pos, "error": "無法讀取股價"})
+            continue
+        if not prices:
+            results.append({**pos, "error": "無股價資料"})
+            continue
+
+        last = prices[-1]
+        current_close = last["close"]
+        data_date = last["date"]
+
+        # 更新 peak_price
+        if current_close > pos["peak_price"]:
+            pos["peak_price"] = current_close
+            updated = True
+
+        stop_price = pos["peak_price"] * (1 - pos["stop_pct"])
+        pnl_pct = (current_close / pos["entry_price"] - 1) * 100
+        dist_stop_pct = (current_close / stop_price - 1) * 100
+
+        # 持有天數（交易日）
+        entry_d = datetime.strptime(pos["entry_date"], "%Y-%m-%d")
+        hold_days = sum(1 for p in prices if p["date"] > pos["entry_date"])
+
+        # 是否已觸發停損
+        hit_stop = current_close <= stop_price
+
+        results.append({
+            "stock_id": sid,
+            "name": pos.get("name", names.get(sid, "")),
+            "strategy": pos["strategy"],
+            "entry_date": pos["entry_date"],
+            "entry_price": pos["entry_price"],
+            "current_close": current_close,
+            "data_date": data_date,
+            "peak_price": pos["peak_price"],
+            "stop_price": round(stop_price, 1),
+            "stop_pct": pos["stop_pct"],
+            "pnl_pct": round(pnl_pct, 1),
+            "dist_stop_pct": round(dist_stop_pct, 1),
+            "hold_days": hold_days,
+            "hit_stop": hit_stop,
+        })
+
+    if updated:
+        _save_positions(positions)
+
+    return results
+
+
+def print_positions(pos_results, data_date=None):
+    """印出持倉狀態"""
+    print("=" * 80)
+    print("  持倉狀態")
+    print("=" * 80)
+
+    if not pos_results:
+        print("  目前無持倉\n")
+        return
+
+    next_date = _next_trading_date(data_date) if data_date else "下一交易日"
+
+    print(f"  {'代號':>6} {'名稱':<6} {'策略':<6} {'進場':>7} {'現價':>7} {'損益':>7} {'最高':>7} {'停損':>7} {'距停損':>6} {'天數':>4}")
+    print(f"  {'-' * 78}")
+
+    for r in pos_results:
+        if "error" in r:
+            print(f"  {r['stock_id']:>6} {r.get('name', ''):<6} — {r['error']}")
+            continue
+
+        strat_name = STRATEGY_MAP.get(r["strategy"], {}).get("name", r["strategy"])
+        # 截短策略名
+        short_strat = {"波動率擠壓": "擠壓", "超跌反彈": "超跌", "AD背離": "AD離"}.get(strat_name, strat_name[:4])
+
+        pnl_s = f"{r['pnl_pct']:+.1f}%"
+        dist_s = f"{r['dist_stop_pct']:+.1f}%"
+
+        print(f"  {r['stock_id']:>6} {r['name']:<6} {short_strat:<6} {r['entry_price']:>7.1f} {r['current_close']:>7.1f} {pnl_s:>7} {r['peak_price']:>7.1f} {r['stop_price']:>7.1f} {dist_s:>6} {r['hold_days']:>4}")
+
+        if r["hit_stop"]:
+            print(f"         → *** 已觸發停損！收盤 {r['current_close']:.1f} ≤ 停損 {r['stop_price']:.1f}，應出場 ***")
+        else:
+            print(f"         → {next_date} 出場條件：收盤 < {r['stop_price']:.1f}（距現價 {r['dist_stop_pct']:.1f}%）")
+
+    print()
+
+
+# ═══════════════════════════════════════════════════════════════
 #  輸出格式
 # ═══════════════════════════════════════════════════════════════
 
@@ -610,7 +787,6 @@ def _print_ad_table(rows):
 
 def _next_trading_date(data_date):
     """推算下一個交易日：若今天 > 資料日期，用今天；否則跳週末"""
-    from datetime import timedelta
     try:
         d = datetime.strptime(data_date, "%Y-%m-%d")
     except (ValueError, TypeError):
@@ -667,11 +843,48 @@ def print_summary(sq, os, ad, data_date):
 #  Main
 # ═══════════════════════════════════════════════════════════════
 
-def main():
-    args = sys.argv[1:]
-    no_update = "--no-update" in args
-    json_output = "--json" in args
+def _get_data_date(stock_ids):
+    """取得資料日期（第一檔有資料的最後日期）"""
+    for sid in stock_ids[:5]:
+        try:
+            p = read_prices(sid)
+            if p:
+                return p[-1]["date"]
+        except Exception:
+            continue
+    return "unknown"
 
+
+def cmd_add(args):
+    if len(args) < 3:
+        print("  用法：python3 scan.py add <代號> <策略> <進場價> [日期]")
+        strats = ', '.join(f'{k}={v["name"]}' for k, v in STRATEGY_MAP.items())
+        print(f"  策略：{strats}")
+        return
+    stock_id, strategy, price = args[0], args[1], args[2]
+    date = args[3] if len(args) > 3 else None
+    add_position(stock_id, strategy, price, date)
+
+
+def cmd_close(args):
+    if len(args) < 1:
+        print("  用法：python3 scan.py close <代號> [賣出價]")
+        return
+    stock_id = args[0]
+    price = args[1] if len(args) > 1 else None
+    close_position(stock_id, price)
+
+
+def cmd_positions():
+    names = load_stock_names()
+    lists = load_filtered_lists()
+    data_date = _get_data_date(lists["squeeze"])
+    pos_results = check_positions(names)
+    print()
+    print_positions(pos_results, data_date)
+
+
+def cmd_scan(no_update=False, json_output=False):
     # 1) 更新股價
     if not no_update:
         from stock_cache import StockCache
@@ -683,34 +896,30 @@ def main():
     names = load_stock_names()
     lists = load_filtered_lists()
 
-    # 3) 掃描
+    # 3) 資料日期
+    data_date = _get_data_date(lists["squeeze"])
+    next_date = _next_trading_date(data_date)
+
+    # 4) 持倉檢查
+    pos_results = check_positions(names)
+
+    # 5) 掃描
     sq = scan_squeeze(lists["squeeze"], names)
     os_results = scan_oversold(lists["oversold"], names)
     ad = scan_ad_divergence(lists["ad_divergence"], names)
 
-    # 資料日期（取第一檔的最後日期）
-    data_date = "unknown"
-    for sid in lists["squeeze"][:5]:
-        try:
-            p = read_prices(sid)
-            if p:
-                data_date = p[-1]["date"]
-                break
-        except Exception:
-            continue
-
-    next_date = _next_trading_date(data_date)
-
-    # 4) 輸出
+    # 6) 輸出
     if json_output:
         output = {
             "scan_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "data_date": data_date,
             "next_trading_date": next_date,
+            "positions": pos_results,
             "squeeze": sq,
             "oversold": os_results,
             "ad_divergence": ad,
             "summary": {
+                "positions": len(pos_results),
                 "squeeze_triggered": len([r for r in sq if r["status"] == "triggered"]),
                 "oversold_triggered": len([r for r in os_results if r["status"] == "triggered"]),
                 "ad_triggered": len([r for r in ad if r["status"] == "triggered"]),
@@ -719,10 +928,29 @@ def main():
         print(json.dumps(output, ensure_ascii=False, indent=2))
     else:
         print(f"\n  資料日期：{data_date}｜觀察條件適用於：{next_date}\n")
+        # 持倉先輸出（出場比進場重要）
+        print_positions(pos_results, data_date)
+        # 再輸出進場掃描
         print_squeeze(sq)
         print_oversold(os_results)
         print_ad(ad)
         print_summary(sq, os_results, ad, data_date)
+
+
+def main():
+    args = sys.argv[1:]
+
+    # 子命令分流
+    if args and args[0] == "add":
+        cmd_add(args[1:])
+    elif args and args[0] == "close":
+        cmd_close(args[1:])
+    elif args and args[0] == "positions":
+        cmd_positions()
+    else:
+        no_update = "--no-update" in args
+        json_output = "--json" in args
+        cmd_scan(no_update=no_update, json_output=json_output)
 
 
 if __name__ == "__main__":
