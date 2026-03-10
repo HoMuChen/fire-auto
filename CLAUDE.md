@@ -80,7 +80,33 @@ python3 stock_cache.py one 2330            # 增量更新單檔
 python3 stock_cache.py info                # 快取狀態
 ```
 
-FinMind API 限制：600 req/hr（有 token）。全市場一天 = 1 call（~45,000 筆）。
+FinMind API 限制：600 req/hr（有 token）。全市場一天 = 1 call（~46,000 筆），`update_range()` 會自動逐天抓取。
+
+## 每日掃描器 `scan.py`
+
+掃描三策略（波動率擠壓 / 超跌反彈 / AD背離）的進場信號 + 追蹤持倉出場條件。
+
+**使用者說「跑 scan」、「掃描」、「今天有什麼信號」、「更新資料」時，就執行 `python3 scan.py`。**
+
+```bash
+python3 scan.py                    # 更新今天股價 + 掃描信號 + 檢查持倉
+python3 scan.py --no-update        # 不更新股價，用本地最新資料掃描
+python3 scan.py add <代號> <策略> <進場價> [日期]  # 新增持倉
+python3 scan.py close <代號> [賣出價]              # 關閉持倉
+python3 scan.py positions          # 只看持倉狀態
+```
+
+策略簡寫：`sq`=波動率擠壓（trail 4%）, `os`=超跌反彈（trail 8%）, `ad`=AD背離（trail 8%）
+
+範例：
+```bash
+python3 scan.py add 4167 ad 19.05 2026-03-02   # 新增 AD背離 持倉
+python3 scan.py close 4167 20.5                 # 關閉持倉，記錄賣出價
+```
+
+輸出順序：持倉狀態（出場條件）→ 掃描結果（進場信號）→ 摘要
+
+持倉檔：`positions.json`（已 gitignore）
 
 ## 籌碼快取模組 `chip_cache.py`
 
