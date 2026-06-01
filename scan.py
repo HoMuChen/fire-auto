@@ -170,6 +170,7 @@ def scan_squeeze(stock_ids, names):
                 "adx": round(adx[i], 1) if adx[i] else None,
                 "vol_ratio": round(vol_ratio, 1),
                 "mom5_pct": round(mom5 * 100, 1),
+                "vol_threshold_张": vol_threshold_張,
             })
         elif currently_squeezing and squeeze_days >= 3:
             next_day = _squeeze_next_day(
@@ -184,8 +185,11 @@ def scan_squeeze(stock_ids, names):
                 "bb_upper": round(upper_bb[i], 1) if upper_bb[i] else None,
                 "bb_dist_pct": round(bb_dist * 100, 1) if bb_dist is not None else None,
                 "adx": round(adx[i], 1) if adx[i] else None,
+                "adx_ok": adx_ok,
                 "vol_ratio": round(vol_ratio, 1),
                 "mom5_pct": round(mom5 * 100, 1),
+                "vol_threshold_张": vol_threshold_張,
+                "mom5_ref": round(mom5_ref, 1) if mom5_ref else None,
                 "next_day": next_day,
             })
         elif just_released:
@@ -211,8 +215,11 @@ def scan_squeeze(stock_ids, names):
                 "bb_upper": round(upper_bb[i], 1) if upper_bb[i] else None,
                 "bb_dist_pct": round(bb_dist * 100, 1) if bb_dist is not None else None,
                 "adx": round(adx[i], 1) if adx[i] else None,
+                "adx_ok": adx_ok,
                 "vol_ratio": round(vol_ratio, 1),
                 "mom5_pct": round(mom5 * 100, 1),
+                "vol_threshold_张": vol_threshold_張,
+                "mom5_ref": round(mom5_ref, 1) if mom5_ref else None,
                 "missing": missing,
                 "next_day": next_day,
             })
@@ -328,6 +335,7 @@ def scan_oversold(stock_ids, names):
                 "status": "triggered" if triggered else "near",
                 "date": prices[i]["date"],
                 "close": closes[i],
+                "open": opens[i],
                 "sma60": round(sma60[i], 1),
                 "drop5d_pct": round(drop5 * 100, 1),
                 "kd": round(kd_val, 0),
@@ -335,6 +343,8 @@ def scan_oversold(stock_ids, names):
                 "is_red": is_red,
                 "met": met, "total": 5,
                 "missing": missing,
+                "vol_max_张": round(vol_ma[i] * 0.8 / 1000) if vol_ma[i] else 0,
+                "kd_price_max": kd_price,
                 "next_day": next_day,
             })
 
@@ -449,6 +459,7 @@ def scan_ad_divergence(stock_ids, names):
                     price_at_low, ad_not_low, ad_min20, rsi_val, rsi_ok, rsi_price,
                 )
 
+            new_min20 = min(closes[i - 19:i + 1]) if i >= 19 else min(closes[:i + 1])
             results.append({
                 "stock_id": sid, "name": names.get(sid, ""),
                 "status": "triggered" if triggered else "near",
@@ -460,6 +471,8 @@ def scan_ad_divergence(stock_ids, names):
                 "rsi": round(rsi_val, 0),
                 "met": met, "total": 5,
                 "missing": missing,
+                "price_low_threshold": round(new_min20, 1) if not price_at_low else None,
+                "rsi_price_max": rsi_price,
                 "next_day": next_day,
             })
 
@@ -843,6 +856,63 @@ def print_summary(sq, os, ad, data_date):
 #  Main
 # ═══════════════════════════════════════════════════════════════
 
+WATCHLIST_PATH = BASE_DIR / "data" / "watchlist_conditions.json"
+
+
+def _save_watchlist_conditions(sq, os_results, ad, data_date):
+    """儲存結構化 watchlist，供 monitor.py 盤中監測使用"""
+    stocks = []
+
+    for r in sq:
+        if r["status"] in ("squeezing", "released_miss"):
+            stocks.append({
+                "stock_id": r["stock_id"],
+                "name": r["name"],
+                "strategy": "squeeze",
+                "status": r["status"],
+                "last_close": r["close"],
+                "squeeze_days": r["squeeze_days"],
+                "price_above": r.get("bb_upper"),       # 收盤需 > 此價
+                "adx_ok": r.get("adx_ok", True),
+                "vol_min_张": r.get("vol_threshold_张", 0),  # 量需 > N 張
+                "mom5_ref": r.get("mom5_ref"),           # 5日動量參考價
+            })
+
+    for r in os_results:
+        if r["status"] == "near":
+            stocks.append({
+                "stock_id": r["stock_id"],
+                "name": r["name"],
+                "strategy": "oversold",
+                "status": r["status"],
+                "last_close": r["close"],
+                "missing": r.get("missing", []),
+                "need_red_candle": "紅K" in r.get("missing", []),
+                "vol_max_张": r.get("vol_max_张", 0),    # 量需 < N 張
+                "kd_price_max": r.get("kd_price_max"),  # 收盤需 < 此價（KD超賣）
+            })
+
+    for r in ad:
+        if r["status"] == "near":
+            stocks.append({
+                "stock_id": r["stock_id"],
+                "name": r["name"],
+                "strategy": "ad_divergence",
+                "status": r["status"],
+                "last_close": r["close"],
+                "missing": r.get("missing", []),
+                "price_low_threshold": r.get("price_low_threshold"),  # 收盤需 ≤ 此價
+                "rsi_price_max": r.get("rsi_price_max"),              # 收盤需 < 此價（RSI）
+            })
+
+    output = {
+        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "data_date": data_date,
+        "stocks": stocks,
+    }
+    WATCHLIST_PATH.write_text(json.dumps(output, ensure_ascii=False, indent=2))
+
+
 def _get_data_date(stock_ids):
     """取得資料日期（第一檔有資料的最後日期）"""
     for sid in stock_ids[:5]:
@@ -908,7 +978,10 @@ def cmd_scan(no_update=False, json_output=False):
     os_results = scan_oversold(lists["oversold"], names)
     ad = scan_ad_divergence(lists["ad_divergence"], names)
 
-    # 6) 輸出
+    # 6) 存結構化 watchlist（供 monitor.py 使用）
+    _save_watchlist_conditions(sq, os_results, ad, data_date)
+
+    # 7) 輸出
     if json_output:
         output = {
             "scan_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
