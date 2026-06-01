@@ -255,17 +255,26 @@ def main():
         else:
             near_all.append(entry)
 
-    # 已觸發
+    from notify import send
+
+    # 已觸發 → 每檔個別發 Telegram
     if triggered_all:
         print(f"\n  🔔 已觸發條件（{len(triggered_all)} 檔）")
         for e in triggered_all:
             print(f"\n  ★ {e['stock_id']} {e['name']}【{e['strategy_label']}】現價 {e['close']:.1f}  量 {e['volume_张']:,}張")
             for line in e["lines"]:
                 print(line)
+            # Telegram 通知
+            detail = "\n".join(l.strip() for l in e["lines"])
+            send(
+                f"🔔 {e['stock_id']} {e['name']}【{e['strategy_label']}】\n"
+                f"現價 {e['close']:.1f}  量 {e['volume_张']:,}張\n"
+                f"{detail}"
+            )
     else:
         print(f"\n  目前無股票觸發")
 
-    # 接近觸發
+    # 接近觸發 → 只印 log，不發通知
     if near_all:
         print(f"\n  觀察中（{len(near_all)} 檔）")
         for e in near_all:

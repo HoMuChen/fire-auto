@@ -859,6 +859,44 @@ def print_summary(sq, os, ad, data_date):
 WATCHLIST_PATH = BASE_DIR / "data" / "watchlist_conditions.json"
 
 
+def _send_morning_summary(sq, os_results, ad, data_date, pos_results):
+    """發早晨摘要到 Telegram"""
+    try:
+        from notify import send
+    except Exception:
+        return
+
+    lines = [f"☀️ 早安！{data_date} 掃描摘要"]
+
+    # 持倉狀態
+    if pos_results:
+        lines.append("\n📂 持倉")
+        for p in pos_results:
+            if p.get("hit_stop"):
+                lines.append(f"  ⚠️ {p['stock_id']} {p['name']} 停損觸發！{p['current_close']:.1f}")
+            else:
+                strat = {"sq": "擠壓", "os": "超跌", "ad": "AD"}.get(p["strategy"], p["strategy"])
+                lines.append(f"  {p['stock_id']} {p['name']}（{strat}）{p['pnl_pct']:+.1f}% 停損{p['stop_price']:.1f}")
+
+    # 觸發信號
+    triggered = [r for r in sq + os_results + ad if r["status"] == "triggered"]
+    if triggered:
+        lines.append("\n🔔 今日觸發")
+        for r in triggered:
+            lines.append(f"  ★ {r['stock_id']} {r['name']}")
+
+    # 觀察重點
+    watch = [r for r in sq + os_results + ad
+             if r["status"] not in ("triggered",) and r.get("missing")]
+    if watch:
+        lines.append(f"\n👀 觀察（{len(watch)} 檔，差一步）")
+        for r in watch[:8]:
+            missing = ", ".join(r.get("missing", [])[:2])
+            lines.append(f"  {r['stock_id']} {r['name']}（差 {missing}）")
+
+    send("\n".join(lines))
+
+
 def _save_watchlist_conditions(sq, os_results, ad, data_date):
     """儲存結構化 watchlist，供 monitor.py 盤中監測使用"""
     stocks = []
@@ -981,7 +1019,11 @@ def cmd_scan(no_update=False, json_output=False):
     # 6) 存結構化 watchlist（供 monitor.py 使用）
     _save_watchlist_conditions(sq, os_results, ad, data_date)
 
-    # 7) 輸出
+    # 7) 早晨摘要發 Telegram（只在 --no-update 時，即早上 8 點掃描）
+    if no_update and not json_output:
+        _send_morning_summary(sq, os_results, ad, data_date, pos_results)
+
+    # 8) 輸出
     if json_output:
         output = {
             "scan_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
