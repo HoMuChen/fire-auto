@@ -2,3 +2,11 @@
 __pycache__/
 *.pyc
 positions.json
+
+# 本地資料快取（檔案過大，不 commit）
+data/broker/
+data/broker_backfill.log
+data/broker_cache_meta.json
+data/chip_cache_meta.json
+data/institutional/
+data/margin/
