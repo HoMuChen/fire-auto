@@ -135,6 +135,21 @@ cache.info()
 快取邏輯同 `stock_cache.py`（增量更新）。只快取有流動性的 1,439 檔個股。
 資料存放：`data/institutional/`（法人）、`data/margin/`（融資融券）。
 
+## 每日自動化排程（Crontab）
+
+Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pandas/pyarrow，不可用）
+
+| 時間 | 動作 | Log |
+|------|------|-----|
+| 08:00 平日 | `scan.py --no-update` — 掃描前日信號、存 `watchlist_conditions.json`、發 Telegram 早晨摘要 | `data/morning_watchlist.txt` |
+| 09:00–13:30 每10分 | `monitor.py` — 盤中監測 watchlist 條件，觸發時發 Telegram | `data/monitor.log` |
+| 18:00 平日 | `stock_cache.py today` — 更新全市場股價（盤後收盤資料） | `data/stock_update.log` |
+| 22:00 平日 | 1) 停掉 backfill → 2) `broker_cache.py today` 更新當日券商分點 → 3) 重啟 backfill | `data/broker_daily.log`, `data/broker_backfill.log` |
+
+**券商分點 Backfill**：1,439 檔 × 2021-06-30 起，以 `nohup` 背景執行，每晚 22:00 自動中斷後重啟（續抓）。
+進度查詢：`tail -f data/broker_backfill.log`
+手動重啟：`nohup /usr/local/bin/python3 -u broker_cache.py range 2021-06-30 <今日> >> data/broker_backfill.log 2>&1 &`
+
 ## 策略研究原則
 
 ### 核心哲學
