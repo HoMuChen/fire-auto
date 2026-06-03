@@ -178,6 +178,13 @@ def _check_squeeze(prices: list[dict]) -> tuple[str | None, list[str]]:
     return None, []
 
 
+def _intraday_vol_fraction() -> float:
+    """盤中已過交易時間比例（9:00=0.0, 13:30=1.0），用於修正量縮門檻"""
+    now = datetime.now()
+    elapsed = (now.hour * 60 + now.minute) - 9 * 60  # 距開盤分鐘數
+    return min(max(elapsed / 270, 0.05), 1.0)  # 270 = 13:30-9:00，至少 5% 避免除以零
+
+
 def _check_oversold(prices: list[dict]) -> tuple[str | None, list[str]]:
     closes = [p["close"] for p in prices]
     opens = [p["open"] for p in prices]
@@ -197,9 +204,14 @@ def _check_oversold(prices: list[dict]) -> tuple[str | None, list[str]]:
     drop5 = (closes[i - 5] - closes[i - 1]) / closes[i - 5] if closes[i - 5] > 0 else 0
     kd_ok = k[i] < 30
     is_red = closes[i] > opens[i]
-    vol_shrink = vols[i] < vol_ma[i] * 0.8
+    # 量縮門檻依盤中已過時間比例調整：若只過了 45% 交易時間，門檻也只用 45%
+    t_frac = _intraday_vol_fraction()
+    vol_threshold = vol_ma[i] * 0.8 * t_frac
+    vol_shrink = vols[i] < vol_threshold
     vol_ratio = vols[i] / vol_ma[i]
-    vol_max_张 = round(vol_ma[i] * 0.8 / 1000)
+    # 顯示用：預估全天量 = 今日累積 / 已過時間比例
+    proj_ratio = vol_ratio / t_frac
+    vol_max_张 = round(vol_ma[i] * 0.8 / 1000)  # 收盤門檻（顯示用）
 
     if drop5 < 0.03 and k[i] >= 40:
         return None, []
@@ -215,7 +227,7 @@ def _check_oversold(prices: list[dict]) -> tuple[str | None, list[str]]:
     if met == 4:
         return "triggered", [
             f"  ✓ 60MA之上  5日跌{drop5*100:.1f}%  KD{k[i]:.0f}",
-            f"  ✓ 紅K（{closes[i]:.1f}>{opens[i]:.1f}）  量{vol_ratio:.2f}x",
+            f"  ✓ 紅K（{closes[i]:.1f}>{opens[i]:.1f}）  量估{proj_ratio:.2f}x（需<{vol_max_张:,}張）",
         ]
 
     if met >= 2:
@@ -223,7 +235,7 @@ def _check_oversold(prices: list[dict]) -> tuple[str | None, list[str]]:
         lines.append(f"  {'✓' if drop5>=0.05 else '·'} 5日跌{drop5*100:.1f}%  "
                      f"{'✓' if kd_ok else '·'} KD{k[i]:.0f}  "
                      f"{'✓' if is_red else '·'} {'紅' if is_red else '黑'}K  "
-                     f"{'✓' if vol_shrink else '·'} 量{vol_ratio:.2f}x（需<{vol_max_张:,}張）")
+                     f"{'✓' if vol_shrink else '·'} 量估{proj_ratio:.2f}x（需<{vol_max_张:,}張）")
         return "near", lines
 
     return None, []
