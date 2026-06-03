@@ -28,10 +28,11 @@ DATA_DIR = BASE_DIR / "data" / "stock_prices"
 INDIVIDUAL_STOCKS_PATH = BASE_DIR / "individual_stocks.json"
 FILTERED_LISTS_PATH = BASE_DIR / "strategies" / "filtered_stock_lists.json"
 ENV_PATH = BASE_DIR / ".env.local"
-API_URL = "https://api.finmindtrade.com/api/v4/data"
+TWSE_URL = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp"
 
 MARKET_OPEN = (9, 0)
 MARKET_CLOSE = (13, 30)
+EX_MAP = {"twse": "tse", "tpex": "otc"}  # individual_stocks.json type → TWSE exchange prefix
 
 sys.path.insert(0, str(BASE_DIR))
 from backtest import (
@@ -58,39 +59,60 @@ def _is_market_hours() -> bool:
     return MARKET_OPEN <= t <= MARKET_CLOSE
 
 
-def _fetch_market_snapshot(date: str, token: str) -> dict:
-    """一個 API call 取得全市場今日快照，回傳 {stock_id: {open,high,low,close,volume_张}}"""
-    params = urllib.parse.urlencode({
-        "dataset": "TaiwanStockPrice",
-        "start_date": date,
-        "token": token,
-    })
-    try:
-        req = urllib.request.Request(f"{API_URL}?{params}")
-        with urllib.request.urlopen(req, timeout=30) as resp:
+def _fetch_market_snapshot(stock_ids: list[str], stock_types: dict[str, str]) -> dict:
+    """TWSE 即時行情批次查詢，回傳 {stock_id: {open,high,low,close,volume_张}}
+
+    stock_types: {stock_id: 'twse'|'tpex'}
+    TWSE API 於盤中即時更新（約 5 秒延遲），盤後保留收盤資料
+    URL 長度上限約 2,000 字元（~160 檔），超過時自動分批
+    """
+    def _query_batch(ids: list[str]) -> dict:
+        ex_ch = "|".join(
+            f"{EX_MAP.get(stock_types.get(sid, 'twse'), 'tse')}_{sid}.tw"
+            for sid in ids
+        )
+        req = urllib.request.Request(
+            f"{TWSE_URL}?ex_ch={ex_ch}&json=1&delay=0",
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read())
-        if data.get("status") != 200 or not data.get("data"):
-            return {}
+        if data.get("rtcode") != "0000":
+            raise RuntimeError(f"TWSE rtcode={data.get('rtcode')} {data.get('rtmessage','')}")
         result = {}
-        for row in data["data"]:
-            if row["date"] != date:
+        for row in data.get("msgArray", []):
+            sid = row.get("c", "")
+            if not sid:
                 continue
-            sid = row["stock_id"]
-            o = float(row.get("open") or 0)
-            c = float(row.get("close") or 0)
-            if o <= 0 or c <= 0:
+            try:
+                o = float(row["o"])
+                h = float(row["h"])
+                l = float(row["l"])
+                z = row.get("z", "-")
+                c = float(z) if z and z != "-" else None
+                v = int(float(row.get("v", 0) or 0))
+            except (ValueError, KeyError):
+                continue
+            if o <= 0:
                 continue
             result[sid] = {
                 "open": o,
-                "high": float(row.get("max") or o),
-                "low": float(row.get("min") or o),
-                "close": c,
-                "volume_张": int(row.get("Trading_turnover") or 0),
+                "high": h,
+                "low": l,
+                "close": c if c else o,  # 若無最新成交，暫用開盤價
+                "close_valid": c is not None,
+                "volume_张": v,
             }
         return result
+
+    BATCH = 150  # 安全批次大小（URL ~1,900 字元）
+    result = {}
+    try:
+        for i in range(0, len(stock_ids), BATCH):
+            result.update(_query_batch(stock_ids[i: i + BATCH]))
     except Exception as e:
-        print(f"  [API] 全市場快照失敗：{e}")
-        return {}
+        print(f"  [TWSE] 快照失敗：{e}")
+    return result
 
 
 def _load_history(stock_id: str, n: int = 85) -> list[dict] | None:
@@ -287,17 +309,11 @@ def main():
         print(f"[{time_str}] 非交易時間，略過")
         return
 
-    token = _load_token()
+    # 1. 股票清單（先讀，供快照使用）
+    individual = json.loads(INDIVIDUAL_STOCKS_PATH.read_text())
+    names = {s["stock_id"]: s["stock_name"] for s in individual}
+    stock_types = {s["stock_id"]: s["type"] for s in individual}
 
-    # 1. 全市場快照（1 API call）
-    snapshot = _fetch_market_snapshot(today, token)
-    if not snapshot:
-        print(f"[{time_str}] 快照失敗，略過")
-        return
-
-    # 2. 股票清單
-    names = {s["stock_id"]: s["stock_name"]
-             for s in json.loads(INDIVIDUAL_STOCKS_PATH.read_text())}
     raw = json.loads(FILTERED_LISTS_PATH.read_text())["strategies"]
     filtered = {
         "squeeze":  {s["stock_id"] for s in raw["squeeze"]["kept"]},
@@ -305,6 +321,12 @@ def main():
         "ad":       {s["stock_id"] for s in raw["ad_divergence"]["kept"]},
     }
     all_ids = filtered["squeeze"] | filtered["oversold"] | filtered["ad"]
+
+    # 2. TWSE 即時快照（1 HTTP call）
+    snapshot = _fetch_market_snapshot(sorted(all_ids), stock_types)
+    if not snapshot:
+        print(f"[{time_str}] 快照失敗，略過")
+        return
 
     triggered_all = []
     near_all = []
