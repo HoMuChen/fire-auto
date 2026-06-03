@@ -1,15 +1,20 @@
 """
-盤中監測器 — 每 10 分鐘檢查 watchlist_conditions.json 裡的條件是否達到
+盤中監測器 — 每 10 分鐘全市場掃描三策略即時信號
+
+架構：
+  1. 一個 API call 取得全市場即時快照
+  2. 讀本地 CSV 歷史資料（無需額外 API call）
+  3. 把今日即時價格接在歷史後面，跑完整策略邏輯
+  → 可偵測「當日才達成條件」的信號（如 3176 基亞類型）
 
 用法：
     python3 monitor.py           # 單次執行（由 crontab 呼叫）
 
 Crontab（台股 09:00–13:30）：
     */10 9-13 * * 1-5 cd /Users/mu/fire-auto && python3 monitor.py >> data/monitor.log 2>&1
-
-資料來源：FinMind TaiwanStockPrice（盤中即時快照，約有 15 分鐘延遲）
 """
 
+import csv
 import json
 import os
 import sys
@@ -19,13 +24,20 @@ from datetime import datetime
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
-WATCHLIST_PATH = BASE_DIR / "data" / "watchlist_conditions.json"
+DATA_DIR = BASE_DIR / "data" / "stock_prices"
+INDIVIDUAL_STOCKS_PATH = BASE_DIR / "individual_stocks.json"
+FILTERED_LISTS_PATH = BASE_DIR / "strategies" / "filtered_stock_lists.json"
 ENV_PATH = BASE_DIR / ".env.local"
 API_URL = "https://api.finmindtrade.com/api/v4/data"
 
-# 台股交易時間
 MARKET_OPEN = (9, 0)
 MARKET_CLOSE = (13, 30)
+
+sys.path.insert(0, str(BASE_DIR))
+from backtest import (
+    calc_sma, calc_bollinger, calc_keltner, calc_adx,
+    calc_kd, calc_rsi, calc_ad_line,
+)
 
 
 def _load_token() -> str:
@@ -46,151 +58,225 @@ def _is_market_hours() -> bool:
     return MARKET_OPEN <= t <= MARKET_CLOSE
 
 
-def _fetch_current(stock_id: str, date: str, token: str) -> dict | None:
-    """抓單股今日 OHLCV 快照"""
+def _fetch_market_snapshot(date: str, token: str) -> dict:
+    """一個 API call 取得全市場今日快照，回傳 {stock_id: {open,high,low,close,volume_张}}"""
     params = urllib.parse.urlencode({
         "dataset": "TaiwanStockPrice",
-        "data_id": stock_id,
         "start_date": date,
         "token": token,
     })
     try:
         req = urllib.request.Request(f"{API_URL}?{params}")
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read())
         if data.get("status") != 200 or not data.get("data"):
-            return None
-        row = data["data"][-1]  # 取最新一筆
-        if row["date"] != date:
-            return None  # 非今日資料
-        return {
-            "open": float(row["open"]),
-            "high": float(row["max"]),
-            "low": float(row["min"]),
-            "close": float(row["close"]),
-            "volume_张": int(row["Trading_turnover"]),  # 注意大寫 T
-        }
+            return {}
+        result = {}
+        for row in data["data"]:
+            if row["date"] != date:
+                continue
+            sid = row["stock_id"]
+            o = float(row.get("open") or 0)
+            c = float(row.get("close") or 0)
+            if o <= 0 or c <= 0:
+                continue
+            result[sid] = {
+                "open": o,
+                "high": float(row.get("max") or o),
+                "low": float(row.get("min") or o),
+                "close": c,
+                "volume_张": int(row.get("Trading_turnover") or 0),
+            }
+        return result
+    except Exception as e:
+        print(f"  [API] 全市場快照失敗：{e}")
+        return {}
+
+
+def _load_history(stock_id: str, n: int = 85) -> list[dict] | None:
+    """讀取本地 CSV 最後 n 筆，格式與 backtest.py 相容"""
+    csv_path = DATA_DIR / f"{stock_id}.csv"
+    if not csv_path.exists():
+        return None
+    try:
+        rows = []
+        with open(csv_path, newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                c = float(row.get("close") or 0)
+                if c > 0:
+                    rows.append({
+                        "date": row["date"],
+                        "open": float(row["open"]),
+                        "high": float(row["high"]),
+                        "low": float(row["low"]),
+                        "close": c,
+                        "volume": float(row["volume"]),
+                    })
+        return rows[-n:] if len(rows) >= 65 else None
     except Exception:
         return None
 
 
-def _check_squeeze(stock: dict, cur: dict) -> tuple[bool, list[str]]:
-    """檢查波動率擠壓觸發條件，回傳 (triggered, status_lines)"""
-    lines = []
-    triggered_conditions = 0
-    total_conditions = 0
+# ── 策略條件檢查（傳入已含今日即時價格的 prices 列表）─────────────
 
-    # 價格突破上軌
-    price_above = stock.get("price_above")
-    if price_above:
-        total_conditions += 1
-        if cur["close"] >= price_above:
-            lines.append(f"  ✓ 突破上軌 {price_above:.1f}（現 {cur['close']:.1f}）")
-            triggered_conditions += 1
-        else:
-            dist = (price_above - cur["close"]) / price_above * 100
-            lines.append(f"  · 未突破上軌 {price_above:.1f}（現 {cur['close']:.1f}，差 {dist:.1f}%）")
+def _check_squeeze(prices: list[dict]) -> tuple[str | None, list[str]]:
+    closes = [p["close"] for p in prices]
+    vols = [p["volume"] for p in prices]
+    upper_bb, lower_bb, _ = calc_bollinger(closes, 20, 2)
+    upper_kc, lower_kc, _ = calc_keltner(prices, 20, 1.5)
+    adx = calc_adx(prices, 14)
+    vol_ma = calc_sma([float(v) for v in vols], 20)
+    n = len(prices)
+    i = n - 1
 
-    # ADX（歷史條件，盤中不變）
-    if not stock.get("adx_ok", True):
-        lines.append(f"  ✗ ADX 不足（歷史條件未達）")
-        total_conditions += 1
-    else:
-        triggered_conditions += 1
-        total_conditions += 1
+    if i < 6 or any(v is None for v in [upper_bb[i], upper_kc[i], adx[i], vol_ma[i]]):
+        return None, []
 
-    # 量能
-    vol_min = stock.get("vol_min_张", 0)
-    if vol_min:
-        total_conditions += 1
-        if cur["volume_张"] >= vol_min:
-            lines.append(f"  ✓ 成交量 {cur['volume_张']:,}張 ≥ {vol_min:,}張")
-            triggered_conditions += 1
-        else:
-            lines.append(f"  · 量能不足 {cur['volume_张']:,}張 < {vol_min:,}張")
+    in_sq = []
+    for j in range(n):
+        vals = [upper_bb[j], lower_bb[j], upper_kc[j], lower_kc[j]]
+        in_sq.append(
+            all(v is not None for v in vals)
+            and upper_bb[j] < upper_kc[j] and lower_bb[j] > lower_kc[j]
+        )
+    sq_count = [0] * n
+    for j in range(1, n):
+        sq_count[j] = sq_count[j - 1] + 1 if in_sq[j] else 0
 
-    # 5日動量
-    mom5_ref = stock.get("mom5_ref")
-    if mom5_ref:
-        total_conditions += 1
-        if cur["close"] > mom5_ref:
-            lines.append(f"  ✓ 5日動量正向（現 {cur['close']:.1f} > {mom5_ref:.1f}）")
-            triggered_conditions += 1
-        else:
-            lines.append(f"  · 5日動量不足（現 {cur['close']:.1f} ≤ {mom5_ref:.1f}）")
+    just_released = not in_sq[i] and sq_count[i - 1] >= 5
+    currently_squeezing = in_sq[i] and sq_count[i] >= 3
 
-    all_met = triggered_conditions == total_conditions and total_conditions > 0
-    return all_met, lines
+    bb_breakout = closes[i] > upper_bb[i]
+    adx_ok = adx[i] > 18
+    vol_ok = vols[i] > vol_ma[i] * 1.4
+    mom5 = (closes[i] - closes[i - 5]) / closes[i - 5] if closes[i - 5] > 0 else 0
+    mom_ok = mom5 > 0
+    vol_ratio = vols[i] / vol_ma[i] if vol_ma[i] > 0 else 0
 
+    if just_released and bb_breakout and adx_ok and vol_ok and mom_ok:
+        return "triggered", [
+            f"  ✓ 脫離擠壓（前{sq_count[i-1]}天）突破 {upper_bb[i]:.1f}",
+            f"  ✓ ADX {adx[i]:.0f}  量比 {vol_ratio:.1f}x  動量 +{mom5*100:.1f}%",
+        ]
 
-def _check_oversold(stock: dict, cur: dict) -> tuple[bool, list[str]]:
-    """檢查超跌反彈觸發條件，回傳 (triggered, status_lines)"""
-    lines = []
-    missing = stock.get("missing", [])
-    new_met = []
+    if just_released:
+        missing = []
+        if not bb_breakout:
+            missing.append(f"突破上軌 {upper_bb[i]:.1f}（現 {closes[i]:.1f}）")
+        if not adx_ok:
+            missing.append(f"ADX {adx[i]:.0f}<18")
+        if not vol_ok:
+            missing.append(f"量比 {vol_ratio:.1f}x<1.4x")
+        if not mom_ok:
+            missing.append(f"動量 {mom5*100:.1f}%")
+        return "near", [f"  · 脫離擠壓，差：{', '.join(missing)}"]
 
-    # 紅K（盤中可觀察）
-    if stock.get("need_red_candle"):
-        if cur["close"] > cur["open"]:
-            lines.append(f"  ✓ 紅K 成立（現 {cur['close']:.1f} > 開 {cur['open']:.1f}）")
-            new_met.append("紅K")
-        else:
-            lines.append(f"  · 尚未紅K（現 {cur['close']:.1f} ≤ 開 {cur['open']:.1f}）")
+    if currently_squeezing:
+        dist = (upper_bb[i] / closes[i] - 1) * 100 if upper_bb[i] else 0
+        return "near", [f"  · 擠壓中第{sq_count[i]}天，距上軌 {dist:.1f}%  ADX {adx[i]:.0f}"]
 
-    # 量縮
-    vol_max = stock.get("vol_max_张", 0)
-    if vol_max and "量縮" in missing:
-        if cur["volume_张"] < vol_max:
-            lines.append(f"  ✓ 量縮 {cur['volume_张']:,}張 < {vol_max:,}張")
-            new_met.append("量縮")
-        else:
-            lines.append(f"  · 量未縮 {cur['volume_张']:,}張 ≥ {vol_max:,}張")
-
-    # KD 超賣（需價格繼續下跌）
-    kd_price_max = stock.get("kd_price_max")
-    if kd_price_max and "短線超賣" in missing:
-        if cur["close"] <= kd_price_max:
-            lines.append(f"  ✓ 超賣達標（現 {cur['close']:.1f} ≤ {kd_price_max:.1f}）")
-            new_met.append("短線超賣")
-        else:
-            lines.append(f"  · 超賣未達（現 {cur['close']:.1f} > {kd_price_max:.1f}）")
-
-    # 已滿足的歷史條件
-    already_met = [c for c in ["60均之上", "5日跌5%", "短線超賣"] if c not in missing]
-    remaining = [c for c in missing if c not in new_met]
-
-    all_met = len(remaining) == 0
-    return all_met, lines
+    return None, []
 
 
-def _check_ad(stock: dict, cur: dict) -> tuple[bool, list[str]]:
-    """檢查 AD 背離觸發條件，回傳 (triggered, status_lines)"""
-    lines = []
-    missing = stock.get("missing", [])
-    new_met = []
+def _check_oversold(prices: list[dict]) -> tuple[str | None, list[str]]:
+    closes = [p["close"] for p in prices]
+    opens = [p["open"] for p in prices]
+    vols = [p["volume"] for p in prices]
+    sma60 = calc_sma(closes, 60)
+    k, _ = calc_kd(prices, 9)
+    vol_ma = calc_sma([float(v) for v in vols], 20)
+    i = len(prices) - 1
 
-    # 創 20 日新低
-    price_low_threshold = stock.get("price_low_threshold")
-    if price_low_threshold and "20日新低" in missing:
-        if cur["close"] <= price_low_threshold:
-            lines.append(f"  ✓ 創新低（現 {cur['close']:.1f} ≤ {price_low_threshold:.1f}）")
-            new_met.append("20日新低")
-        else:
-            lines.append(f"  · 未創新低（現 {cur['close']:.1f} > {price_low_threshold:.1f}）")
+    if any(v is None for v in [sma60[i], k[i], vol_ma[i]]) or vol_ma[i] == 0:
+        return None, []
 
-    # RSI 轉弱
-    rsi_price_max = stock.get("rsi_price_max")
-    if rsi_price_max and "動能轉弱" in missing:
-        if cur["close"] <= rsi_price_max:
-            lines.append(f"  ✓ 動能轉弱（現 {cur['close']:.1f} ≤ {rsi_price_max:.1f}）")
-            new_met.append("動能轉弱")
-        else:
-            lines.append(f"  · 動能仍強（現 {cur['close']:.1f} > {rsi_price_max:.1f}）")
+    above_ma = closes[i] > sma60[i]
+    if not above_ma:
+        return None, []
 
-    remaining = [c for c in missing if c not in new_met]
-    all_met = len(remaining) == 0
-    return all_met, lines
+    drop5 = (closes[i - 5] - closes[i - 1]) / closes[i - 5] if closes[i - 5] > 0 else 0
+    kd_ok = k[i] < 30
+    is_red = closes[i] > opens[i]
+    vol_shrink = vols[i] < vol_ma[i] * 0.8
+    vol_ratio = vols[i] / vol_ma[i]
+    vol_max_张 = round(vol_ma[i] * 0.8 / 1000)
 
+    if drop5 < 0.03 and k[i] >= 40:
+        return None, []
+
+    conditions = {
+        "5日跌5%": drop5 >= 0.05,
+        "短線超賣": kd_ok,
+        "紅K": is_red,
+        "量縮": vol_shrink,
+    }
+    met = sum(conditions.values())
+
+    if met == 4:
+        return "triggered", [
+            f"  ✓ 60MA之上  5日跌{drop5*100:.1f}%  KD{k[i]:.0f}",
+            f"  ✓ 紅K（{closes[i]:.1f}>{opens[i]:.1f}）  量{vol_ratio:.2f}x",
+        ]
+
+    if met >= 2:
+        lines = []
+        lines.append(f"  {'✓' if drop5>=0.05 else '·'} 5日跌{drop5*100:.1f}%  "
+                     f"{'✓' if kd_ok else '·'} KD{k[i]:.0f}  "
+                     f"{'✓' if is_red else '·'} {'紅' if is_red else '黑'}K  "
+                     f"{'✓' if vol_shrink else '·'} 量{vol_ratio:.2f}x（需<{vol_max_张:,}張）")
+        return "near", lines
+
+    return None, []
+
+
+def _check_ad(prices: list[dict]) -> tuple[str | None, list[str]]:
+    closes = [p["close"] for p in prices]
+    sma60 = calc_sma(closes, 60)
+    rsi14 = calc_rsi(closes, 14)
+    ad = calc_ad_line(prices)
+    i = len(prices) - 1
+
+    if any(v is None for v in [sma60[i], rsi14[i]]) or i < 25:
+        return None, []
+
+    above_ma = closes[i] > sma60[i]
+    ma_rising = sma60[i - 5] is not None and sma60[i] > sma60[i - 5]
+    if not (above_ma and ma_rising):
+        return None, []
+
+    price_min20 = min(closes[i - 20:i])
+    price_dist = (closes[i] / price_min20 - 1) if price_min20 > 0 else 999
+    price_at_low = closes[i] <= price_min20
+
+    if price_dist > 0.02 and not price_at_low:
+        return None, []
+    if rsi14[i] >= 50:
+        return None, []
+
+    ad_min20 = min(ad[i - 20:i])
+    ad_not_low = ad[i] > ad_min20
+    rsi_ok = rsi14[i] < 45
+
+    conditions = {"20日新低": price_at_low, "量價背離": ad_not_low, "動能轉弱": rsi_ok}
+    met = sum(conditions.values())
+
+    if met == 3:
+        return "triggered", [
+            f"  ✓ 60MA上升  20日新低 {closes[i]:.1f}",
+            f"  ✓ AD線未新低  RSI{rsi14[i]:.0f}<45",
+        ]
+
+    if met >= 1:
+        parts = []
+        parts.append(f"{'✓' if price_at_low else '·'} 新低（差{price_dist*100:.1f}%）")
+        parts.append(f"{'✓' if ad_not_low else '·'} AD背離")
+        parts.append(f"{'✓' if rsi_ok else '·'} RSI{rsi14[i]:.0f}")
+        return "near", [f"  {', '.join(parts)}"]
+
+    return None, []
+
+
+# ─────────────────────────────────────────────────────────────
 
 def main():
     now = datetime.now()
@@ -201,84 +287,100 @@ def main():
         print(f"[{time_str}] 非交易時間，略過")
         return
 
-    if not WATCHLIST_PATH.exists():
-        print(f"[{time_str}] 找不到 {WATCHLIST_PATH}，請先執行 scan.py")
-        return
-
-    watchlist = json.loads(WATCHLIST_PATH.read_text())
-    stocks = watchlist.get("stocks", [])
-    data_date = watchlist.get("data_date", "")
-    generated_at = watchlist.get("generated_at", "")
-
-    if not stocks:
-        print(f"[{time_str}] Watchlist 為空")
-        return
-
     token = _load_token()
 
-    print(f"\n{'='*60}")
-    print(f"  盤中監測  {today} {time_str}")
-    print(f"  Watchlist 來源：{generated_at}（資料日期 {data_date}）")
-    print(f"{'='*60}")
+    # 1. 全市場快照（1 API call）
+    snapshot = _fetch_market_snapshot(today, token)
+    if not snapshot:
+        print(f"[{time_str}] 快照失敗，略過")
+        return
+
+    # 2. 股票清單
+    names = {s["stock_id"]: s["stock_name"]
+             for s in json.loads(INDIVIDUAL_STOCKS_PATH.read_text())}
+    raw = json.loads(FILTERED_LISTS_PATH.read_text())["strategies"]
+    filtered = {
+        "squeeze":  {s["stock_id"] for s in raw["squeeze"]["kept"]},
+        "oversold": {s["stock_id"] for s in raw["oversold"]["kept"]},
+        "ad":       {s["stock_id"] for s in raw["ad_divergence"]["kept"]},
+    }
+    all_ids = filtered["squeeze"] | filtered["oversold"] | filtered["ad"]
 
     triggered_all = []
     near_all = []
 
-    for stock in stocks:
-        sid = stock["stock_id"]
-        name = stock["name"]
-        strategy = stock["strategy"]
-        strategy_label = {"squeeze": "波動率擠壓", "oversold": "超跌反彈", "ad_divergence": "AD背離"}.get(strategy, strategy)
-
-        cur = _fetch_current(sid, today, token)
-        if cur is None:
+    # 3. 逐檔掃描
+    for sid in sorted(all_ids):
+        snap = snapshot.get(sid)
+        if not snap:
+            continue
+        history = _load_history(sid)
+        if not history:
             continue
 
-        if strategy == "squeeze":
-            triggered, lines = _check_squeeze(stock, cur)
-        elif strategy == "oversold":
-            triggered, lines = _check_oversold(stock, cur)
-        elif strategy == "ad_divergence":
-            triggered, lines = _check_ad(stock, cur)
-        else:
-            continue
+        # 避免今日資料重複（若 CSV 已含今日）
+        if history and history[-1]["date"] == today:
+            history = history[:-1]
 
-        entry = {
-            "stock_id": sid, "name": name,
-            "strategy_label": strategy_label,
-            "close": cur["close"], "open": cur["open"],
-            "volume_张": cur["volume_张"],
-            "lines": lines, "triggered": triggered,
+        today_row = {
+            "date": today,
+            "open": snap["open"],
+            "high": snap["high"],
+            "low": snap["low"],
+            "close": snap["close"],
+            "volume": snap["volume_张"] * 1000,
         }
-        if triggered:
-            triggered_all.append(entry)
-        else:
-            near_all.append(entry)
+        prices = history + [today_row]
+        name = names.get(sid, "")
+
+        for strategy_key, label, checker in [
+            ("squeeze",  "波動率擠壓", _check_squeeze),
+            ("oversold", "超跌反彈",   _check_oversold),
+            ("ad",       "AD背離",     _check_ad),
+        ]:
+            if sid not in filtered[strategy_key]:
+                continue
+            status, lines = checker(prices)
+            if not status:
+                continue
+            entry = {
+                "stock_id": sid, "name": name,
+                "strategy_label": label,
+                "close": snap["close"], "open": snap["open"],
+                "volume_张": snap["volume_张"],
+                "lines": lines,
+            }
+            if status == "triggered":
+                triggered_all.append(entry)
+            else:
+                near_all.append(entry)
 
     from notify import send
 
-    # 已觸發 → 每檔個別發 Telegram
+    print(f"\n{'='*60}")
+    print(f"  盤中監測  {today} {time_str}  掃描 {len(all_ids)} 檔")
+    print(f"{'='*60}")
+
     if triggered_all:
-        print(f"\n  🔔 已觸發條件（{len(triggered_all)} 檔）")
+        print(f"\n  🔔 已觸發（{len(triggered_all)} 檔）")
         for e in triggered_all:
-            print(f"\n  ★ {e['stock_id']} {e['name']}【{e['strategy_label']}】現價 {e['close']:.1f}  量 {e['volume_张']:,}張")
+            print(f"\n  ★ {e['stock_id']} {e['name']}【{e['strategy_label']}】"
+                  f"現價 {e['close']:.1f}  量 {e['volume_张']:,}張")
             for line in e["lines"]:
                 print(line)
-            # Telegram 通知
             detail = "\n".join(l.strip() for l in e["lines"])
             send(
                 f"🔔 {e['stock_id']} {e['name']}【{e['strategy_label']}】\n"
-                f"現價 {e['close']:.1f}  量 {e['volume_张']:,}張\n"
-                f"{detail}"
+                f"現價 {e['close']:.1f}  量 {e['volume_张']:,}張\n{detail}"
             )
     else:
         print(f"\n  目前無股票觸發")
 
-    # 接近觸發 → 只印 log，不發通知
     if near_all:
         print(f"\n  觀察中（{len(near_all)} 檔）")
         for e in near_all:
-            print(f"\n  {e['stock_id']} {e['name']}【{e['strategy_label']}】現價 {e['close']:.1f}  量 {e['volume_张']:,}張")
+            print(f"\n  {e['stock_id']} {e['name']}【{e['strategy_label']}】"
+                  f"現價 {e['close']:.1f}  量 {e['volume_张']:,}張")
             for line in e["lines"]:
                 print(line)
 
