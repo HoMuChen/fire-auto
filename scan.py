@@ -22,11 +22,18 @@ from backtest import (
     read_prices, calc_sma, calc_rsi, calc_kd, calc_ad_line,
     calc_bollinger, calc_keltner, calc_adx,
 )
+from circuit_breaker import allowed_set, is_systemic, BREAKER
+
+try:
+    import broker_concentration as _bconc
+except Exception:  # 缺套件/資料時不影響掃描
+    _bconc = None
 
 BASE_DIR = Path(__file__).parent
 FILTERED_PATH = BASE_DIR / "strategies" / "filtered_stock_lists.json"
 STOCKS_PATH = BASE_DIR / "individual_stocks.json"
 POSITIONS_PATH = BASE_DIR / "positions.json"
+TRADES_PATH = BASE_DIR / "data" / "trades.csv"
 
 STRATEGY_MAP = {
     "sq": {"name": "波動率擠壓", "stop_pct": 0.04},
@@ -555,20 +562,62 @@ def add_position(stock_id, strategy_key, entry_price, entry_date=None):
     print(f"  進場 {entry_price} @ {entry_date}，停損 {stop_price:.1f}（-{pos['stop_pct']:.0%}）")
 
 
+def _append_trade(pos: dict, exit_price: float | None, exit_date: str):
+    """把一筆已結算交易 append 到 data/trades.csv"""
+    import csv as _csv
+    entry = float(pos["entry_price"])
+    pnl_pct = (exit_price / entry - 1) * 100 if exit_price else None
+
+    # 計算持有交易日數（簡略：用日曆天數）
+    try:
+        from datetime import date as _date
+        d0 = _date.fromisoformat(pos["entry_date"])
+        d1 = _date.fromisoformat(exit_date)
+        hold_days = (d1 - d0).days
+    except Exception:
+        hold_days = ""
+
+    header = ["exit_date", "stock_id", "name", "strategy",
+              "entry_date", "entry_price", "peak_price",
+              "exit_price", "pnl_pct", "hold_days"]
+    row = {
+        "exit_date":   exit_date,
+        "stock_id":    pos["stock_id"],
+        "name":        pos.get("name", ""),
+        "strategy":    STRATEGY_MAP.get(pos["strategy"], {}).get("name", pos["strategy"]),
+        "entry_date":  pos["entry_date"],
+        "entry_price": entry,
+        "peak_price":  pos.get("peak_price", ""),
+        "exit_price":  exit_price if exit_price is not None else "",
+        "pnl_pct":     f"{pnl_pct:.2f}" if pnl_pct is not None else "",
+        "hold_days":   hold_days,
+    }
+    write_header = not TRADES_PATH.exists()
+    with open(TRADES_PATH, "a", newline="", encoding="utf-8") as f:
+        writer = _csv.DictWriter(f, fieldnames=header)
+        if write_header:
+            writer.writeheader()
+        writer.writerow(row)
+
+
 def close_position(stock_id, close_price=None):
-    """關閉持倉"""
+    """關閉持倉，並記錄到 data/trades.csv"""
     positions = _load_positions()
     found = [p for p in positions if p["stock_id"] == stock_id]
     if not found:
         print(f"  找不到 {stock_id} 的持倉")
         return
+    exit_date = datetime.now().strftime("%Y-%m-%d")
+    exit_price = float(close_price) if close_price is not None else None
     for p in found:
         pnl_str = ""
-        if close_price is not None:
-            close_price = float(close_price)
-            pnl = (close_price / p["entry_price"] - 1) * 100
+        if exit_price is not None:
+            pnl = (exit_price / p["entry_price"] - 1) * 100
             pnl_str = f"，損益 {pnl:+.1f}%"
-        print(f"  關閉持倉：{p['stock_id']} {p.get('name', '')}（{STRATEGY_MAP.get(p['strategy'], {}).get('name', p['strategy'])}）{pnl_str}")
+        strategy_name = STRATEGY_MAP.get(p["strategy"], {}).get("name", p["strategy"])
+        print(f"  關閉持倉：{p['stock_id']} {p.get('name', '')}（{strategy_name}）{pnl_str}")
+        _append_trade(p, exit_price, exit_date)
+        print(f"  已記錄至 data/trades.csv")
     positions = [p for p in positions if p["stock_id"] != stock_id]
     _save_positions(positions)
 
@@ -818,6 +867,79 @@ def _next_trading_date(data_date):
     return d.strftime("%Y-%m-%d")
 
 
+def apply_circuit_breaker(sq, os_results, ad, lists):
+    """套用系統性風險斷路器（與回測一致），就地標記 triggered 結果：
+
+      r["actionable"] = True/False   # 斷路後是否仍建議進場
+      r["breaker_note"] = str|None   # 被擋下的原因
+
+    回傳各策略的 systemic 旗標 dict（同日 >3 觸發 → 系統性下殺全跳過）。
+    """
+    universe = {
+        "squeeze":  lists["squeeze"],
+        "oversold": lists["oversold"],
+        "ad":       lists["ad_divergence"],
+    }
+    systemic = {}
+    for strat, results in (("squeeze", sq), ("oversold", os_results), ("ad", ad)):
+        order = {sid: idx for idx, sid in enumerate(universe[strat])}
+        triggered = sorted(
+            [r for r in results if r["status"] == "triggered"],
+            key=lambda r: order.get(r["stock_id"], 1 << 30),
+        )
+        tids = [r["stock_id"] for r in triggered]
+        allowed = set(allowed_set(strat, tids))
+        sys_flag = is_systemic(strat, len(tids))
+        systemic[strat] = sys_flag
+        for r in triggered:
+            r["actionable"] = r["stock_id"] in allowed
+            if r["actionable"]:
+                r["breaker_note"] = None
+            elif sys_flag:
+                r["breaker_note"] = f"系統性下殺（同日 {len(tids)} 檔>3）全跳過"
+            else:
+                r["breaker_note"] = f"同日限買 1 檔，僅取名單第一檔"
+    return systemic
+
+
+def annotate_concentration(sq, os_results, ad, data_date):
+    """為觸發信號標記買方分點集中度（排序/優先級用，不砍信號）。
+
+    就地加上 r["conc_pct"]（當日全市場百分位）、r["conc_high"]（>當日中位數）、r["conc"]。
+    集中度高 = 籌碼集中、主力在場，資金/倉位受限時優先。資料缺漏時靜默略過。
+    """
+    if _bconc is None:
+        return
+    triggered = [r for r in sq + os_results + ad if r["status"] == "triggered"]
+    if not triggered:
+        return
+    try:
+        _bconc.ensure_current()  # 自包含增量補到最新交易日
+        ann = _bconc.annotate_signals([r["stock_id"] for r in triggered], data_date)
+    except Exception:
+        return
+    for r in triggered:
+        a = ann.get(r["stock_id"])
+        if a:
+            r["conc_pct"] = a["pct"]
+            r["conc_high"] = a["high"]
+            r["conc"] = a["conc"]
+
+
+def _conc_tag(r):
+    """信號的集中度標記字串，無資料回空字串。"""
+    pct = r.get("conc_pct")
+    if pct is None:
+        return ""
+    flag = "高" if r.get("conc_high") else "低"
+    return f"〔集中度 {pct:.0f}百分位·{flag}〕"
+
+
+def _conc_key(r):
+    """排序鍵：集中度百分位由高到低，無資料排最後。"""
+    return -(r.get("conc_pct") if r.get("conc_pct") is not None else -1)
+
+
 def print_summary(sq, os, ad, data_date):
     next_date = _next_trading_date(data_date)
     print("=" * 80)
@@ -835,10 +957,17 @@ def print_summary(sq, os, ad, data_date):
     print(f"  合計：      {total_t} 檔觸發買入")
 
     if sq_t + os_t + ad_t > 0:
-        print(f"\n  已觸發個股（{data_date} 收盤達成所有條件）：")
-        for r in sq + os + ad:
-            if r["status"] == "triggered":
-                print(f"    {r['stock_id']} {r['name']}")
+        triggered = [r for r in sq + os + ad if r["status"] == "triggered"]
+        actionable = sorted([r for r in triggered if r.get("actionable", True)], key=_conc_key)
+        skipped = [r for r in triggered if not r.get("actionable", True)]
+        print(f"\n  已觸發個股（{data_date} 收盤達成所有條件，建議進場依集中度排序）：")
+        for r in actionable:
+            print(f"    ★ {r['stock_id']} {r['name']}（建議進場）{_conc_tag(r)}")
+        for r in skipped:
+            print(f"    ✗ {r['stock_id']} {r['name']}（{r.get('breaker_note', '斷路跳過')}）{_conc_tag(r)}")
+        print(f"\n  斷路後實際建議進場："
+              f"{sum(1 for r in sq + os + ad if r['status']=='triggered' and r.get('actionable', True))} 檔"
+              f"（超跌/AD：同日限1檔、>3檔系統性下殺全跳過；擠壓不限）")
 
     watch = [r for r in sq + os + ad if r["status"] != "triggered" and r.get("next_day")]
     if watch:
@@ -878,12 +1007,18 @@ def _send_morning_summary(sq, os_results, ad, data_date, pos_results):
                 strat = {"sq": "擠壓", "os": "超跌", "ad": "AD"}.get(p["strategy"], p["strategy"])
                 lines.append(f"  {p['stock_id']} {p['name']}（{strat}）{p['pnl_pct']:+.1f}% 停損{p['stop_price']:.1f}")
 
-    # 觸發信號
+    # 觸發信號（含系統性風險斷路）
     triggered = [r for r in sq + os_results + ad if r["status"] == "triggered"]
     if triggered:
-        lines.append("\n🔔 今日觸發")
-        for r in triggered:
-            lines.append(f"  ★ {r['stock_id']} {r['name']}")
+        actionable = sorted([r for r in triggered if r.get("actionable", True)], key=_conc_key)
+        skipped = [r for r in triggered if not r.get("actionable", True)]
+        lines.append(f"\n🔔 今日觸發（建議進場 {len(actionable)} 檔，依集中度排序）")
+        for r in actionable:
+            lines.append(f"  ★ {r['stock_id']} {r['name']} {_conc_tag(r)}")
+        if skipped:
+            lines.append(f"\n🚫 斷路跳過（{len(skipped)} 檔）")
+            for r in skipped:
+                lines.append(f"  ✗ {r['stock_id']} {r['name']}（{r.get('breaker_note', '')}）")
 
     # 觀察重點
     watch = [r for r in sq + os_results + ad
@@ -1016,6 +1151,12 @@ def cmd_scan(no_update=False, json_output=False):
     os_results = scan_oversold(lists["oversold"], names)
     ad = scan_ad_divergence(lists["ad_divergence"], names)
 
+    # 5.5) 系統性風險斷路（與回測一致：超跌/AD 同日限1檔、>3檔全跳過）
+    apply_circuit_breaker(sq, os_results, ad, lists)
+
+    # 5.6) 買方分點集中度標記（排序/優先級用，不砍信號）
+    annotate_concentration(sq, os_results, ad, data_date)
+
     # 6) 存結構化 watchlist（供 monitor.py 使用）
     _save_watchlist_conditions(sq, os_results, ad, data_date)
 
@@ -1038,6 +1179,8 @@ def cmd_scan(no_update=False, json_output=False):
                 "squeeze_triggered": len([r for r in sq if r["status"] == "triggered"]),
                 "oversold_triggered": len([r for r in os_results if r["status"] == "triggered"]),
                 "ad_triggered": len([r for r in ad if r["status"] == "triggered"]),
+                "actionable": len([r for r in sq + os_results + ad
+                                   if r["status"] == "triggered" and r.get("actionable", True)]),
             },
         }
         print(json.dumps(output, ensure_ascii=False, indent=2))
