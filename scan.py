@@ -21,7 +21,15 @@ from pathlib import Path
 from backtest import (
     read_prices, calc_sma, calc_rsi, calc_kd, calc_ad_line,
     calc_bollinger, calc_keltner, calc_adx,
+    BUY_FEE, SELL_FEE, SELL_TAX,
 )
+
+
+def _net_pnl_pct(entry_price: float, exit_price: float) -> float:
+    """含手續費(買賣各0.1425%)與證交稅(賣0.3%)的淨損益%，與回測一致。"""
+    cost = entry_price * (1 + BUY_FEE)
+    proceeds = exit_price * (1 - SELL_FEE - SELL_TAX)
+    return (proceeds / cost - 1) * 100
 from circuit_breaker import allowed_set, is_systemic, BREAKER
 
 try:
@@ -566,7 +574,7 @@ def _append_trade(pos: dict, exit_price: float | None, exit_date: str):
     """把一筆已結算交易 append 到 data/trades.csv"""
     import csv as _csv
     entry = float(pos["entry_price"])
-    pnl_pct = (exit_price / entry - 1) * 100 if exit_price else None
+    pnl_pct = _net_pnl_pct(entry, exit_price) if exit_price else None
 
     # 計算持有交易日數（簡略：用日曆天數）
     try:
@@ -612,8 +620,8 @@ def close_position(stock_id, close_price=None):
     for p in found:
         pnl_str = ""
         if exit_price is not None:
-            pnl = (exit_price / p["entry_price"] - 1) * 100
-            pnl_str = f"，損益 {pnl:+.1f}%"
+            pnl = _net_pnl_pct(float(p["entry_price"]), exit_price)
+            pnl_str = f"，損益 {pnl:+.1f}%（淨）"
         strategy_name = STRATEGY_MAP.get(p["strategy"], {}).get("name", p["strategy"])
         print(f"  關閉持倉：{p['stock_id']} {p.get('name', '')}（{strategy_name}）{pnl_str}")
         _append_trade(p, exit_price, exit_date)
