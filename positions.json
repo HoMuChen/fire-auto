@@ -1,0 +1,29 @@
+[
+  {
+    "stock_id": "1810",
+    "name": "和成",
+    "strategy": "os",
+    "entry_date": "2026-06-17",
+    "entry_price": 20.25,
+    "peak_price": 21.35,
+    "stop_pct": 0.08
+  },
+  {
+    "stock_id": "6227",
+    "name": "茂綸",
+    "strategy": "ad",
+    "entry_date": "2026-06-24",
+    "entry_price": 118.0,
+    "peak_price": 121.5,
+    "stop_pct": 0.08
+  },
+  {
+    "stock_id": "3305",
+    "name": "昇貿",
+    "strategy": "ad",
+    "entry_date": "2026-06-25",
+    "entry_price": 136.5,
+    "peak_price": 138.0,
+    "stop_pct": 0.08
+  }
+]

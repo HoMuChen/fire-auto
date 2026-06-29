@@ -1,8 +1,6 @@
 .env.local
 __pycache__/
 *.pyc
-positions.json
-data/trades.csv
 data/monitor_state.json
 
 # 本地資料快取（檔案過大，不 commit）
