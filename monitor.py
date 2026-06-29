@@ -27,6 +27,7 @@ BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data" / "stock_prices"
 INDIVIDUAL_STOCKS_PATH = BASE_DIR / "individual_stocks.json"
 FILTERED_LISTS_PATH = BASE_DIR / "strategies" / "filtered_stock_lists.json"
+STATE_PATH = BASE_DIR / "data" / "monitor_state.json"
 ENV_PATH = BASE_DIR / ".env.local"
 FINMIND_SNAPSHOT_URL = "https://api.finmindtrade.com/api/v4/taiwan_stock_tick_snapshot"
 
@@ -38,6 +39,85 @@ from backtest import (
     calc_sma, calc_bollinger, calc_keltner, calc_adx,
     calc_kd, calc_rsi, calc_ad_line,
 )
+from circuit_breaker import allowed_set, is_systemic, BREAKER
+
+
+def _load_state(today: str) -> dict:
+    """讀取當日盤中狀態（跨 10 分鐘執行累積）；換日自動重置。
+
+    triggered: 各策略當日「首次觸發」的代號（依時間順序，供限1檔取最早那檔）
+    notified:  已發過 Telegram 的代號（防重複）
+    systemic_warned: 是否已發過系統性下殺警告（一次性）
+    """
+    blank = {
+        "date": today,
+        "triggered": {"squeeze": [], "oversold": [], "ad": []},
+        "notified": {"squeeze": [], "oversold": [], "ad": []},
+        "systemic_warned": {"oversold": False, "ad": False},
+    }
+    try:
+        st = json.loads(STATE_PATH.read_text())
+        if st.get("date") == today:
+            # 補齊可能缺少的鍵
+            for k in ("triggered", "notified"):
+                for s in ("squeeze", "oversold", "ad"):
+                    st.setdefault(k, {}).setdefault(s, [])
+            st.setdefault("systemic_warned", {}).setdefault("oversold", False)
+            st["systemic_warned"].setdefault("ad", False)
+            return st
+    except Exception:
+        pass
+    return blank
+
+
+def _save_state(state: dict) -> None:
+    try:
+        STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2))
+    except Exception as e:
+        print(f"  [state] 寫入失敗：{e}")
+
+
+def _apply_breaker_state(state: dict, triggered_all: list[dict]) -> tuple[list[dict], list[dict]]:
+    """套用斷路 + 防重複，就地更新「累積觸發」（state["triggered"]）。
+
+    注意：notified / systemic_warned **不在此標記**，由呼叫端在 Telegram
+    成功送出後才標記，確保發送失敗時下個 tick 會重試。
+
+    回傳 (to_send, warnings)：
+      to_send  — 通過斷路、尚未發過的 entry（依策略順序）
+      warnings — [{"strategy_key", "text"}]，待發的系統性下殺警告（一次性）
+
+    規則（與回測一致）：
+      超跌/AD：當日累積觸發 >3 → 系統性下殺，停發+一次性警告；否則限發最早觸發 1 檔
+      擠壓    ：不限檔數，每檔每日只發一次
+    """
+    entries_by_id = {(e["strategy_key"], e["stock_id"]): e for e in triggered_all}
+
+    # 累積本次觸發（保留首次觸發的時間順序）— 一律記錄
+    for e in triggered_all:
+        sk, sid = e["strategy_key"], e["stock_id"]
+        if sid not in state["triggered"][sk]:
+            state["triggered"][sk].append(sid)
+
+    to_send, warnings = [], []
+    for sk in ("squeeze", "oversold", "ad"):
+        cum = state["triggered"][sk]              # 當日累積（時間序）
+        for sid in allowed_set(sk, cum):          # 斷路後允許清單
+            if sid in state["notified"][sk]:
+                continue                          # 已發過，防重複
+            e = entries_by_id.get((sk, sid))
+            if e is None:
+                continue                          # 該檔此刻未在快照觸發（稍早觸發過）
+            to_send.append(e)
+        # 系統性下殺一次性警告（超跌/AD）
+        if is_systemic(sk, len(cum)) and not state["systemic_warned"].get(sk, False):
+            label = {"oversold": "超跌反彈", "ad": "AD背離"}.get(sk, sk)
+            warnings.append({
+                "strategy_key": sk,
+                "text": (f"⚠️ {label}：當日已 {len(cum)} 檔觸發（>3），"
+                         f"研判系統性下殺，回測規則為全跳過，建議今日勿進場。"),
+            })
+    return to_send, warnings
 
 
 def _load_token() -> str:
@@ -357,6 +437,7 @@ def main():
                 continue
             entry = {
                 "stock_id": sid, "name": name,
+                "strategy_key": strategy_key,
                 "strategy_label": label,
                 "close": snap["close"], "open": snap["open"],
                 "volume_张": snap["volume_张"],
@@ -373,20 +454,38 @@ def main():
     print(f"  盤中監測  {today} {time_str}  掃描 {len(all_ids)} 檔")
     print(f"{'='*60}")
 
-    if triggered_all:
-        print(f"\n  🔔 已觸發（{len(triggered_all)} 檔）")
-        for e in triggered_all:
+    # ── 系統性風險斷路（與回測一致）+ 防重複通知 ──
+    # triggered/notified 跨 10 分鐘累積（換日重置）：
+    #   超跌/AD：當日累積觸發 >3 檔 → 系統性下殺，停發並一次性警告；否則限發 1 檔（最早觸發那檔）
+    #   擠壓：不限檔數，但每檔每日只發一次
+    state = _load_state(today)
+    to_send, warnings = _apply_breaker_state(state, triggered_all)
+
+    for warn in warnings:
+        print(f"\n  {warn['text']}")
+        if send(warn["text"], intraday=True):
+            state["systemic_warned"][warn["strategy_key"]] = True
+
+    if to_send:
+        print(f"\n  🔔 新觸發（{len(to_send)} 檔，已過斷路）")
+        for e in to_send:
             print(f"\n  ★ {e['stock_id']} {e['name']}【{e['strategy_label']}】"
                   f"現價 {e['close']:.1f}  量 {e['volume_张']:,}張")
             for line in e["lines"]:
                 print(line)
             detail = "\n".join(l.strip() for l in e["lines"])
-            send(
+            if send(
                 f"🔔 {e['stock_id']} {e['name']}【{e['strategy_label']}】\n"
-                f"現價 {e['close']:.1f}  量 {e['volume_张']:,}張\n{detail}"
-            )
+                f"現價 {e['close']:.1f}  量 {e['volume_张']:,}張\n{detail}",
+                intraday=True,
+            ):
+                state["notified"][e["strategy_key"]].append(e["stock_id"])
+    elif triggered_all:
+        print(f"\n  觸發 {len(triggered_all)} 檔，但皆已通知或被斷路過濾（不重發）")
     else:
         print(f"\n  目前無股票觸發")
+
+    _save_state(state)
 
     if near_all:
         print(f"\n  觀察中（{len(near_all)} 檔）")
