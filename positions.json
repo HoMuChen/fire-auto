@@ -6,7 +6,8 @@
     "entry_date": "2026-06-17",
     "entry_price": 20.25,
     "peak_price": 21.35,
-    "stop_pct": 0.08
+    "stop_pct": 0.08,
+    "shares": 1000
   },
   {
     "stock_id": "6227",
@@ -15,7 +16,8 @@
     "entry_date": "2026-06-24",
     "entry_price": 118.0,
     "peak_price": 121.5,
-    "stop_pct": 0.08
+    "stop_pct": 0.08,
+    "shares": 100
   },
   {
     "stock_id": "3305",
@@ -23,7 +25,18 @@
     "strategy": "ad",
     "entry_date": "2026-06-25",
     "entry_price": 136.5,
-    "peak_price": 138.0,
-    "stop_pct": 0.08
+    "peak_price": 139.0,
+    "stop_pct": 0.08,
+    "shares": 200
+  },
+  {
+    "stock_id": "4564",
+    "name": "元翎",
+    "strategy": "sq",
+    "entry_date": "2026-07-02",
+    "entry_price": 17.0,
+    "peak_price": 17.0,
+    "stop_pct": 0.04,
+    "shares": 1000
   }
 ]

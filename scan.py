@@ -539,7 +539,7 @@ def _save_positions(positions):
     POSITIONS_PATH.write_text(json.dumps(positions, ensure_ascii=False, indent=2))
 
 
-def add_position(stock_id, strategy_key, entry_price, entry_date=None):
+def add_position(stock_id, strategy_key, entry_price, entry_date=None, shares=None):
     """新增持倉"""
     if strategy_key not in STRATEGY_MAP:
         print(f"  錯誤：策略 '{strategy_key}' 不存在，可用：{', '.join(STRATEGY_MAP.keys())}")
@@ -563,11 +563,14 @@ def add_position(stock_id, strategy_key, entry_price, entry_date=None):
         "peak_price": entry_price,
         "stop_pct": STRATEGY_MAP[strategy_key]["stop_pct"],
     }
+    if shares is not None:
+        pos["shares"] = int(shares)
     positions.append(pos)
     _save_positions(positions)
     stop_price = entry_price * (1 - pos["stop_pct"])
     print(f"  新增持倉：{stock_id} {pos['name']}（{STRATEGY_MAP[strategy_key]['name']}）")
-    print(f"  進場 {entry_price} @ {entry_date}，停損 {stop_price:.1f}（-{pos['stop_pct']:.0%}）")
+    shares_str = f"，{pos['shares']} 股" if shares is not None else ""
+    print(f"  進場 {entry_price} @ {entry_date}{shares_str}，停損 {stop_price:.1f}（-{pos['stop_pct']:.0%}）")
 
 
 def _append_trade(pos: dict, exit_price: float | None, exit_date: str):
@@ -587,7 +590,7 @@ def _append_trade(pos: dict, exit_price: float | None, exit_date: str):
 
     header = ["exit_date", "stock_id", "name", "strategy",
               "entry_date", "entry_price", "peak_price",
-              "exit_price", "pnl_pct", "hold_days"]
+              "exit_price", "pnl_pct", "hold_days", "shares"]
     row = {
         "exit_date":   exit_date,
         "stock_id":    pos["stock_id"],
@@ -599,6 +602,7 @@ def _append_trade(pos: dict, exit_price: float | None, exit_date: str):
         "exit_price":  exit_price if exit_price is not None else "",
         "pnl_pct":     f"{pnl_pct:.2f}" if pnl_pct is not None else "",
         "hold_days":   hold_days,
+        "shares":      pos.get("shares", ""),
     }
     write_header = not TRADES_PATH.exists()
     with open(TRADES_PATH, "a", newline="", encoding="utf-8") as f:
@@ -1108,13 +1112,14 @@ def _get_data_date(stock_ids):
 
 def cmd_add(args):
     if len(args) < 3:
-        print("  用法：python3 scan.py add <代號> <策略> <進場價> [日期]")
+        print("  用法：python3 scan.py add <代號> <策略> <進場價> [日期] [股數]")
         strats = ', '.join(f'{k}={v["name"]}' for k, v in STRATEGY_MAP.items())
         print(f"  策略：{strats}")
         return
     stock_id, strategy, price = args[0], args[1], args[2]
     date = args[3] if len(args) > 3 else None
-    add_position(stock_id, strategy, price, date)
+    shares = args[4] if len(args) > 4 else None
+    add_position(stock_id, strategy, price, date, shares)
 
 
 def cmd_close(args):
