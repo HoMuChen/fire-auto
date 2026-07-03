@@ -1,5 +1,5 @@
 """
-本地籌碼快取模組 — Supabase institutional_investors / margin_trading 的本地 CSV 快取
+本地籌碼快取模組 — 透過 FinMind API 更新三大法人 / 融資融券的本地 CSV 快取
 
 用法:
     from chip_cache import ChipCache
@@ -43,20 +43,48 @@ MARGIN_FIELDS = [
     "short_sale_yesterday_balance", "short_sale_today_balance",
 ]
 
-SUPABASE_URL = "https://jnikspnudxhecsqthlbo.supabase.co"
-PAGE_SIZE = 1000
+FINMIND_API_URL = "https://api.finmindtrade.com/api/v4/data"
+
+# FinMind dataset 名稱與欄位對應（FinMind 欄位 → 本地 CSV 欄位）
+DATASETS = {
+    "inst": {
+        "dataset": "TaiwanStockInstitutionalInvestorsBuySell",
+        "field_map": {
+            "date": "date",
+            "name": "investor_name",
+            "buy": "buy",
+            "sell": "sell",
+        },
+    },
+    "margin": {
+        "dataset": "TaiwanStockMarginPurchaseShortSale",
+        "field_map": {
+            "date": "date",
+            "MarginPurchaseBuy": "margin_purchase_buy",
+            "MarginPurchaseSell": "margin_purchase_sell",
+            "MarginPurchaseCashRepayment": "margin_purchase_cash_repayment",
+            "MarginPurchaseYesterdayBalance": "margin_purchase_yesterday_balance",
+            "MarginPurchaseTodayBalance": "margin_purchase_today_balance",
+            "ShortSaleBuy": "short_sale_buy",
+            "ShortSaleSell": "short_sale_sell",
+            "ShortSaleCashRepayment": "short_sale_cash_repayment",
+            "ShortSaleYesterdayBalance": "short_sale_yesterday_balance",
+            "ShortSaleTodayBalance": "short_sale_today_balance",
+        },
+    },
+}
 
 
 def _load_env():
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    key = os.environ.get("FINMIND_API_TOKEN")
     if key:
         return key
     if ENV_PATH.exists():
         for line in ENV_PATH.read_text().splitlines():
             line = line.strip()
-            if line.startswith("SUPABASE_SERVICE_ROLE_KEY="):
+            if line.startswith("FINMIND_API_TOKEN="):
                 return line.split("=", 1)[1]
-    raise RuntimeError("找不到 SUPABASE_SERVICE_ROLE_KEY，請確認 .env.local")
+    raise RuntimeError("找不到 FINMIND_API_TOKEN，請確認 .env.local")
 
 
 def _load_meta() -> dict:
@@ -69,36 +97,36 @@ def _save_meta(meta: dict):
     META_PATH.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
 
 
-def _fetch_rows(table: str, stock_id: str, api_key: str,
-                select: str, after_date: str = None) -> list[dict]:
-    all_rows = []
-    offset = 0
-    while True:
-        params = {
-            "select": select,
-            "stock_id": f"eq.{stock_id}",
-            "order": "date.asc",
-            "offset": str(offset),
-            "limit": str(PAGE_SIZE),
-        }
-        if after_date:
-            params["date"] = f"gt.{after_date}"
+def _fetch_rows(data_type: str, stock_id: str, token: str,
+                after_date: str = None) -> list[dict]:
+    """從 FinMind 抓某檔股票的籌碼資料，回傳已轉成本地欄位的 rows（date 升冪）。
 
-        query = urllib.parse.urlencode(params)
-        url = f"{SUPABASE_URL}/rest/v1/{table}?{query}"
-        req = urllib.request.Request(url, headers={
-            "apikey": api_key,
-            "Authorization": f"Bearer {api_key}",
-        })
-        with urllib.request.urlopen(req) as resp:
-            batch = json.loads(resp.read())
+    after_date: 只回傳此日期「之後」的資料（exclusive）。
+    """
+    spec = DATASETS[data_type]
+    params = {
+        "dataset": spec["dataset"],
+        "data_id": stock_id,
+        "start_date": after_date or "2020-01-01",
+        "token": token,
+    }
+    query = urllib.parse.urlencode(params)
+    url = f"{FINMIND_API_URL}?{query}"
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        body = json.loads(resp.read())
 
-        all_rows.extend(batch)
-        if len(batch) < PAGE_SIZE:
-            break
-        offset += PAGE_SIZE
+    if body.get("status") != 200:
+        msg = body.get("msg", str(body))
+        raise RuntimeError(f"FinMind API 錯誤: {msg}")
 
-    return all_rows
+    field_map = spec["field_map"]
+    rows = [{local: r.get(fm, "") for fm, local in field_map.items()}
+            for r in body.get("data", [])]
+    if after_date:
+        rows = [r for r in rows if r["date"] > after_date]
+    rows.sort(key=lambda r: r["date"])
+    return rows
 
 
 def _read_csv(path: Path) -> list[dict]:
@@ -176,9 +204,7 @@ class ChipCache:
         if existing:
             after_date = existing[-1]["date"]
 
-        select = ",".join(INST_FIELDS)
-        new_rows = _fetch_rows("institutional_investors", stock_id,
-                               self._api_key, select, after_date)
+        new_rows = _fetch_rows("inst", stock_id, self._api_key, after_date)
 
         if new_rows:
             cleaned = [{k: r[k] for k in INST_FIELDS} for r in new_rows]
@@ -202,9 +228,7 @@ class ChipCache:
         if existing:
             after_date = existing[-1]["date"]
 
-        select = ",".join(MARGIN_FIELDS)
-        new_rows = _fetch_rows("margin_trading", stock_id,
-                               self._api_key, select, after_date)
+        new_rows = _fetch_rows("margin", stock_id, self._api_key, after_date)
 
         if new_rows:
             cleaned = [{k: r[k] for k in MARGIN_FIELDS} for r in new_rows]
