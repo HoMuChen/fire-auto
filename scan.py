@@ -952,6 +952,95 @@ def _conc_key(r):
     return -(r.get("conc_pct") if r.get("conc_pct") is not None else -1)
 
 
+def check_tsmc_signal():
+    """台積電「外資棄守退場」策略狀態（strategies/tsmc_foreign_exit.md）
+
+    退場 = 收盤 < MA200 且 外資近15日量正規化累計買賣超 < 0（兩條件同時成立）
+    回場 = 任一條件解除
+    回傳 dict（含今日/昨日狀態與轉折），資料不足回傳 None。
+    """
+    import csv as _csv
+
+    # 增量更新 2330 法人資料（過期才打 API，離線時用既有快取）
+    try:
+        from chip_cache import ChipCache
+        ChipCache().get_institutional("2330")
+    except Exception:
+        pass
+
+    try:
+        prices = read_prices("2330")
+        inst_path = BASE_DIR / "data" / "institutional" / "2330.csv"
+        with open(inst_path, newline="", encoding="utf-8") as f:
+            inst_rows = list(_csv.DictReader(f))
+    except Exception:
+        return None
+
+    # 外資每日淨買賣超（股）
+    fi_net = {}
+    for r in inst_rows:
+        if r["investor_name"] == "Foreign_Investor":
+            fi_net[r["date"]] = float(r["buy"]) - float(r["sell"])
+
+    closes = [p["close"] for p in prices]
+    if len(closes) < 202:
+        return None
+
+    def state_at(idx):
+        """idx = prices 的索引，回傳 (in_market, cond_ma_broken, cond_fi_neg, ma200, fi15)"""
+        ma200 = sum(closes[idx - 199:idx + 1]) / 200
+        fi15 = 0.0
+        for p in prices[idx - 14:idx + 1]:
+            net = fi_net.get(p["date"])
+            if net is not None and p["volume"] > 0:
+                fi15 += net / p["volume"]
+        ma_broken = closes[idx] < ma200
+        fi_neg = fi15 < 0
+        return (not (ma_broken and fi_neg), ma_broken, fi_neg, ma200, fi15)
+
+    last = len(prices) - 1
+    in_now, ma_broken, fi_neg, ma200, fi15 = state_at(last)
+    in_prev, *_ = state_at(last - 1)
+
+    transition = None
+    if in_prev and not in_now:
+        transition = "exit"     # 出場訊號：次日開盤賣出
+    elif not in_prev and in_now:
+        transition = "entry"    # 回場訊號：次日開盤買回
+
+    return {
+        "date": prices[last]["date"],
+        "close": closes[last],
+        "ma200": round(ma200, 1),
+        "ma_broken": ma_broken,
+        "fi15": round(fi15, 4),
+        "fi_neg": fi_neg,
+        "in_market": in_now,
+        "transition": transition,
+    }
+
+
+def print_tsmc_signal(t):
+    print("=" * 80)
+    print("  台積電 外資棄守退場（破MA200 + 外資15日賣超 → 退場；任一解除 → 回場）")
+    print("=" * 80)
+    if t is None:
+        print("  資料不足，無法計算\n")
+        return
+    ma_s = f"收盤 {t['close']:.0f} {'<' if t['ma_broken'] else '≥'} MA200 {t['ma200']:.0f}"
+    fi_s = f"外資15日 {'賣超' if t['fi_neg'] else '買超'}（{t['fi15']:+.4f}）"
+    cond = f"{'✗' if t['ma_broken'] else '✓'} {ma_s}｜{'✗' if t['fi_neg'] else '✓'} {fi_s}"
+    if t["transition"] == "exit":
+        print(f"  🚨 出場訊號！兩條件同時成立 → 次日開盤賣出")
+    elif t["transition"] == "entry":
+        print(f"  ✅ 回場訊號！條件解除 → 次日開盤買回")
+    elif t["in_market"]:
+        print(f"  📈 在場（續抱）")
+    else:
+        print(f"  📉 退場中（續空手）")
+    print(f"  {cond}\n")
+
+
 def print_summary(sq, os, ad, data_date):
     next_date = _next_trading_date(data_date)
     print("=" * 80)
@@ -1000,7 +1089,7 @@ def print_summary(sq, os, ad, data_date):
 WATCHLIST_PATH = BASE_DIR / "data" / "watchlist_conditions.json"
 
 
-def _send_morning_summary(sq, os_results, ad, data_date, pos_results):
+def _send_morning_summary(sq, os_results, ad, data_date, pos_results, tsmc=None):
     """發早晨摘要到 Telegram"""
     try:
         from notify import send
@@ -1008,6 +1097,18 @@ def _send_morning_summary(sq, os_results, ad, data_date, pos_results):
         return
 
     lines = [f"☀️ 早安！{data_date} 掃描摘要"]
+
+    # 台積電 外資棄守退場 狀態
+    if tsmc:
+        ma_s = f"{'✗破' if tsmc['ma_broken'] else '✓站上'}MA200({tsmc['ma200']:.0f})"
+        fi_s = f"外資15日{'✗賣超' if tsmc['fi_neg'] else '✓買超'}"
+        if tsmc["transition"] == "exit":
+            lines.append(f"\n🚨 台積電出場訊號！{ma_s}｜{fi_s} → 開盤賣出")
+        elif tsmc["transition"] == "entry":
+            lines.append(f"\n✅ 台積電回場訊號！{ma_s}｜{fi_s} → 開盤買回")
+        else:
+            status = "在場續抱" if tsmc["in_market"] else "退場空手中"
+            lines.append(f"\n💠 台積電：{status}（{ma_s}｜{fi_s}）")
 
     # 持倉狀態
     if pos_results:
@@ -1170,12 +1271,15 @@ def cmd_scan(no_update=False, json_output=False):
     # 5.6) 買方分點集中度標記（排序/優先級用，不砍信號）
     annotate_concentration(sq, os_results, ad, data_date)
 
+    # 5.7) 台積電 外資棄守退場 狀態（strategies/tsmc_foreign_exit.md）
+    tsmc = check_tsmc_signal()
+
     # 6) 存結構化 watchlist（供 monitor.py 使用）
     _save_watchlist_conditions(sq, os_results, ad, data_date)
 
     # 7) 早晨摘要發 Telegram（只在 --no-update 時，即早上 8 點掃描）
     if no_update and not json_output:
-        _send_morning_summary(sq, os_results, ad, data_date, pos_results)
+        _send_morning_summary(sq, os_results, ad, data_date, pos_results, tsmc)
 
     # 8) 輸出
     if json_output:
@@ -1183,6 +1287,7 @@ def cmd_scan(no_update=False, json_output=False):
             "scan_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "data_date": data_date,
             "next_trading_date": next_date,
+            "tsmc_foreign_exit": tsmc,
             "positions": pos_results,
             "squeeze": sq,
             "oversold": os_results,
@@ -1199,6 +1304,8 @@ def cmd_scan(no_update=False, json_output=False):
         print(json.dumps(output, ensure_ascii=False, indent=2))
     else:
         print(f"\n  資料日期：{data_date}｜觀察條件適用於：{next_date}\n")
+        # 台積電策略狀態
+        print_tsmc_signal(tsmc)
         # 持倉先輸出（出場比進場重要）
         print_positions(pos_results, data_date)
         # 再輸出進場掃描
