@@ -218,6 +218,7 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 | 08:00 平日 | `scan.py --no-update` — 掃描前日信號（含斷路器）、存 `watchlist_conditions.json`、發 Telegram 早晨摘要 | `data/morning_watchlist.txt` |
 | 09:00–13:30 每10分 | `monitor.py` — 盤中掃濾網名單即時信號，套斷路器+防重複，觸發時發 Telegram | `data/monitor.log` |
 | 18:00 平日 | `stock_cache.py today` — 更新全市場股價（盤後收盤資料） | `data/stock_update.log` |
+| 19:00 平日 | `ChipCache().update_all(sleep=1.2)` — 增量更新三大法人/融資融券（1,439 檔，融資券公布較晚為 T-1） | `data/chip_update.log` |
 | 22:00 平日 | 1) 停掉 backfill → 2) `broker_cache.py today` 更新當日券商分點 → 3) 重啟 backfill | `data/broker_daily.log`, `data/broker_backfill.log` |
 
 **券商分點 Backfill**：**已於 2026-06-22 全部補完**（1,439 檔 × 2021-06-30~，存 `data/broker/{id}.parquet`，每檔每日每分點 `buy/sell`，單位=股）。

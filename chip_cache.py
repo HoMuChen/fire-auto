@@ -246,8 +246,12 @@ class ChipCache:
 
     # ─── 批次更新 ───
 
-    def update_all(self, progress: bool = True):
-        """批次更新所有有流動性個股的籌碼資料"""
+    def update_all(self, progress: bool = True, sleep: float = 1.2):
+        """批次更新所有有流動性個股的籌碼資料
+
+        sleep: 每檔（2 個 API call）間隔秒數。預設 1.2s ≈ 3,600 call/hr，
+        留餘裕給 4,000 req/hr 的 rate limit。
+        """
         total = len(self._stocks)
         updated = 0
         skipped = 0
@@ -275,7 +279,7 @@ class ChipCache:
             if progress and (i + 1) % 50 == 0:
                 print(f"  [{i+1}/{total}] 已更新 {updated}, 跳過 {skipped}, 錯誤 {len(errors)}")
 
-            time.sleep(0.05)
+            time.sleep(sleep)
 
         if progress:
             print(f"\n完成！更新 {updated}, 跳過 {skipped}, 錯誤 {len(errors)}")
