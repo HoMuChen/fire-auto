@@ -5,19 +5,9 @@
     "strategy": "os",
     "entry_date": "2026-06-17",
     "entry_price": 20.25,
-    "peak_price": 24.45,
+    "peak_price": 26.2,
     "stop_pct": 0.08,
     "shares": 1000
-  },
-  {
-    "stock_id": "6227",
-    "name": "茂綸",
-    "strategy": "ad",
-    "entry_date": "2026-06-24",
-    "entry_price": 118.0,
-    "peak_price": 124.5,
-    "stop_pct": 0.08,
-    "shares": 100
   },
   {
     "stock_id": "4564",
@@ -25,7 +15,7 @@
     "strategy": "sq",
     "entry_date": "2026-07-02",
     "entry_price": 17.0,
-    "peak_price": 19.3,
+    "peak_price": 21.0,
     "stop_pct": 0.04,
     "shares": 1000
   }
