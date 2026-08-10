@@ -1,6 +1,7 @@
 # 台積電網格研究 — 實驗歷程存檔
 
 定案版在 `research/tsmc_grid_income.py`、文件 `strategies/tsmc_grid_income.md`。
+小型台積電期貨口數版在 `research/tsmc_futures_grid_income.py`，用 2330 現股收盤當期貨代理價，先不處理基差與轉倉。
 以下為研究過程的里程碑腳本（存檔用，部分路徑/依賴為當時 scratchpad 環境）：
 
 - `grid_screen.py` — 篩選高波動震盪股（網格主場標的）

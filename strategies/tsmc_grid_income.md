@@ -56,6 +56,90 @@
 
 **逐月明細**:`python3 research/tsmc_grid_income.py monthly`
 
+## 小型台積電期貨口數版（研究中）
+
+腳本：`research/tsmc_futures_grid_income.py`
+
+這是把同一套「近 10 日高再掛單 / +1% 平倉」邏輯搬到小型台積電期貨的研究版。目的不是取代現貨定案版，而是測試「一口一口下」時的資金需求、補保證金壓力與現金流分布。
+
+**資料與限制**
+- 價格先用 `2330` 現股收盤當期貨代理價。
+- 暫不處理期貨基差、夜盤、跳空盤中追繳、每月到期轉倉轉約。
+- 只看每日收盤價；為避免同一個收盤價同時賣出又買回，期貨版採「同日有賣出就不買」。
+
+**期貨契約假設**
+- 小型台積電期貨：1 口 = 100 股，1 點 = NT$100。
+- 每次買進信號下單 `--contracts-per-trade` 口，預設 1 口。
+- 每個 lot 達買價 × 1.01 時整批平倉。
+- 期交稅預設 `0.00002`/邊；手續費預設 `--fee 20` 元/口/邊。
+- 可用 `--roll-cost-pct` 模擬比例式每月轉倉成本；每月最後一個交易日按「月底價格 × 比例 × 未平倉口數 × 100」扣除，預設 0。`--roll-cost-points` 仍保留作固定點數壓力測試，兩者只能擇一。
+
+**買進規則**
+1. 今日收盤 ≤ 近 10 個交易日最高收盤 × 0.99。
+2. 現有 lot 中沒有任何買價在今日收盤 ±1% 內。
+3. 新增 `--contracts-per-trade` 口後，名目曝險 / 權益 ≤ `--leverage`。
+4. 當天沒有任何 lot 先觸發賣出。
+
+**賣出規則**
+- 每個 lot 獨立判斷：今日收盤 ≥ lot 買價 × 1.01 → 整批平倉。
+- 同日可賣多個 lot；但只要當天有賣出，當天不再新增買進 lot。
+
+**槓桿與保證金模型**
+- `--leverage` 是「新增部位時」的名目曝險上限，不是持有期間的硬性強平線。
+- 持有後若價格下跌、權益縮水，實際槓桿可能高於 `--leverage`。
+- 預設原始保證金 `--initial-margin 0.135`，維持保證金 `--maintenance-margin 0.1035`。
+- 若帳戶權益 < 維持保證金需求，不強制平倉；模擬從外部補錢，把權益補到原始保證金需求。
+- 報表中的 `補錢` 是累計追加保證金；`實報酬` 用「初始本金 + 累計補錢」當分母。
+
+**現金流處理**
+- 平倉損益會直接留在帳戶內再投入，不做出金。
+- 月表 `現金流` 是該月已實現淨損益金額；`月底權益` 包含初始本金、已實現損益、未實現損益、補進去的保證金與交易成本。
+
+**常用參數**
+```bash
+# 摘要：比較不同新增部位槓桿上限
+python3 research/tsmc_futures_grid_income.py \
+  --capital 500000 \
+  --leverage-list 1.0,3.0,5.0,7.0 \
+  --start 2025-03
+
+# 逐月：從 2025-03 開始，50 萬本金，每次 1 口，新增上限 7x
+python3 research/tsmc_futures_grid_income.py monthly \
+  --capital 500000 \
+  --leverage 7.0 \
+  --start 2025-03 \
+  --contracts-per-trade 1
+
+# 輸出交易明細 CSV
+python3 research/tsmc_futures_grid_income.py monthly \
+  --capital 500000 \
+  --leverage 7.0 \
+  --start 2025-03 \
+  --contracts-per-trade 1 \
+  --roll-cost-pct 0.003 \
+  --trades-out /tmp/tsmc_qf_trades.csv
+```
+
+**主要參數表**
+| 參數 | 預設 | 說明 |
+|------|------|------|
+| `--capital` | 1,000,000 | 初始帳戶本金 |
+| `--start` | 全資料 | 起始月份或日期，格式 `YYYY-MM` / `YYYY-MM-DD` |
+| `--leverage` | 1.0 | monthly 模式的新增部位槓桿上限 |
+| `--leverage-list` | 1.0,1.25,1.5,2.0 | summary 模式比較的槓桿上限 |
+| `--contracts-per-trade` | 1 | 每次買進信號下單口數 |
+| `--roll-cost-pct` | 0 | 每月轉倉成本比例，按月底價格與未平倉口數扣除；建議測 0.002 / 0.003 / 0.005 |
+| `--roll-cost-points` | 0 | 每月固定點數轉倉成本，按月底未平倉口數扣除；與 `--roll-cost-pct` 擇一 |
+| `--initial-margin` | 0.135 | 原始保證金率；補錢補到此水位 |
+| `--maintenance-margin` | 0.1035 | 維持保證金率；低於此水位觸發補錢 |
+| `--fee` | 20 | 每口每邊期貨手續費 |
+| `--trades-out` | 無 | 輸出交易明細 CSV |
+
+**交易明細欄位**
+`date, action, price, contracts, buy_price, gross_pnl, cost, net_pnl, cash_after, equity_after, open_contracts_after, note`
+
+其中 `action` 包含 `buy`、`sell`、`skip_buy`、`margin_deposit`。
+
 ## 運作樣貌(從逐月明細)
 
 1. **持倉會呼吸**:平常抱 0~6 批(大半資金在等),**2022 崩盤時一路往下鋪、9 月鋪滿 20 批(100 萬全下)**——這是 −27% 帳面回撤來源(滿倉套底、抱著等)。2023 邊漲邊出,持倉 20→8,同時月月收租。

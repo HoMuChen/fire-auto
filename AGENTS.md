@@ -8,6 +8,8 @@
 
 ## 本地資料
 
+> **版控政策**：所有本地資料快取（`data/stock_prices/`、`institutional/`、`margin/`、`broker/`、各 `*_cache_meta.json`、`broker_concentration.parquet`）以及排程 log / watchlist 輸出**皆不進版控**（見 `.gitignore`）——全部可由 FinMind 重抓。進版控的只有程式碼、策略文件，及個人交易紀錄（`positions.json`、`data/trades.csv`、`data/futures_trades.csv`）與參考清單（`individual_stocks.json`、`data/low_liquidity_stocks.json`）。
+
 ### `individual_stocks.json` — 個股清單（2,518 檔）
 
 排除 ETF、ETN、受益證券、存託憑證等非個股類別。
@@ -110,7 +112,7 @@ python3 scan.py close 4167 20.5                 # 關閉持倉，記錄賣出價
 
 ### 系統性風險斷路器 `circuit_breaker.py`
 
-scan.py（日掃）與 monitor.py（盤中）的觸發信號都會套用斷路器，**與回測投組模擬（`/tmp/combo_2022.py` 的 CFG）一致**，避免實盤接到回測前提外的信號：
+scan.py（日掃）與 monitor.py（盤中）的觸發信號都會套用斷路器，**與回測投組模擬 CFG 一致**（該 CFG 已固化於本模組 `circuit_breaker.py`），避免實盤接到回測前提外的信號：
 
 | 策略 | 每日上限 | 系統性下殺門檻 |
 |------|---------|--------------|
@@ -430,7 +432,7 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 
 **個股篩選規則**：用 Period A（2020-2022）的每策略每檔股票平均交易報酬 > 0 篩選。
 每個策略邏輯不同，適合的股票不同（三策略交集僅 33 檔，只適合單一策略的有 60 檔）。
-篩選腳本：`/tmp/stock_filter_per_strategy.py`
+篩選結果已固化於 `strategies/filtered_stock_lists.json`（原篩選腳本 `stock_filter_per_strategy.py` 在 /tmp，已隨環境清除；如需重跑須依此規則重建）。
 
 對照無篩選基準（209 檔同名單）：+30.8%, DD 12.3%, Sharpe 2.11, 150/yr [4/4]
 
@@ -463,7 +465,7 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 **絕對不可以用「共享池」**（所有策略信號丟進同一個池搶位置）：
 - 長持有策略（超跌 30 天、AD 46 天）會堵住位置，短持有策略（擠壓 13.5 天）進不了場
 - 共享池會嚴重低估績效（同樣三策略，分池 +30.8% vs 共享池 +18.7%）
-- 分池的正確實作參考：`/tmp/random_50_test.py` 的 `triple_combo()`
+- 分池的正確實作邏輯在 `backtest.py` 的 `simulate()`（原參考腳本 `random_50_test.py` 的 `triple_combo()` 在 /tmp，已隨環境清除）
 
 ### 籌碼策略研究結論（2026-03-01）
 
