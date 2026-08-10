@@ -465,7 +465,8 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 **絕對不可以用「共享池」**（所有策略信號丟進同一個池搶位置）：
 - 長持有策略（超跌 30 天、AD 46 天）會堵住位置，短持有策略（擠壓 13.5 天）進不了場
 - 共享池會嚴重低估績效（同樣三策略，分池 +30.8% vs 共享池 +18.7%）
-- 分池的正確實作邏輯在 `backtest.py` 的 `simulate()`（原參考腳本 `random_50_test.py` 的 `triple_combo()` 在 /tmp，已隨環境清除）
+- 分池的正確實作已重建為 **`research/portfolio_sim.py`**（原參考腳本 `random_50_test.py` 的 `triple_combo()` 在 /tmp、已隨環境清除；本檔復用 backtest.py 策略函數重建，`--exec close` 對齊引擎、`--exec next_open` 為 next-bar 保守版）
+  - 驗證：Period A（2020-2022）重現基準 DD 9.1% / CAGR +36.1% / Sharpe 2.66；完整期 2020-2026 CAGR +33.0%、兩期都強正
 
 ### 籌碼策略研究結論（2026-03-01）
 
