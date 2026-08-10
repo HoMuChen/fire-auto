@@ -1,13 +1,19 @@
 .env.local
 __pycache__/
 *.pyc
-data/monitor_state.json
 
-# 本地資料快取（檔案過大，不 commit）
-data/broker/
-data/broker_concentration.parquet
-data/broker_backfill.log
-data/broker_cache_meta.json
-data/chip_cache_meta.json
+# ── 本地資料快取（皆為 FinMind 可重抓，不進版控）──
+data/stock_prices/
 data/institutional/
 data/margin/
+data/broker/
+data/broker_concentration.parquet
+data/cache_meta.json
+data/broker_cache_meta.json
+data/chip_cache_meta.json
+data/monitor_state.json
+
+# ── 每日排程產生的輸出 / log ──
+data/*.log
+data/morning_watchlist.txt
+data/watchlist_conditions.json
