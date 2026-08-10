@@ -402,6 +402,29 @@ def run(start, end, exec_mode):
     return metrics
 
 
+def combined_daily_equity(start=None, end=None, exec_mode="close"):
+    """回傳三池合併的每日淨值 (dates, values)，供相關性/混合分析用。"""
+    lists = load_filtered_lists()
+    pools_data = {pk: prep_pool(pk, lists[pk], start, end) for pk in POOLS}
+    dates = all_dates(pools_data)
+    if not dates:
+        return [], []
+    pool_eq = {}
+    for pk in POOLS:
+        eq, _ = simulate_pool(pk, lists[pk], pools_data[pk], dates, exec_mode)
+        pool_eq[pk] = eq
+    values = []
+    last = {pk: INITIAL_CAPITAL / 3 for pk in POOLS}
+    for d in dates:
+        tot = 0.0
+        for pk in POOLS:
+            if d in pool_eq[pk]:
+                last[pk] = pool_eq[pk][d]
+            tot += last[pk]
+        values.append(tot)
+    return dates, values
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", default=None, help="回測起日 YYYY-MM-DD")
