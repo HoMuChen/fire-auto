@@ -8,6 +8,7 @@ data/institutional/
 data/margin/
 data/broker/
 data/revenue/
+data/futures/
 data/broker_concentration.parquet
 data/cache_meta.json
 data/broker_cache_meta.json
