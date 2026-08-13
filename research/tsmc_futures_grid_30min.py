@@ -60,6 +60,7 @@ def run(p):
     capital_base = p.capital      # 投入本金（補錢模式下會隨追繳增加）
     total_deposit = 0.0           # 累計補錢
     deposit_events = 0
+    worst_margin = (9.99, "")     # 最緊的 (equity/exposure, 日期)；越接近維持保證金越危險
     realized = 0.0
     lots = []                     # {price(adj), contracts}
     curve = []
@@ -131,6 +132,12 @@ def run(p):
 
         equity = capital_base + realized + unreal(lots, c)
 
+        # 追蹤最緊的保證金餘裕（equity/exposure，越低越接近被追繳的維持保證金）
+        if lots:
+            exp0 = notional(lots, c)
+            if exp0 > 0 and equity / exp0 < worst_margin[0]:
+                worst_margin = (equity / exp0, dt[i])
+
         # 補錢模式：權益跌破維持保證金 → 補到原始保證金水位（不強制平倉）
         if p.topup and lots:
             exp = notional(lots, c)
@@ -151,7 +158,8 @@ def run(p):
     return dict(dt=dt, curve=curve, realized=realized, mcf=mcf, mbuy=mbuy,
                 msell=msell, max_lev=max_lev, max_lots=max_lots, end_lots=end_lots,
                 lots_open=len(lots), total_deposit=total_deposit,
-                deposit_events=deposit_events, peak_committed=p.capital + total_deposit)
+                deposit_events=deposit_events, peak_committed=p.capital + total_deposit,
+                worst_margin=worst_margin)
 
 
 def adj_notional(price, contracts):
