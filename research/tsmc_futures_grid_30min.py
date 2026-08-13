@@ -67,6 +67,18 @@ def run(p):
     max_lots = 0
     end_lots = {}
 
+    # 趨勢濾網用的移動平均（bars）
+    RM = p.regime_ma
+    ma_series = [None] * n
+    if RM:
+        run_sum = 0.0
+        for i in range(n):
+            run_sum += adj[i]
+            if i >= RM:
+                run_sum -= adj[i - RM]
+            if i >= RM - 1:
+                ma_series[i] = run_sum / RM
+
     for i in range(n):
         c = adj[i]
         ym = dt[i][:7]
@@ -93,12 +105,13 @@ def run(p):
                 rem.append(lot)
         lots[:] = rem
 
-        # 買：跌破近H高×(1-STEP)、±STEP 內無持倉、批數/槓桿夠
+        # 買：跌破近H高×(1-STEP)、±STEP 內無持倉、批數/槓桿夠、（可選）趨勢濾網
         ref = max(adj[max(0, i - H):i + 1])
         equity = equity0 + realized + unreal(lots, c)
         notional_after = notional(lots, c) + adj_notional(c, p.contracts_per_lot)
         lev_ok = notional_after <= equity * p.max_leverage
-        if (c <= ref * (1 - p.step) and len(lots) < p.max_lots and lev_ok
+        regime_ok = (not RM) or (ma_series[i] is not None and c > ma_series[i])
+        if (c <= ref * (1 - p.step) and len(lots) < p.max_lots and lev_ok and regime_ok
                 and not any(abs(l["price"] / c - 1) < p.step for l in lots)):
             realized -= p.fee_per_side * p.contracts_per_lot  # 買進手續費
             mcf[ym] -= p.fee_per_side * p.contracts_per_lot
@@ -200,6 +213,8 @@ def main():
     ap.add_argument("--fee-per-side", type=float, default=DEFAULT_FEE_PER_SIDE, dest="fee_per_side")
     ap.add_argument("--roll-cost-points", type=float, default=DEFAULT_ROLL_COST_POINTS, dest="roll_cost_points")
     ap.add_argument("--max-leverage", type=float, default=1.0, dest="max_leverage")
+    ap.add_argument("--regime-ma", type=int, default=0, dest="regime_ma",
+                    help="趨勢濾網：僅在 adj收盤 > 近N根均線時開新倉（0=關；600≈60日）")
     p = ap.parse_args()
     (monthly if p.mode == "monthly" else summary)(p)
 
