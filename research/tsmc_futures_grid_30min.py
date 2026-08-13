@@ -79,9 +79,14 @@ def run(p):
             if i >= RM - 1:
                 ma_series[i] = run_sum / RM
 
+    bought_today = False
     for i in range(n):
         c = adj[i]
         ym = dt[i][:7]
+        day = dt[i][:10]
+        if i == 0 or dt[i - 1][:10] != day:
+            bought_today = False              # 換日重置
+        is_close_bar = (i == n - 1) or (dt[i + 1][:10] != day)
 
         # 轉倉成本（開倉部位）
         if i in rolls and lots:
@@ -111,12 +116,16 @@ def run(p):
         notional_after = notional(lots, c) + adj_notional(c, p.contracts_per_lot)
         lev_ok = notional_after <= equity * p.max_leverage
         regime_ok = (not RM) or (ma_series[i] is not None and c > ma_series[i])
+        # 當天已買過 → 只在收盤那根再檢查（放慢單日填倉）
+        timing_ok = (not p.intraday_once) or (not bought_today) or is_close_bar
         if (c <= ref * (1 - p.step) and len(lots) < p.max_lots and lev_ok and regime_ok
+                and timing_ok
                 and not any(abs(l["price"] / c - 1) < p.step for l in lots)):
             realized -= p.fee_per_side * p.contracts_per_lot  # 買進手續費
             mcf[ym] -= p.fee_per_side * p.contracts_per_lot
             lots.append({"price": c, "contracts": p.contracts_per_lot})
             mbuy[ym] += 1
+            bought_today = True
 
         equity = equity0 + realized + unreal(lots, c)
         curve.append(equity)
@@ -215,6 +224,8 @@ def main():
     ap.add_argument("--max-leverage", type=float, default=1.0, dest="max_leverage")
     ap.add_argument("--regime-ma", type=int, default=0, dest="regime_ma",
                     help="趨勢濾網：僅在 adj收盤 > 近N根均線時開新倉（0=關；600≈60日）")
+    ap.add_argument("--intraday-once", action="store_true", dest="intraday_once",
+                    help="當天已買過後，只在收盤那根(13:15)再檢查是否加碼")
     p = ap.parse_args()
     (monthly if p.mode == "monthly" else summary)(p)
 

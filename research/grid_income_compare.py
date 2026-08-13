@@ -22,7 +22,7 @@ def base(**kw):
     p = SimpleNamespace(capital=1_000_000, max_lots=20, contracts_per_lot=1,
                         step=0.01, take=0.01, h_days=10,
                         fee_per_side=20.0, roll_cost_points=2.0,
-                        max_leverage=1.0, regime_ma=0)
+                        max_leverage=1.0, regime_ma=0, intraday_once=False)
     for k, v in kw.items():
         setattr(p, k, v)
     return p
