@@ -57,7 +57,9 @@ def run(p):
     n = len(adj)
     H = p.h_days * BARS_PER_DAY
 
-    equity0 = p.capital
+    capital_base = p.capital      # 投入本金（補錢模式下會隨追繳增加）
+    total_deposit = 0.0           # 累計補錢
+    deposit_events = 0
     realized = 0.0
     lots = []                     # {price(adj), contracts}
     curve = []
@@ -112,7 +114,7 @@ def run(p):
 
         # 買：跌破近H高×(1-STEP)、±STEP 內無持倉、批數/槓桿夠、（可選）趨勢濾網
         ref = max(adj[max(0, i - H):i + 1])
-        equity = equity0 + realized + unreal(lots, c)
+        equity = capital_base + realized + unreal(lots, c)
         notional_after = notional(lots, c) + adj_notional(c, p.contracts_per_lot)
         lev_ok = notional_after <= equity * p.max_leverage
         regime_ok = (not RM) or (ma_series[i] is not None and c > ma_series[i])
@@ -127,7 +129,19 @@ def run(p):
             mbuy[ym] += 1
             bought_today = True
 
-        equity = equity0 + realized + unreal(lots, c)
+        equity = capital_base + realized + unreal(lots, c)
+
+        # 補錢模式：權益跌破維持保證金 → 補到原始保證金水位（不強制平倉）
+        if p.topup and lots:
+            exp = notional(lots, c)
+            if equity < exp * p.maintenance_margin:
+                deposit = exp * p.initial_margin - equity
+                if deposit > 0:
+                    capital_base += deposit
+                    total_deposit += deposit
+                    deposit_events += 1
+                    equity += deposit
+
         curve.append(equity)
         if equity > 0:
             max_lev = max(max_lev, notional(lots, c) / equity)
@@ -136,7 +150,8 @@ def run(p):
 
     return dict(dt=dt, curve=curve, realized=realized, mcf=mcf, mbuy=mbuy,
                 msell=msell, max_lev=max_lev, max_lots=max_lots, end_lots=end_lots,
-                lots_open=len(lots))
+                lots_open=len(lots), total_deposit=total_deposit,
+                deposit_events=deposit_events, peak_committed=p.capital + total_deposit)
 
 
 def adj_notional(price, contracts):
@@ -190,6 +205,12 @@ def summary(p):
     print(f"  月現金流：中位 {statistics.median(vals):+.2f}%  平均 {statistics.mean(vals):+.2f}%  "
           f"有現金流月 {pos}/{len(ms)}={pos/len(ms)*100:.0f}%  最長乾旱 {mx}月")
     print(f"  峰值槓桿 {r['max_lev']:.2f}x｜最多同時持倉 {r['max_lots']} 批")
+    if p.topup:
+        peak = r["peak_committed"]
+        print(f"  ★補錢模式：追繳 {r['deposit_events']} 次，累計補錢 {r['total_deposit']:,.0f} 元"
+              f"｜峰值投入資金 {peak:,.0f} 元（初始 {cap:,.0f} + 補 {r['total_deposit']:,.0f}）")
+        print(f"  以峰值投入資金計：已實現現金流 {r['realized']/peak*100:+.1f}%"
+              f"／年化約 {r['realized']/peak/years*100:+.1f}%")
     tb, ts = sum(r["mbuy"].values()), sum(r["msell"].values())
     print(f"  交易：買 {tb} / 賣 {ts}（月均 買{tb/len(ms):.1f}/賣{ts/len(ms):.1f}）")
 
@@ -226,6 +247,10 @@ def main():
                     help="趨勢濾網：僅在 adj收盤 > 近N根均線時開新倉（0=關；600≈60日）")
     ap.add_argument("--intraday-once", action="store_true", dest="intraday_once",
                     help="當天已買過後，只在收盤那根(13:15)再檢查是否加碼")
+    ap.add_argument("--topup", action="store_true", dest="topup",
+                    help="補錢模式：權益跌破維持保證金就補到原始保證金（不強平）")
+    ap.add_argument("--initial-margin", type=float, default=0.135, dest="initial_margin")
+    ap.add_argument("--maintenance-margin", type=float, default=0.1035, dest="maintenance_margin")
     p = ap.parse_args()
     (monthly if p.mode == "monthly" else summary)(p)
 
