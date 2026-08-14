@@ -34,8 +34,10 @@ DEFAULT_FEE_PER_SIDE = 20.0      # 手續費 元/口/邊（保守）
 DEFAULT_ROLL_COST_POINTS = 2.0   # 每口每次轉倉成本（點；價差+手續費估）
 
 
-def load_bars():
+def load_bars(start=None):
     rows = list(csv.DictReader(open(CSV, encoding="utf-8")))
+    if start:
+        rows = [r for r in rows if r["datetime"][:10] >= start]
     dt = [r["datetime"] for r in rows]
     con = [r["contract_date"] for r in rows]
     close = [float(r["close"]) for r in rows]
@@ -53,7 +55,7 @@ def load_bars():
 
 
 def run(p):
-    dt, con, real, adj, rolls = load_bars()
+    dt, con, real, adj, rolls = load_bars(getattr(p, "start", None))
     n = len(adj)
     H = p.h_days * BARS_PER_DAY
 
@@ -82,6 +84,25 @@ def run(p):
             if i >= RM - 1:
                 ma_series[i] = run_sum / RM
 
+    # 波動率序列（近100根30分報酬 std，×√10 ≈ 日波動），供動態格距用
+    vol_series = [None] * n
+    if getattr(p, "atr_mult", 0):
+        VW = 100
+        rets = [0.0] + [(adj[i] / adj[i - 1] - 1) if adj[i - 1] > 0 else 0.0
+                        for i in range(1, n)]
+        for i in range(n):
+            if i >= VW:
+                w = rets[i - VW + 1:i + 1]
+                mean = sum(w) / len(w)
+                sd = (sum((r - mean) ** 2 for r in w) / (len(w) - 1)) ** 0.5
+                vol_series[i] = sd * (10 ** 0.5)
+
+    def dyn_step(i):
+        """動態格距：atr_mult×日波動，夾在 [0.4%, 2.5%]；未開啟則用固定 p.step。"""
+        if getattr(p, "atr_mult", 0) and vol_series[i]:
+            return max(0.004, min(0.025, p.atr_mult * vol_series[i]))
+        return p.step
+
     bought_today = False
     for i in range(n):
         c = adj[i]
@@ -97,20 +118,38 @@ def run(p):
             realized -= roll_cost
             mcf[ym] -= roll_cost
 
-        # 賣：逐批漲到買價 +TAKE 平倉
+        step_i = dyn_step(i)
+        take_i = step_i if getattr(p, "atr_mult", 0) else p.take
+
+        # 賣：逐批漲到買價 +TAKE 平倉；移動停利模式則達標後改追蹤高點回落
+        def do_close(lot, price):
+            nonlocal realized
+            gross = (price - lot["price"]) * MULTIPLIER * lot["contracts"]
+            cost = (adj_notional(lot["price"], lot["contracts"]) +
+                    adj_notional(price, lot["contracts"])) * FUTURES_TAX \
+                + p.fee_per_side * lot["contracts"] * 2
+            pnl = gross - cost
+            realized += pnl
+            mcf[ym] += pnl
+            msell[ym] += 1
+
         rem = []
         for lot in lots:
-            if c >= lot["price"] * (1 + p.take):
-                gross = (c - lot["price"]) * MULTIPLIER * lot["contracts"]
-                cost = (adj_notional(lot["price"], lot["contracts"]) +
-                        adj_notional(c, lot["contracts"])) * FUTURES_TAX \
-                    + p.fee_per_side * lot["contracts"] * 2
-                pnl = gross - cost
-                realized += pnl
-                mcf[ym] += pnl
-                msell[ym] += 1
-            else:
+            if getattr(p, "trail_tp", 0):
+                # 移動停利：達 +take 才啟動，之後追蹤高點、回落 trail_tp 才賣（讓贏家跑）
+                if c >= lot["price"] * (1 + take_i):
+                    lot["armed"] = True
+                if lot.get("armed"):
+                    lot["peak"] = max(lot.get("peak", c), c)
+                    if c <= lot["peak"] * (1 - p.trail_tp):
+                        do_close(lot, c)
+                        continue
                 rem.append(lot)
+            else:
+                if c >= lot["price"] * (1 + take_i):
+                    do_close(lot, c)
+                else:
+                    rem.append(lot)
         lots[:] = rem
 
         # 買：跌破近H高×(1-STEP)、±STEP 內無持倉、批數/槓桿夠、（可選）趨勢濾網
@@ -121,9 +160,9 @@ def run(p):
         regime_ok = (not RM) or (ma_series[i] is not None and c > ma_series[i])
         # 當天已買過 → 只在收盤那根再檢查（放慢單日填倉）
         timing_ok = (not p.intraday_once) or (not bought_today) or is_close_bar
-        if (c <= ref * (1 - p.step) and len(lots) < p.max_lots and lev_ok and regime_ok
+        if (c <= ref * (1 - step_i) and len(lots) < p.max_lots and lev_ok and regime_ok
                 and timing_ok
-                and not any(abs(l["price"] / c - 1) < p.step for l in lots)):
+                and not any(abs(l["price"] / c - 1) < step_i for l in lots)):
             realized -= p.fee_per_side * p.contracts_per_lot  # 買進手續費
             mcf[ym] -= p.fee_per_side * p.contracts_per_lot
             lots.append({"price": c, "contracts": p.contracts_per_lot})
@@ -259,6 +298,11 @@ def main():
                     help="補錢模式：權益跌破維持保證金就補到原始保證金（不強平）")
     ap.add_argument("--initial-margin", type=float, default=0.135, dest="initial_margin")
     ap.add_argument("--maintenance-margin", type=float, default=0.1035, dest="maintenance_margin")
+    ap.add_argument("--start", default=None, help="回測起始日 YYYY-MM-DD（策略從此日啟動）")
+    ap.add_argument("--atr-mult", type=float, default=0.0, dest="atr_mult",
+                    help="動態格距：格距=atr_mult×近期日波動（0=固定 --step）")
+    ap.add_argument("--trail-tp", type=float, default=0.0, dest="trail_tp",
+                    help="移動停利：達+take後追蹤高點、回落此比例才賣（0=固定停利）")
     p = ap.parse_args()
     (monthly if p.mode == "monthly" else summary)(p)
 
