@@ -118,10 +118,10 @@ def run(p):
             if i >= per:
                 rsi_series[i] = 100.0 if al == 0 else 100 - 100 / (1 + ag / al)
 
-    # 長期高點（等比加寬 / 深度加碼 用「跌多深」衡量）
-    LW = 600  # 60 日
+    # 長期高點（等比加寬 / 深度加碼 用「跌多深」衡量）；窗口可調
+    LW = getattr(p, "depth_ref_bars", 600) or 600
     ref_long = [0.0] * n
-    if getattr(p, "widen", 0) or getattr(p, "depth_scale", 0):
+    if getattr(p, "widen", 0) or getattr(p, "depth_scale", 0) or getattr(p, "shallow_boost", 0):
         for i in range(n):
             ref_long[i] = max(adj[max(0, i - LW):i + 1])
 
@@ -198,13 +198,21 @@ def run(p):
         # RSI 超賣過濾：只在 RSI < gate 時吃網格買點
         rsi_ok = (not getattr(p, "rsi_gate", 0)) or \
             (rsi_series[i] is not None and rsi_series[i] < p.rsi_gate)
-        # 深度加碼：跌越深（相對長期高）每格買越多口（受控反馬丁，上限 3 口）
+        # 口數調整（兩種相反哲學，擇一）：
+        #  ① depth_scale：跌越深買越多（底部重壓，需預留資金）
+        #  ② shallow_boost：淺回檔買越多（常態多賺，深跌靠補錢）
         cpl = p.contracts_per_lot
-        if getattr(p, "depth_scale", 0) and getattr(p, "widen", 0) == 0 and ref_long_ds(i) > 0:
+        base = p.contracts_per_lot
+        if ref_long_ds(i) > 0:
             drop = max(0.0, (ref_long_ds(i) - c) / ref_long_ds(i))
-            cpl = min(3 * p.contracts_per_lot,
-                      int(round(p.contracts_per_lot * (1 + p.depth_scale * drop))))
-            cpl = max(cpl, p.contracts_per_lot)
+            if getattr(p, "depth_scale", 0) and getattr(p, "widen", 0) == 0:
+                cpl = min(3 * base, int(round(base * (1 + p.depth_scale * drop))))
+                cpl = max(cpl, base)
+            elif getattr(p, "shallow_boost", 0):
+                taper = getattr(p, "shallow_taper", 0.15) or 0.15
+                factor = 1 + p.shallow_boost * max(0.0, 1 - drop / taper)
+                cpl = min(3 * base, int(round(base * factor)))
+                cpl = max(cpl, base)
         notional_after = notional(lots, c) + adj_notional(c, cpl)
         lev_ok = notional_after <= equity * p.max_leverage
         if (c <= ref * (1 - step_i) and len(lots) < p.max_lots and lev_ok and regime_ok
@@ -359,6 +367,12 @@ def main():
                     help="RSI 週期(30分K根數，預設70≈7日)")
     ap.add_argument("--depth-scale", type=float, default=0.0, dest="depth_scale",
                     help="深度加碼：口數=base×(1+depth_scale×跌深)，上限3口（0=固定口數）")
+    ap.add_argument("--depth-ref-bars", type=int, default=600, dest="depth_ref_bars",
+                    help="深度加碼/加寬的『跌深』參考高點回看根數（600≈60日,2400≈1年）")
+    ap.add_argument("--shallow-boost", type=float, default=0.0, dest="shallow_boost",
+                    help="淺回檔加碼：近高處每格買越多口(上限3)，跌深後回1口；深跌靠補錢")
+    ap.add_argument("--shallow-taper", type=float, default=0.15, dest="shallow_taper",
+                    help="淺回檔加碼的遞減深度（跌到此%後回到1口，預設15%）")
     p = ap.parse_args()
     (monthly if p.mode == "monthly" else summary)(p)
 

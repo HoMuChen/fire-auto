@@ -25,7 +25,8 @@ def base(**kw):
                         max_leverage=1.0, regime_ma=0, intraday_once=False,
                         topup=False, initial_margin=0.135, maintenance_margin=0.1035,
                         start=None, atr_mult=0.0, trail_tp=0.0,
-                        widen=0.0, rsi_gate=0.0, rsi_period=70, depth_scale=0.0)
+                        widen=0.0, rsi_gate=0.0, rsi_period=70, depth_scale=0.0,
+                        depth_ref_bars=600, shallow_boost=0.0, shallow_taper=0.15)
     for k, v in kw.items():
         setattr(p, k, v)
     return p
