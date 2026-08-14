@@ -244,8 +244,9 @@ def summary(p):
     cagr = ((curve[-1] / cap) ** (1 / years) - 1) * 100 if years > 0 else 0
     print(f"小型台積電期(QFF) 30分K 網格收租（{dt[0][:10]} ~ {dt[-1][:10]}，{len(ms)}月，"
           f"{len(dt)}根K）")
-    print(f"  參數：max {p.max_lots} 批 × {p.contracts_per_lot} 口／格{p.step:.0%}／"
-          f"賣+{p.take:.0%}／近{p.h_days}日高／本金{cap:,.0f}／槓桿上限{p.max_leverage}x")
+    tp_desc = f"移動停利{p.trail_tp:.1%}" if getattr(p, "trail_tp", 0) else f"固定+{p.take:.1%}"
+    print(f"  參數：max {p.max_lots} 批 × {p.contracts_per_lot} 口／格{p.step:.1%}／"
+          f"{tp_desc}／近{p.h_days}日高／本金{cap:,.0f}／槓桿上限{p.max_leverage}x")
     print(f"  總報酬 {tot:+.1f}%   CAGR {cagr:+.1f}%   最大回撤 {maxdd(curve):.1f}%")
     print(f"  已實現現金流 {r['realized']:+,.0f} 元（{r['realized']/cap*100:+.1f}% 本金）"
           f"｜期末未平倉 {r['lots_open']} 批")
@@ -301,8 +302,8 @@ def main():
     ap.add_argument("--start", default=None, help="回測起始日 YYYY-MM-DD（策略從此日啟動）")
     ap.add_argument("--atr-mult", type=float, default=0.0, dest="atr_mult",
                     help="動態格距：格距=atr_mult×近期日波動（0=固定 --step）")
-    ap.add_argument("--trail-tp", type=float, default=0.0, dest="trail_tp",
-                    help="移動停利：達+take後追蹤高點、回落此比例才賣（0=固定停利）")
+    ap.add_argument("--trail-tp", type=float, default=0.007, dest="trail_tp",
+                    help="移動停利：達+take後追蹤高點、回落此比例才賣（預設0.7%；設0=固定停利）")
     p = ap.parse_args()
     (monthly if p.mode == "monthly" else summary)(p)
 
