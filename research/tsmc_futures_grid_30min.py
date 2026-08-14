@@ -97,11 +97,46 @@ def run(p):
                 sd = (sum((r - mean) ** 2 for r in w) / (len(w) - 1)) ** 0.5
                 vol_series[i] = sd * (10 ** 0.5)
 
+    # RSI 序列（超賣過濾用），週期 p.rsi_period（預設 70 根≈7日）
+    rsi_series = [None] * n
+    if getattr(p, "rsi_gate", 0):
+        per = getattr(p, "rsi_period", 70)
+        gains = [0.0] * n
+        losses = [0.0] * n
+        for i in range(1, n):
+            ch = adj[i] - adj[i - 1]
+            gains[i] = max(ch, 0.0)
+            losses[i] = max(-ch, 0.0)
+        ag = al = 0.0
+        for i in range(1, n):
+            if i <= per:
+                ag += gains[i] / per
+                al += losses[i] / per
+            else:
+                ag = (ag * (per - 1) + gains[i]) / per
+                al = (al * (per - 1) + losses[i]) / per
+            if i >= per:
+                rsi_series[i] = 100.0 if al == 0 else 100 - 100 / (1 + ag / al)
+
+    # 長期高點（等比加寬 / 深度加碼 用「跌多深」衡量）
+    LW = 600  # 60 日
+    ref_long = [0.0] * n
+    if getattr(p, "widen", 0) or getattr(p, "depth_scale", 0):
+        for i in range(n):
+            ref_long[i] = max(adj[max(0, i - LW):i + 1])
+
+    def ref_long_ds(i):
+        return ref_long[i]
+
     def dyn_step(i):
-        """動態格距：atr_mult×日波動，夾在 [0.4%, 2.5%]；未開啟則用固定 p.step。"""
+        """有效格距：① atr_mult×日波動；② 等比加寬(跌越深越寬)；否則固定 p.step。"""
+        s = p.step
         if getattr(p, "atr_mult", 0) and vol_series[i]:
-            return max(0.004, min(0.025, p.atr_mult * vol_series[i]))
-        return p.step
+            s = max(0.004, min(0.025, p.atr_mult * vol_series[i]))
+        if getattr(p, "widen", 0) and ref_long[i] > 0:
+            drop = max(0.0, (ref_long[i] - adj[i]) / ref_long[i])
+            s = s * (1 + p.widen * drop)     # 跌 drop 深→格距放大
+        return min(s, 0.05)
 
     bought_today = False
     for i in range(n):
@@ -160,12 +195,24 @@ def run(p):
         regime_ok = (not RM) or (ma_series[i] is not None and c > ma_series[i])
         # 當天已買過 → 只在收盤那根再檢查（放慢單日填倉）
         timing_ok = (not p.intraday_once) or (not bought_today) or is_close_bar
+        # RSI 超賣過濾：只在 RSI < gate 時吃網格買點
+        rsi_ok = (not getattr(p, "rsi_gate", 0)) or \
+            (rsi_series[i] is not None and rsi_series[i] < p.rsi_gate)
+        # 深度加碼：跌越深（相對長期高）每格買越多口（受控反馬丁，上限 3 口）
+        cpl = p.contracts_per_lot
+        if getattr(p, "depth_scale", 0) and getattr(p, "widen", 0) == 0 and ref_long_ds(i) > 0:
+            drop = max(0.0, (ref_long_ds(i) - c) / ref_long_ds(i))
+            cpl = min(3 * p.contracts_per_lot,
+                      int(round(p.contracts_per_lot * (1 + p.depth_scale * drop))))
+            cpl = max(cpl, p.contracts_per_lot)
+        notional_after = notional(lots, c) + adj_notional(c, cpl)
+        lev_ok = notional_after <= equity * p.max_leverage
         if (c <= ref * (1 - step_i) and len(lots) < p.max_lots and lev_ok and regime_ok
-                and timing_ok
+                and timing_ok and rsi_ok
                 and not any(abs(l["price"] / c - 1) < step_i for l in lots)):
-            realized -= p.fee_per_side * p.contracts_per_lot  # 買進手續費
-            mcf[ym] -= p.fee_per_side * p.contracts_per_lot
-            lots.append({"price": c, "contracts": p.contracts_per_lot})
+            realized -= p.fee_per_side * cpl  # 買進手續費
+            mcf[ym] -= p.fee_per_side * cpl
+            lots.append({"price": c, "contracts": cpl})
             mbuy[ym] += 1
             bought_today = True
 
@@ -304,6 +351,14 @@ def main():
                     help="動態格距：格距=atr_mult×近期日波動（0=固定 --step）")
     ap.add_argument("--trail-tp", type=float, default=0.007, dest="trail_tp",
                     help="移動停利：達+take後追蹤高點、回落此比例才賣（預設0.7%；設0=固定停利）")
+    ap.add_argument("--widen", type=float, default=0.0,
+                    help="等比加寬網格：格距=step×(1+widen×跌深)，跌越深格距越寬（0=均勻）")
+    ap.add_argument("--rsi-gate", type=float, default=0.0, dest="rsi_gate",
+                    help="RSI超賣過濾：只在 RSI<此值 才吃網格買點（0=關）")
+    ap.add_argument("--rsi-period", type=int, default=70, dest="rsi_period",
+                    help="RSI 週期(30分K根數，預設70≈7日)")
+    ap.add_argument("--depth-scale", type=float, default=0.0, dest="depth_scale",
+                    help="深度加碼：口數=base×(1+depth_scale×跌深)，上限3口（0=固定口數）")
     p = ap.parse_args()
     (monthly if p.mode == "monthly" else summary)(p)
 
