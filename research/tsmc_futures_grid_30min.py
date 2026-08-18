@@ -66,6 +66,7 @@ def run(p):
     realized = 0.0
     lots = []                     # {price(adj), contracts}
     curve = []
+    trade_log = []                # 逐筆交易 {dt,action,price,contracts,entry,pnl}
     mcf = defaultdict(float)      # 每月已實現現金流(NT$)
     mbuy = defaultdict(int); msell = defaultdict(int)
     max_lev = 0.0
@@ -167,6 +168,9 @@ def run(p):
             realized += pnl
             mcf[ym] += pnl
             msell[ym] += 1
+            trade_log.append({"dt": dt[i], "action": "賣", "price": real[i],
+                              "adj_price": price, "contracts": lot["contracts"],
+                              "entry_adj": lot["price"], "pnl": pnl})
 
         rem = []
         for lot in lots:
@@ -223,6 +227,9 @@ def run(p):
             lots.append({"price": c, "contracts": cpl})
             mbuy[ym] += 1
             bought_today = True
+            trade_log.append({"dt": dt[i], "action": "買", "price": real[i],
+                              "adj_price": c, "contracts": cpl, "entry_adj": None,
+                              "pnl": None})
 
         equity = capital_base + realized + unreal(lots, c)
 
@@ -253,7 +260,8 @@ def run(p):
                 msell=msell, max_lev=max_lev, max_lots=max_lots, end_lots=end_lots,
                 lots_open=len(lots), total_deposit=total_deposit,
                 deposit_events=deposit_events, peak_committed=p.capital + total_deposit,
-                worst_margin=worst_margin)
+                worst_margin=worst_margin, trade_log=trade_log,
+                open_lots=[dict(l) for l in lots])
 
 
 def adj_notional(price, contracts):
