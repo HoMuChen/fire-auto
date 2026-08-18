@@ -19,3 +19,5 @@ data/monitor_state.json
 data/*.log
 data/morning_watchlist.txt
 data/watchlist_conditions.json
+.venv/
+shioaji.log

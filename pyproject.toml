@@ -1,0 +1,14 @@
+[project]
+name = "fire-auto"
+version = "0.1.0"
+description = "台股交易策略研究 + 永豐 Shioaji 下單"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "pyarrow>=16",
+    "shioaji>=1.7.2",
+]
+
+[tool.uv]
+package = false
