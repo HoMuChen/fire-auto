@@ -158,7 +158,7 @@ def run(p):
         take_i = step_i if getattr(p, "atr_mult", 0) else p.take
 
         # 賣：逐批漲到買價 +TAKE 平倉；移動停利模式則達標後改追蹤高點回落
-        def do_close(lot, price):
+        def do_close(lot, price, reason="停利"):
             nonlocal realized
             gross = (price - lot["price"]) * MULTIPLIER * lot["contracts"]
             cost = (adj_notional(lot["price"], lot["contracts"]) +
@@ -168,8 +168,9 @@ def run(p):
             realized += pnl
             mcf[ym] += pnl
             msell[ym] += 1
-            trade_log.append({"dt": dt[i], "action": "賣", "price": real[i],
-                              "adj_price": price, "contracts": lot["contracts"],
+            trade_log.append({"dt": dt[i], "action": "賣", "reason": reason,
+                              "price": real[i], "adj_price": price,
+                              "contracts": lot["contracts"],
                               "entry_adj": lot["price"], "pnl": pnl})
 
         rem = []
@@ -230,6 +231,16 @@ def run(p):
             trade_log.append({"dt": dt[i], "action": "買", "price": real[i],
                               "adj_price": c, "contracts": cpl, "entry_adj": None,
                               "pnl": None})
+
+        # 反彈減碼：低接累積後,若槓桿超過舒適值,且當根在反彈(上漲),
+        # 就賣掉「最接近獲利(成本最低)」的批,把槓桿降回目標(最小實現虧損)
+        if getattr(p, "derisk_lev", 0) and lots and i > 0 and adj[i] > adj[i - 1]:
+            eq = capital_base + realized + unreal(lots, c)
+            while lots and eq > 0 and notional(lots, c) > eq * p.derisk_lev:
+                lot = min(lots, key=lambda l: l["price"])   # 成本最低=最可能已獲利
+                do_close(lot, c, reason="減碼")
+                lots.remove(lot)
+                eq = capital_base + realized + unreal(lots, c)
 
         equity = capital_base + realized + unreal(lots, c)
 
@@ -381,6 +392,8 @@ def main():
                     help="淺回檔加碼：近高處每格買越多口(上限3)，跌深後回1口；深跌靠補錢")
     ap.add_argument("--shallow-taper", type=float, default=0.15, dest="shallow_taper",
                     help="淺回檔加碼的遞減深度（跌到此%後回到1口，預設15%）")
+    ap.add_argument("--derisk-lev", type=float, default=0.0, dest="derisk_lev",
+                    help="反彈減碼：槓桿>此值且當根上漲時,賣最接近獲利的批降回此槓桿(0=關)")
     p = ap.parse_args()
     (monthly if p.mode == "monthly" else summary)(p)
 
