@@ -1114,7 +1114,9 @@ def _send_morning_summary(sq, os_results, ad, data_date, pos_results, tsmc=None)
     if pos_results:
         lines.append("\n📂 持倉")
         for p in pos_results:
-            if p.get("hit_stop"):
+            if "error" in p:
+                lines.append(f"  ⁉️ {p['stock_id']} {p.get('name', '')} — {p['error']}")
+            elif p.get("hit_stop"):
                 lines.append(f"  ⚠️ {p['stock_id']} {p['name']} 停損觸發！{p['current_close']:.1f}")
             else:
                 strat = {"sq": "擠壓", "os": "超跌", "ad": "AD"}.get(p["strategy"], p["strategy"])
