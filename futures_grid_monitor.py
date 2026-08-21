@@ -175,7 +175,7 @@ def cmd_monitor():
             lines.append(f"{icon}：{detail}")
         lines += ["", "（成交後回報：buy <價> / sell <進場價>）"]
         msg = "\n".join(lines)
-        notify.send(msg, intraday=True)
+        notify.send(msg)          # 只送主收件人(早上八點那個 TELEGRAM_CHAT_ID)，不送 intraday
         print(f"[{hm}] 發送 {len(sig)} 個訊號")
     else:
         print(f"[{hm}] 現價{price:.0f} 近高{ref:.0f} 槓桿{lev:.1f}x — 無訊號")
