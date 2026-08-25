@@ -11,18 +11,20 @@
   python3 futures_grid_monitor.py sell 2400            # 回報：我把進場@2400那口賣了
   python3 futures_grid_monitor.py status               # 看目前狀態/下一格買賣位
 
-Cron（對齊30分K收盤，日盤平日）：
-  15,45 9-13 * * 1-5  cd /Users/mu/fire-auto && /usr/local/bin/python3 futures_grid_monitor.py >> data/futures_monitor.log 2>&1
+即時價來源：永豐 shioaji（.env.local 的 SJ_API_KEY/SJ_SEC_KEY），需用 .venv/bin/python 跑（含 shioaji）。
+近10日高：本地 QFF_30min_day.csv 最後100根收盤 + 今日盤中最高。
+
+Cron（對齊30分K收盤，日盤平日；用 .venv 的 python）：
+  15,45 9-13 * * 1-5  cd /Users/mu/fire-auto && .venv/bin/python futures_grid_monitor.py >> data/futures_monitor.log 2>&1
 """
 import csv
 import json
 import sys
 from datetime import datetime
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-sys.path.insert(0, str(Path(__file__).parent / "research"))
-import futures_cache as fc          # reuse fetch_ticks / bars_for_day / token（在 research/）
 import notify
 
 BASE = Path(__file__).parent
@@ -88,25 +90,49 @@ def local_recent_closes(n):
     return [float(r["close"]) for r in rows[-n:]]
 
 
-def today_bars(tok):
-    """抓今天日盤 tick → 近月連續 30 分 K（排除價差單）。回傳 list of bar dict。"""
-    day = datetime.now().strftime("%Y-%m-%d")
-    ticks = fc.fetch_ticks(day, tok)
-    return fc.bars_for_day(ticks)
+def load_sj_env():
+    env = {}
+    for line in (BASE / ".env.local").read_text().splitlines():
+        if "=" in line and not line.strip().startswith("#"):
+            k, v = line.split("=", 1)
+            env[k.strip()] = v.strip()
+    return env
 
 
-def current_price_and_ref(tok):
-    """回傳 (最後一根收盤價, 近10日高, 是否上漲bar, 最後bar時間) 或 None。"""
-    tb = today_bars(tok)
-    if not tb:
+def sj_price():
+    """用永豐 shioaji 取 QFF 近月即時價（唯讀快照）。回傳 float 或 None。"""
+    import shioaji as sj
+    env = load_sj_env()
+    api = sj.Shioaji()
+    try:
+        api.login(env["SJ_API_KEY"], env["SJ_SEC_KEY"])
+        time.sleep(2)                              # 等合約載入
+        fut = api.Contracts.Futures.QFF
+        near = sorted([c for c in fut], key=lambda c: c.delivery_month)[0]
+        snap = api.snapshots([near])[0]
+        return float(snap.close) if snap and snap.close else None
+    finally:
+        try:
+            api.logout()
+        except Exception:
+            pass
+
+
+def current_price_and_ref(state):
+    """shioaji 即時價 + 本地近10日高(含今日盤中高)。回傳 (price, ref, is_up) 或 None。"""
+    price = sj_price()
+    if not price or price <= 0:
         return None
-    last = tb[-1]
-    price = last["close"]
-    is_up = last["close"] >= last["open"]
-    # 近10日高 = 本地(到昨天) + 今天，取最後 H 根收盤的最大
-    closes = local_recent_closes(H) + [b["close"] for b in tb]
-    ref = max(closes[-H:]) if closes else price
-    return price, ref, is_up, last["datetime"]
+    # 近10日高 = 本地30分K最後H根收盤，並納入今日盤中看到的最高
+    today_high = max(state["alerts"].get("today_high", 0) or 0, price)
+    state["alerts"]["today_high"] = today_high
+    closes = local_recent_closes(H)
+    ref = max(closes + [today_high]) if closes else today_high
+    # 反彈判斷：現價 vs 上次現價
+    last_price = state["alerts"].get("last_price")
+    is_up = last_price is None or price >= last_price
+    state["alerts"]["last_price"] = price
+    return price, ref, is_up
 
 
 # ─────────── 信號引擎（與回測同邏輯：固定停利/無加碼版）───────────
@@ -156,19 +182,22 @@ def cmd_monitor():
     hm = now.strftime("%H:%M")
     if now.weekday() >= 5 or not (SESSION_START <= hm <= SESSION_END):
         print(f"[{now:%Y-%m-%d %H:%M}] 非日盤時段，跳過"); return
-    # 換日重置買進提醒
+    # 換日重置（買進提醒、今日高、上次價）
     today = now.strftime("%Y-%m-%d")
     if s["alerts"].get("date") != today:
-        s["alerts"] = {"date": today, "last_buy_level": None}
-    tok = fc.token()
-    res = current_price_and_ref(tok)
+        s["alerts"] = {"date": today, "last_buy_level": None,
+                       "today_high": 0, "last_price": None}
+    try:
+        res = current_price_and_ref(s)
+    except Exception as e:
+        print(f"[{hm}] shioaji 取價失敗：{e}"); save_state(s); return
     if res is None:
-        print(f"[{hm}] 尚無今日 K 棒"); save_state(s); return
-    price, ref, is_up, bar_dt = res
+        print(f"[{hm}] 取不到即時價"); save_state(s); return
+    price, ref, is_up = res
     sig = signals(s, price, ref, is_up)
     lev = leverage(s, price)
     if sig:
-        lines = [f"⚡ 台積電期貨網格訊號  {bar_dt}", f"現價 {price:.0f}｜近10日高 {ref:.0f}｜"
+        lines = [f"⚡ 台積電期貨網格訊號  {now:%H:%M}", f"現價 {price:.0f}｜近10日高 {ref:.0f}｜"
                  f"持倉 {len(s['lots'])}批/{sum(l['contracts'] for l in s['lots'])}口｜槓桿 {lev:.1f}x", ""]
         for typ, detail in sig:
             icon = {"買": "🟢 建議買進", "賣": "🔴 建議賣出", "減碼": "⚠️ 建議減碼"}[typ]
