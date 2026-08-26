@@ -8,7 +8,7 @@
   python3 futures_grid_monitor.py init                 # 初始化狀態（用預設設定）
   python3 futures_grid_monitor.py                       # 監控一次（cron 每30分跑）
   python3 futures_grid_monitor.py buy 2400 [口數]       # 回報：我買進了 1 口 @2400
-  python3 futures_grid_monitor.py sell 2400            # 回報：我把進場@2400那口賣了
+  python3 futures_grid_monitor.py sell 2421            # 回報：我用成交價 2421 賣了一口（自動判斷平哪口）
   python3 futures_grid_monitor.py status               # 看目前狀態/下一格買賣位
 
 即時價來源：永豐 shioaji（.env.local 的 SJ_API_KEY/SJ_SEC_KEY），需用 .venv/bin/python 跑（含 shioaji）。
@@ -202,7 +202,7 @@ def cmd_monitor():
         for typ, detail in sig:
             icon = {"買": "🟢 建議買進", "賣": "🔴 建議賣出", "減碼": "⚠️ 建議減碼"}[typ]
             lines.append(f"{icon}：{detail}")
-        lines += ["", "（成交後回報：buy <價> / sell <進場價>）"]
+        lines += ["", "（成交後回報：buy <價> / sell <成交價>）"]
         msg = "\n".join(lines)
         notify.send(msg)          # 只送主收件人(早上八點那個 TELEGRAM_CHAT_ID)，不送 intraday
         print(f"[{hm}] 發送 {len(sig)} 個訊號")
@@ -220,15 +220,22 @@ def cmd_buy(price, contracts=1):
           f"{sum(l['contracts'] for l in s['lots'])}口")
 
 
-def cmd_sell(entry):
+def cmd_sell(sell_price):
+    """回報成交價，自動判斷平哪口：優先平「已達停利中成本最高」那口；否則平成本最接近的。"""
     s = load_state()
-    entry = float(entry)
-    match = min(s["lots"], key=lambda l: abs(l["entry"] - entry), default=None)
-    if match is None:
+    if not s["lots"]:
         print("目前無持倉"); return
-    s["lots"].remove(match)
+    sp = float(sell_price)
+    c = s["config"]
+    tp_hit = [l for l in s["lots"] if sp >= l["entry"] * (1 + c["take"])]
+    lot = (max(tp_hit, key=lambda l: l["entry"]) if tp_hit
+           else min(s["lots"], key=lambda l: abs(l["entry"] - sp)))
+    s["lots"].remove(lot)
+    pnl = (sp - lot["entry"]) * MULTIPLIER * lot["contracts"]
+    s["realized"] = s.get("realized", 0.0) + pnl
     save_state(s)
-    print(f"已移除進場@{match['entry']:.0f} 那口｜剩 {len(s['lots'])}批")
+    print(f"已平：進場@{lot['entry']:.0f} → 賣@{sp:.0f}（{pnl:+,.0f}元）｜剩 {len(s['lots'])}批"
+          f"｜累計已實現 {s['realized']:+,.0f}")
 
 
 def cmd_status():
