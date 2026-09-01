@@ -189,9 +189,9 @@ def signals(s, price, ref, is_up):
         s["alerts"]["last_buy_level"] = price
     elif not (price <= buy_level and not near and lots_ok):
         s["alerts"]["last_buy_level"] = None if not near else last_lv
-    # 減碼：槓桿 > derisk 且反彈
+    # 減碼：槓桿 > derisk 且反彈（derisk_lev 為 0/None 視為關閉）
     lev = leverage(s, price)
-    if lev > c["derisk_lev"] and is_up and s["lots"]:
+    if c.get("derisk_lev") and lev > c["derisk_lev"] and is_up and s["lots"]:
         lowest = min(s["lots"], key=lambda l: l["entry"])
         out.append(("減碼", f"槓桿{lev:.1f}x > {c['derisk_lev']}x 且反彈 → "
                             f"賣最低成本那口(進場@{lowest['entry']:.0f})降槓桿"))

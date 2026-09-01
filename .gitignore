@@ -21,5 +21,5 @@ data/morning_watchlist.txt
 data/watchlist_conditions.json
 .venv/
 shioaji.log
-data/futures_grid_state.json
+data/futures_grid_state*.json
 /Sinopac.pfx
