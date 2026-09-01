@@ -59,6 +59,10 @@ def run(p):
     n = len(adj)
     H = p.h_days * BARS_PER_DAY
 
+    # --depth：以「網格深度 D 口」定義本金（capital = D × 期初價 × 100），
+    # 使不同股價年代的網格結構一致、可比。設定後覆寫 p.capital 供下游使用。
+    if getattr(p, "depth", 0):
+        p.capital = round(p.depth * adj[0] * MULTIPLIER)
     capital_base = p.capital      # 投入本金（補錢模式下會隨追繳增加）
     total_deposit = 0.0           # 累計補錢
     deposit_events = 0
@@ -66,6 +70,7 @@ def run(p):
     realized = 0.0
     lots = []                     # {price(adj), contracts}
     curve = []
+    lev_curve = []                # 每根 bar 收盤時的槓桿（notional/equity）
     trade_log = []                # 逐筆交易 {dt,action,price,contracts,entry,pnl}
     mcf = defaultdict(float)      # 每月已實現現金流(NT$)
     mbuy = defaultdict(int); msell = defaultdict(int)
@@ -171,7 +176,8 @@ def run(p):
             trade_log.append({"dt": dt[i], "action": "賣", "reason": reason,
                               "price": real[i], "adj_price": price,
                               "contracts": lot["contracts"],
-                              "entry_adj": lot["price"], "pnl": pnl})
+                              "entry_adj": lot["price"], "entry_real": lot.get("real"),
+                              "pnl": pnl})
 
         rem = []
         for lot in lots:
@@ -225,7 +231,7 @@ def run(p):
                 and not any(abs(l["price"] / c - 1) < step_i for l in lots)):
             realized -= p.fee_per_side * cpl  # 買進手續費
             mcf[ym] -= p.fee_per_side * cpl
-            lots.append({"price": c, "contracts": cpl})
+            lots.append({"price": c, "contracts": cpl, "real": real[i]})
             mbuy[ym] += 1
             bought_today = True
             trade_log.append({"dt": dt[i], "action": "買", "price": real[i],
@@ -262,12 +268,13 @@ def run(p):
                     equity += deposit
 
         curve.append(equity)
+        lev_curve.append(notional(lots, c) / equity if equity > 0 else 0.0)
         if equity > 0:
             max_lev = max(max_lev, notional(lots, c) / equity)
         max_lots = max(max_lots, len(lots))
         end_lots[ym] = len(lots)
 
-    return dict(dt=dt, curve=curve, realized=realized, mcf=mcf, mbuy=mbuy,
+    return dict(dt=dt, curve=curve, lev_curve=lev_curve, realized=realized, mcf=mcf, mbuy=mbuy,
                 msell=msell, max_lev=max_lev, max_lots=max_lots, end_lots=end_lots,
                 lots_open=len(lots), total_deposit=total_deposit,
                 deposit_events=deposit_events, peak_committed=p.capital + total_deposit,
@@ -357,6 +364,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("mode", nargs="?", default="summary", choices=["summary", "monthly"])
     ap.add_argument("--capital", type=float, default=1_000_000)
+    ap.add_argument("--depth", type=float, default=0.0,
+                    help="以網格深度定義本金：capital=depth×期初價×100（設定則覆寫 --capital，跨年代可比）")
     ap.add_argument("--max-lots", type=int, default=20, dest="max_lots")
     ap.add_argument("--contracts-per-lot", type=int, default=1, dest="contracts_per_lot")
     ap.add_argument("--step", type=float, default=0.01)
