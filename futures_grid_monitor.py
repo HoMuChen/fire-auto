@@ -1,21 +1,27 @@
 """
-小型台積電期貨網格 — 盤中即時買賣點通知（純提醒版，狀態由使用者回報）
+小型期貨網格 — 盤中即時買賣點通知（純提醒版，狀態由使用者回報）
 
-設計：有狀態的部位管理器（非無狀態掃描）。狀態存 data/futures_grid_state.json，
-每 30 分 K 收盤跑一次，比對「當前價 / 近10日高 / 你手上的批」，有買賣點就發 Telegram。
+支援兩檔（--symbol 切換，預設 QFF）：
+  QFF = 小型台積電期貨   SEF = 小型智邦期貨
 
-用法：
-  python3 futures_grid_monitor.py init                 # 初始化狀態（用預設設定）
-  python3 futures_grid_monitor.py                       # 監控一次（cron 每30分跑）
-  python3 futures_grid_monitor.py buy 2400 [口數]       # 回報：我買進了 1 口 @2400
-  python3 futures_grid_monitor.py sell 2421            # 回報：我用成交價 2421 賣了一口（自動判斷平哪口）
-  python3 futures_grid_monitor.py status               # 看目前狀態/下一格買賣位
+設計：有狀態的部位管理器（非無狀態掃描）。各商品獨立狀態檔（QFF→data/futures_grid_state.json、
+SEF→data/futures_grid_state_SEF.json），每 30 分 K 收盤跑一次，比對「當前價 / 近10日高 /
+你手上的批」，有買賣點就發 Telegram。
+
+用法（加 --symbol SEF 即操作小型智邦，省略＝QFF 小型台積）：
+  python3 futures_grid_monitor.py init [--symbol SEF]        # 初始化狀態（用預設設定）
+  python3 futures_grid_monitor.py [--symbol SEF]              # 監控一次（cron 每30分跑）
+  python3 futures_grid_monitor.py buy 2400 [口數] [--symbol SEF]   # 回報：我買進了 1 口 @2400
+  python3 futures_grid_monitor.py sell 2421 [--symbol SEF]   # 回報：成交價 2421 賣一口（自動判斷平哪口）
+  python3 futures_grid_monitor.py status [--symbol SEF]      # 看目前狀態/下一格買賣位
 
 即時價來源：永豐 shioaji（.env.local 的 SJ_API_KEY/SJ_SEC_KEY），需用 .venv/bin/python 跑（含 shioaji）。
-近10日高：本地 QFF_30min_day.csv 最後100根收盤 + 今日盤中最高。
+近10日高：本地 {SYMBOL}_30min_day.csv 最後100根收盤 + 今日盤中最高。
 
 Cron（對齊30分K收盤，日盤平日；用 .venv 的 python）：
   15,45 9-13 * * 1-5  cd /Users/mu/fire-auto && .venv/bin/python futures_grid_monitor.py >> data/futures_monitor.log 2>&1
+  # 要同時盤中跟小型智邦，再加一行 --symbol SEF：
+  15,45 9-13 * * 1-5  cd /Users/mu/fire-auto && .venv/bin/python futures_grid_monitor.py --symbol SEF >> data/futures_monitor_sef.log 2>&1
 """
 import csv
 import json
@@ -28,11 +34,31 @@ sys.path.insert(0, str(Path(__file__).parent))
 import notify
 
 BASE = Path(__file__).parent
-STATE_PATH = BASE / "data" / "futures_grid_state.json"
-LOCAL_BARS = BASE / "data" / "futures" / "QFF_30min_day.csv"
-MULTIPLIER = 100                    # 1 口 = 100 股；1 點 = NT$100
+MULTIPLIER = 100                    # 1 口 = 100 股；1 點 = NT$100（小型台積/小型智邦皆同）
 H = 100                            # 近10交易日高（100 根 30 分 K）
 SESSION_START, SESSION_END = "08:45", "13:45"
+
+# 可切換商品：state 檔各自獨立（QFF 沿用舊路徑保留現有部位）
+SYMBOLS = {
+    "QFF": {"label": "小型台積電", "state": "futures_grid_state.json"},
+    "SEF": {"label": "小型智邦",   "state": "futures_grid_state_SEF.json"},
+}
+SYMBOL = "QFF"
+LABEL = SYMBOLS[SYMBOL]["label"]
+STATE_PATH = BASE / "data" / SYMBOLS[SYMBOL]["state"]
+LOCAL_BARS = BASE / "data" / "futures" / f"{SYMBOL}_30min_day.csv"
+
+
+def configure(symbol):
+    """依商品設定全域：狀態檔、本地K棒檔、shioaji合約碼、顯示名稱。"""
+    global SYMBOL, LABEL, STATE_PATH, LOCAL_BARS
+    symbol = symbol.upper()
+    if symbol not in SYMBOLS:
+        raise SystemExit(f"未知商品：{symbol}（可用 {'/'.join(SYMBOLS)}）")
+    SYMBOL = symbol
+    LABEL = SYMBOLS[symbol]["label"]
+    STATE_PATH = BASE / "data" / SYMBOLS[symbol]["state"]
+    LOCAL_BARS = BASE / "data" / "futures" / f"{symbol}_30min_day.csv"
 
 DEFAULT_CONFIG = {
     "capital": 500000, "step": 0.007, "take": 0.007, "max_lots": 50,
@@ -57,7 +83,7 @@ def cmd_init():
          "alerts": {"date": "", "last_buy_level": None}}
     save_state(s)
     c = s["config"]
-    print(f"已初始化：本金{c['capital']:,} / 格{c['step']:.1%} / 停利+{c['take']:.1%} / "
+    print(f"[{LABEL} {SYMBOL}] 已初始化：本金{c['capital']:,} / 格{c['step']:.1%} / 停利+{c['take']:.1%} / "
           f"買進上限{c['max_leverage']}x / derisk{c['derisk_lev']}x")
 
 
@@ -100,14 +126,14 @@ def load_sj_env():
 
 
 def sj_price():
-    """用永豐 shioaji 取 QFF 近月即時價（唯讀快照）。回傳 float 或 None。"""
+    """用永豐 shioaji 取當前商品(SYMBOL)近月即時價（唯讀快照）。回傳 float 或 None。"""
     import shioaji as sj
     env = load_sj_env()
     api = sj.Shioaji()
     try:
         api.login(env["SJ_API_KEY"], env["SJ_SEC_KEY"])
         time.sleep(2)                              # 等合約載入
-        fut = api.Contracts.Futures.QFF
+        fut = getattr(api.Contracts.Futures, SYMBOL)
         near = sorted([c for c in fut], key=lambda c: c.delivery_month)[0]
         snap = api.snapshots([near])[0]
         return float(snap.close) if snap and snap.close else None
@@ -197,7 +223,7 @@ def cmd_monitor():
     sig = signals(s, price, ref, is_up)
     lev = leverage(s, price)
     if sig:
-        lines = [f"⚡ 台積電期貨網格訊號  {now:%H:%M}", f"現價 {price:.0f}｜近10日高 {ref:.0f}｜"
+        lines = [f"⚡ {LABEL}期貨網格訊號  {now:%H:%M}", f"現價 {price:.0f}｜近10日高 {ref:.0f}｜"
                  f"持倉 {len(s['lots'])}批/{sum(l['contracts'] for l in s['lots'])}口｜槓桿 {lev:.1f}x", ""]
         for typ, detail in sig:
             icon = {"買": "🟢 建議買進", "賣": "🔴 建議賣出", "減碼": "⚠️ 建議減碼"}[typ]
@@ -243,7 +269,7 @@ def cmd_status():
     if s is None:
         print("尚未初始化"); return
     c = s["config"]
-    print(f"設定：本金{c['capital']:,} / 格{c['step']:.1%} / 停利+{c['take']:.1%} / "
+    print(f"[{LABEL} {SYMBOL}] 設定：本金{c['capital']:,} / 格{c['step']:.1%} / 停利+{c['take']:.1%} / "
           f"買進上限{c['max_leverage']}x / derisk{c['derisk_lev']}x")
     print(f"持倉 {len(s['lots'])}批 / {sum(l['contracts'] for l in s['lots'])}口"
           f"｜已實現 {s.get('realized',0):+,.0f}")
@@ -253,15 +279,26 @@ def cmd_status():
 
 
 def main():
-    if len(sys.argv) < 2:
+    args = list(sys.argv[1:])
+    # 解析 --symbol（可放在任意位置），預設 QFF
+    symbol = "QFF"
+    if "--symbol" in args:
+        i = args.index("--symbol")
+        if i + 1 >= len(args):
+            raise SystemExit("--symbol 後面要接商品代碼（QFF/SEF）")
+        symbol = args[i + 1]
+        del args[i:i + 2]
+    configure(symbol)
+
+    if not args:
         cmd_monitor(); return
-    cmd = sys.argv[1]
+    cmd = args[0]
     if cmd == "init":
         cmd_init()
     elif cmd == "buy":
-        cmd_buy(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else 1)
+        cmd_buy(args[1], args[2] if len(args) > 2 else 1)
     elif cmd == "sell":
-        cmd_sell(sys.argv[2])
+        cmd_sell(args[1])
     elif cmd == "status":
         cmd_status()
     else:
