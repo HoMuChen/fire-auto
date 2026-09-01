@@ -23,3 +23,8 @@ data/watchlist_conditions.json
 shioaji.log
 data/futures_grid_state*.json
 /Sinopac.pfx
+
+# ── 真實下單執行器 runtime（帳本/開關旗標，不進版控）──
+data/live_ledger*.json
+data/LIVE_*_ENABLED
+data/AUTO_OFF
