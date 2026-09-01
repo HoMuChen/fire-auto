@@ -3,9 +3,14 @@ QFF 小型台積電 網格 —— 真實下單執行器（Phase 1，預設關閉
 
 與純提醒版 (futures_grid_monitor.py) 完全分離。這支會真的下單，務必先讀懂再開。
 
+★ 兩種模式（由旗標切換）：
+  - 提醒模式（無 data/LIVE_QFF_ENABLED）：連線、算訊號、發 Telegram 建議，但【不下單】，
+    帳本由你手動 `buy/sell` 回報維持。＝等同純提醒版，關掉旗標也不會失聯。
+  - 下單模式（有 data/LIVE_QFF_ENABLED）：真實 place/cancel，帳本由成交自動更新。
+
 ★ 安全機制（每一項都是刻意的，不要拿掉）：
-  1. Opt-in 旗標：必須存在 data/LIVE_QFF_ENABLED 檔才會下單；不在＝只看不下。
-  2. Kill switch：存在 data/AUTO_OFF 檔 → 立即全停（緊急煞車）。
+  1. Opt-in 旗標：必須存在 data/LIVE_QFF_ENABLED 才進入【下單模式】；不在＝提醒模式。
+  2. Kill switch：存在 data/AUTO_OFF 檔 → 立即全停（連提醒都不發，緊急煞車）。
   3. 真實部位對帳：每輪先 api.list_positions() 讀券商真實口數，跟本地帳本比對；
      對不上（你手動下過單/漏成交/部分成交）→ 發 Telegram + 停機，絕不在不一致狀態下單。
   4. 真實保證金檢查：下買單前 api.margin() 查可用保證金，不足就不下（比 config 的 30萬更硬）。
@@ -93,22 +98,24 @@ def local_recent_closes(n):
 
 # ─────────── shioaji ───────────
 
-def sj_connect():
-    """登入 + 啟用憑證（下單必須）。回傳 (api, contract)。"""
+def sj_connect(need_ca=True):
+    """登入；下單模式(need_ca=True)才啟用憑證。回傳 (api, contract)。"""
     import shioaji as sj
     env = gm.load_sj_env()
-    for k in ("SJ_API_KEY", "SJ_SEC_KEY", "SJ_CA_PATH", "SJ_CA_PASSWD"):
+    req = ["SJ_API_KEY", "SJ_SEC_KEY"] + (["SJ_CA_PATH", "SJ_CA_PASSWD"] if need_ca else [])
+    for k in req:
         if not env.get(k):
-            raise RuntimeError(f"缺少環境變數 {k}（下單需要，請補進 .env.local）")
-    # 憑證密碼即身分證字號 → person_id 沿用 SJ_CA_PASSWD（可用 SJ_PERSON_ID 覆寫）
-    person_id = env.get("SJ_PERSON_ID") or env["SJ_CA_PASSWD"]
+            raise RuntimeError(f"缺少環境變數 {k}（請補進 .env.local）")
     api = sj.Shioaji()
     api.login(env["SJ_API_KEY"], env["SJ_SEC_KEY"])
     time.sleep(3)
-    ok = api.activate_ca(ca_path=env["SJ_CA_PATH"], ca_passwd=env["SJ_CA_PASSWD"],
-                         person_id=person_id)
-    if not ok:
-        raise RuntimeError("憑證啟用失敗 activate_ca=False")
+    if need_ca:
+        # 憑證密碼即身分證字號 → person_id 沿用 SJ_CA_PASSWD（可用 SJ_PERSON_ID 覆寫）
+        person_id = env.get("SJ_PERSON_ID") or env["SJ_CA_PASSWD"]
+        ok = api.activate_ca(ca_path=env["SJ_CA_PATH"], ca_passwd=env["SJ_CA_PASSWD"],
+                             person_id=person_id)
+        if not ok:
+            raise RuntimeError("憑證啟用失敗 activate_ca=False")
     fut = getattr(api.Contracts.Futures, SYMBOL)
     contract = sorted([c for c in fut], key=lambda c: c.delivery_month)[0]
     return api, contract
@@ -192,15 +199,15 @@ def run():
     now = datetime.now()
     hm = now.strftime("%H:%M")
 
-    # (1) 交易時段
+    # 交易時段
     if now.weekday() >= 5 or not (SESSION_START <= hm <= SESSION_END):
         log("非日盤時段，跳過"); return
-    # (2) kill switch
+    # kill switch：連提醒都停
     if KILL_FLAG.exists():
-        log("AUTO_OFF 存在 → 全停"); return
-    # (1) opt-in
-    if not ENABLE_FLAG.exists():
-        log(f"未開啟（缺 {ENABLE_FLAG.name}）→ 只看不下"); return
+        log("AUTO_OFF 存在 → 全停（連提醒都不發）"); return
+
+    live = ENABLE_FLAG.exists()          # 有旗標＝下單模式；無＝提醒模式
+    mode = "下單" if live else "提醒"
 
     l = load_ledger()
     today = now.strftime("%Y-%m-%d")
@@ -209,17 +216,20 @@ def run():
 
     api = None
     try:
-        api, contract = sj_connect()
+        api, contract = sj_connect(need_ca=live)   # 提醒模式不啟用憑證
 
-        # (3) 真實部位對帳
+        # 對帳：下單模式不符即停機；提醒模式只警告（你手動 buy/sell 回報維持帳本）
         broker = broker_net_position(api, contract)
         book = net_lots(l)
         if broker != book:
-            save_ledger(l)
-            tg(f"⛔ 對帳不符：券商 {broker} 口 vs 帳本 {book} 口 → 停機。"
-               f"請人工檢查（可能手動下過單/部分成交）。修正後再開。")
-            log(f"RECONCILE MISMATCH broker={broker} book={book} -> HALT")
-            return
+            if live:
+                save_ledger(l)
+                tg(f"⛔ 對帳不符：券商 {broker} 口 vs 帳本 {book} 口 → 停機。"
+                   f"請人工檢查（可能手動下過單/部分成交），修正後再開。")
+                log(f"RECONCILE MISMATCH broker={broker} book={book} -> HALT")
+                return
+            tg(f"⚠️【提醒模式】對帳不符：券商 {broker} 口 vs 帳本 {book} 口。"
+               f"成交後記得 `futures_live.py buy/sell` 回報，帳本才會準。")
 
         price = snapshot_price(api, contract)
         if not price or price <= 0:
@@ -229,17 +239,28 @@ def run():
         ref = max(closes + [l["alerts"]["today_high"]]) if closes else l["alerts"]["today_high"]
         avail = available_margin(api)
 
-        # (4)(5)(6) 決策：每輪最多一個動作
-        act = decide(l, price, ref, avail)
+        act = decide(l, price, ref, avail)      # 每輪最多一個動作
         if act is None:
-            log(f"現價{price:.0f} 近高{ref:.0f} 持倉{book}口 可用保證金{avail:,.0f} — 無動作")
+            log(f"[{mode}] 現價{price:.0f} 近高{ref:.0f} 持倉{book}口 保證金{avail:,.0f} — 無動作")
             save_ledger(l); return
-
         if act["action"] == "BLOCK_MARGIN":
-            tg(f"⚠️ 想買但保證金不足：需 ~{act['need']:,.0f}、可用 {act['have']:,.0f}。"
-               f"（入金或此輪跳過）")
+            tg(f"⚠️ 想買但保證金不足：需 ~{act['need']:,.0f}、可用 {act['have']:,.0f}。（{mode}模式）")
             save_ledger(l); return
 
+        # ── 提醒模式：只發 Telegram 建議，不下單、不動帳本（由你手動回報）──
+        if not live:
+            if act["action"] == "BUY":
+                tg(f"🟢 建議買進 1口 @~{price:.0f}（跌破近10日高{ref:.0f}的"
+                   f"{l['config']['step']:.0%}）｜持倉{book}口\n成交後回報：futures_live.py buy {price:.0f}")
+                l["alerts"]["last_buy_level"] = price
+            elif act["action"] == "SELL":
+                lot = act["lot"]
+                tg(f"🔴 建議賣出 1口 @~{price:.0f}（平進場@{lot['entry']:.0f}那口，"
+                   f"+{price-lot['entry']:.0f}點）\n成交後回報：futures_live.py sell {price:.0f}")
+            log(f"[提醒] 發送建議 {act['action']}")
+            save_ledger(l); return
+
+        # ── 下單模式：真實 place/cancel ──
         if act["action"] == "BUY":
             r = place_and_confirm(api, contract, "Buy", price, "New")
             if r == "filled":
@@ -249,9 +270,7 @@ def run():
                 tg(f"✅ 買進成交 1口 @{price:.0f}｜持倉 {net_lots(l)}口")
             else:
                 tg(f"↩️ 買單未成交已撤（@{price:.0f}）")
-            save_ledger(l); return
-
-        if act["action"] == "SELL":
+        elif act["action"] == "SELL":
             lot = act["lot"]
             r = place_and_confirm(api, contract, "Sell", price, "Cover")
             if r == "filled":
@@ -262,7 +281,7 @@ def run():
                    f"｜持倉 {net_lots(l)}口｜累計已實現 {l['realized']:+,.0f}")
             else:
                 tg(f"↩️ 賣單未成交已撤（@{price:.0f}）")
-            save_ledger(l); return
+        save_ledger(l)
 
     except Exception as e:
         log(f"例外 → 停機：{e}")
@@ -275,5 +294,55 @@ def run():
                 pass
 
 
+# ─────────── 手動回報指令（提醒模式維持帳本用）───────────
+
+def cmd_buy(price, contracts=1):
+    l = load_ledger()
+    l["lots"].append({"entry": float(price), "contracts": int(contracts),
+                      "time": datetime.now().strftime("%Y-%m-%d %H:%M"), "sell_armed": False})
+    save_ledger(l)
+    print(f"已記錄買進 {contracts}口 @{price}｜持倉 {net_lots(l)}口")
+
+
+def cmd_sell(sell_price):
+    l = load_ledger()
+    if not l["lots"]:
+        print("目前無持倉"); return
+    sp = float(sell_price); c = l["config"]
+    tp = [x for x in l["lots"] if sp >= x["entry"] * (1 + c["take"])]
+    lot = max(tp, key=lambda x: x["entry"]) if tp else min(l["lots"], key=lambda x: abs(x["entry"] - sp))
+    l["lots"].remove(lot)
+    pnl = (sp - lot["entry"]) * MULT * lot["contracts"]
+    l["realized"] = l.get("realized", 0.0) + pnl
+    save_ledger(l)
+    print(f"已平 進場@{lot['entry']:.0f}→賣@{sp:.0f}（{pnl:+,.0f}元）｜剩 {net_lots(l)}口"
+          f"｜累計已實現 {l['realized']:+,.0f}")
+
+
+def cmd_status():
+    l = load_ledger(); c = l["config"]
+    mode = "下單 🔴" if ENABLE_FLAG.exists() else "提醒 🟡"
+    kill = "｜AUTO_OFF 全停中 ⛔" if KILL_FLAG.exists() else ""
+    print(f"[QFF 下單器] 模式：{mode}{kill}")
+    print(f"  設定：本金{c['capital']:,}/格{c['step']:.0%}/停利+{c['take']:.0%}/上限{c['max_leverage']}x")
+    print(f"  持倉 {net_lots(l)}口｜已實現 {l.get('realized', 0):+,.0f}")
+    for x in sorted(l["lots"], key=lambda z: z["entry"]):
+        print(f"    進場@{x['entry']:.0f} ×{x['contracts']}  →停利賣點 {x['entry']*(1+c['take']):.0f}")
+
+
+def main():
+    a = sys.argv[1:]
+    if not a:
+        run()
+    elif a[0] == "buy":
+        cmd_buy(a[1], a[2] if len(a) > 2 else 1)
+    elif a[0] == "sell":
+        cmd_sell(a[1])
+    elif a[0] == "status":
+        cmd_status()
+    else:
+        print(f"未知指令：{a[0]}（可用 buy/sell/status，或無參數＝跑一輪）")
+
+
 if __name__ == "__main__":
-    run()
+    main()
