@@ -97,14 +97,16 @@ def sj_connect():
     """登入 + 啟用憑證（下單必須）。回傳 (api, contract)。"""
     import shioaji as sj
     env = gm.load_sj_env()
-    for k in ("SJ_API_KEY", "SJ_SEC_KEY", "SJ_CA_PATH", "SJ_CA_PASSWD", "SJ_PERSON_ID"):
+    for k in ("SJ_API_KEY", "SJ_SEC_KEY", "SJ_CA_PATH", "SJ_CA_PASSWD"):
         if not env.get(k):
             raise RuntimeError(f"缺少環境變數 {k}（下單需要，請補進 .env.local）")
+    # 憑證密碼即身分證字號 → person_id 沿用 SJ_CA_PASSWD（可用 SJ_PERSON_ID 覆寫）
+    person_id = env.get("SJ_PERSON_ID") or env["SJ_CA_PASSWD"]
     api = sj.Shioaji()
     api.login(env["SJ_API_KEY"], env["SJ_SEC_KEY"])
     time.sleep(3)
     ok = api.activate_ca(ca_path=env["SJ_CA_PATH"], ca_passwd=env["SJ_CA_PASSWD"],
-                         person_id=env["SJ_PERSON_ID"])
+                         person_id=person_id)
     if not ok:
         raise RuntimeError("憑證啟用失敗 activate_ca=False")
     fut = getattr(api.Contracts.Futures, SYMBOL)
