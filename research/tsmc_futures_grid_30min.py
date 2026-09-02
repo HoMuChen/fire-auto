@@ -376,8 +376,9 @@ def main():
     ap.add_argument("--max-leverage", type=float, default=1.0, dest="max_leverage")
     ap.add_argument("--regime-ma", type=int, default=0, dest="regime_ma",
                     help="趨勢濾網：僅在 adj收盤 > 近N根均線時開新倉（0=關；600≈60日）")
-    ap.add_argument("--intraday-once", action="store_true", dest="intraday_once",
-                    help="當天已買過後，只在收盤那根(13:15)再檢查是否加碼")
+    ap.add_argument("--intraday-once", action=argparse.BooleanOptionalAction, default=True,
+                    dest="intraday_once",
+                    help="一天最多買2次：當天買過後只剩收盤最後一根(13:15)能再買（預設開；--no-intraday-once 關）")
     ap.add_argument("--topup", action="store_true", dest="topup",
                     help="補錢模式：權益跌破維持保證金就補到原始保證金（不強平）")
     ap.add_argument("--initial-margin", type=float, default=0.135, dest="initial_margin")

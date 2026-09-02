@@ -67,7 +67,7 @@ def tg(msg):
 def default_ledger():
     # config 沿用提醒版 QFF 的設定（30萬/2%/3x/固定停利）
     cfg = {"capital": 300000, "step": 0.015, "take": 0.015,
-           "max_leverage": 3.0}
+           "max_leverage": 3.0, "intraday_once": True}
     return {"config": cfg, "lots": [], "realized": 0.0,
             "alerts": {"date": "", "today_high": 0.0, "last_buy_level": None}}
 
@@ -170,20 +170,20 @@ def place_and_confirm(api, contract, action, price, octype):
 
 # ─────────── 決策（與提醒版同邏輯，但用真實保證金/口數）───────────
 
-def decide(l, price, ref, avail_margin, equity):
-    """回傳單一動作 dict 或 None。優先賣（停利），其次買。"""
+def decide(l, price, ref, avail_margin, equity, timing_ok=True):
+    """回傳單一動作 dict 或 None。優先賣（停利），其次買。timing_ok=False 時不買（一天限次用）。"""
     c = l["config"]
     # 賣：任一口漲到 entry×(1+take) → 平該口（成本最高的先平，貼近停利）
     tp = [x for x in l["lots"] if price >= x["entry"] * (1 + c["take"])]
     if tp:
         return {"action": "SELL", "lot": max(tp, key=lambda x: x["entry"]), "price": price}
-    # 買：跌破近10日高×(1-step)、±step內無持倉、口數上限、防重複
+    # 買：跌破近10日高×(1-step)、±step內無持倉、口數上限、防重複、當日時機
     buy_level = ref * (1 - c["step"])
     near = any(abs(x["entry"] / price - 1) < c["step"] for x in l["lots"])
     lots_ok = net_lots(l) < HARD_MAX_LOTS
     last_lv = l["alerts"].get("last_buy_level")
     fresh = last_lv is None or price <= last_lv * (1 - c["step"]) or price >= last_lv * (1 + c["step"])
-    if not (price <= buy_level and not near and lots_ok and fresh):
+    if not (price <= buy_level and not near and lots_ok and fresh and timing_ok):
         return None
     # 兩道硬限：① 真實可用保證金夠 ② 買後真實槓桿 ≤ max_leverage（對真實權益）
     need_margin = price * MULT * INIT_MARGIN_RATE * MARGIN_BUFFER
@@ -217,7 +217,8 @@ def run():
     l = load_ledger()
     today = now.strftime("%Y-%m-%d")
     if l["alerts"].get("date") != today:
-        l["alerts"] = {"date": today, "today_high": 0.0, "last_buy_level": None}
+        l["alerts"] = {"date": today, "today_high": 0.0, "last_buy_level": None,
+                       "bought_today": False}
 
     api = None
     try:
@@ -246,7 +247,12 @@ def run():
         avail = float(getattr(mg, "available_margin", 0.0))
         equity = float(getattr(mg, "equity_amount", avail))
 
-        act = decide(l, price, ref, avail, equity)      # 每輪最多一個動作
+        # 一天最多買 2 次：當天買過後，只剩「收盤前最後可成交那根 13:15」能再買
+        # （13:45 是收盤瞬間、掛單來不及成交，故用 13:15）
+        is_close_run = (hm == "13:15")
+        bought_today = l["alerts"].get("bought_today", False)
+        timing_ok = (not l["config"].get("intraday_once")) or (not bought_today) or is_close_run
+        act = decide(l, price, ref, avail, equity, timing_ok)   # 每輪最多一個動作
         if act is None:
             log(f"[{mode}] 現價{price:.0f} 近高{ref:.0f} 持倉{book}口 "
                 f"權益{equity:,.0f} 可用{avail:,.0f} — 無動作")
@@ -262,6 +268,7 @@ def run():
                 tg(f"🟢 建議買進 1口 @~{price:.0f}（跌破近10日高{ref:.0f}的"
                    f"{l['config']['step']:.1%}）｜持倉{book}口\n成交後回報：futures_live.py buy {price:.0f}")
                 l["alerts"]["last_buy_level"] = price
+                l["alerts"]["bought_today"] = True
             elif act["action"] == "SELL":
                 lot = act["lot"]
                 tg(f"🔴 建議賣出 1口 @~{price:.0f}（平進場@{lot['entry']:.0f}那口，"
@@ -276,6 +283,7 @@ def run():
                 l["lots"].append({"entry": price, "contracts": 1,
                                   "time": now.strftime("%Y-%m-%d %H:%M"), "sell_armed": False})
                 l["alerts"]["last_buy_level"] = price
+                l["alerts"]["bought_today"] = True
                 tg(f"✅ 買進成交 1口 @{price:.0f}｜持倉 {net_lots(l)}口")
             else:
                 tg(f"↩️ 買單未成交已撤（@{price:.0f}）")
