@@ -170,27 +170,32 @@ def place_and_confirm(api, contract, action, price, octype):
 
 # ─────────── 決策（與提醒版同邏輯，但用真實保證金/口數）───────────
 
-def decide(l, price, ref, avail_margin):
+def decide(l, price, ref, avail_margin, equity):
     """回傳單一動作 dict 或 None。優先賣（停利），其次買。"""
     c = l["config"]
     # 賣：任一口漲到 entry×(1+take) → 平該口（成本最高的先平，貼近停利）
     tp = [x for x in l["lots"] if price >= x["entry"] * (1 + c["take"])]
     if tp:
-        lot = max(tp, key=lambda x: x["entry"])
-        return {"action": "SELL", "lot": lot, "price": price}
-    # 買：跌破近10日高×(1-step)、±step內無持倉、口數/保證金夠、防重複
+        return {"action": "SELL", "lot": max(tp, key=lambda x: x["entry"]), "price": price}
+    # 買：跌破近10日高×(1-step)、±step內無持倉、口數上限、防重複
     buy_level = ref * (1 - c["step"])
     near = any(abs(x["entry"] / price - 1) < c["step"] for x in l["lots"])
     lots_ok = net_lots(l) < HARD_MAX_LOTS
-    need_margin = price * MULT * INIT_MARGIN_RATE * MARGIN_BUFFER
-    margin_ok = avail_margin >= need_margin
     last_lv = l["alerts"].get("last_buy_level")
     fresh = last_lv is None or price <= last_lv * (1 - c["step"]) or price >= last_lv * (1 + c["step"])
-    if price <= buy_level and not near and lots_ok and margin_ok and fresh:
-        return {"action": "BUY", "price": price, "margin_ok": True}
-    if not margin_ok and price <= buy_level and not near and lots_ok:
-        return {"action": "BLOCK_MARGIN", "need": need_margin, "have": avail_margin}
-    return None
+    if not (price <= buy_level and not near and lots_ok and fresh):
+        return None
+    # 兩道硬限：① 真實可用保證金夠 ② 買後真實槓桿 ≤ max_leverage（對真實權益）
+    need_margin = price * MULT * INIT_MARGIN_RATE * MARGIN_BUFFER
+    notional_after = (net_lots(l) + 1) * price * MULT
+    if avail_margin < need_margin:
+        return {"action": "BLOCK", "reason": "保證金不足",
+                "detail": f"需~{need_margin:,.0f}、可用{avail_margin:,.0f}"}
+    if equity <= 0 or notional_after > equity * c["max_leverage"]:
+        lev = notional_after / max(equity, 1)
+        return {"action": "BLOCK", "reason": "槓桿上限",
+                "detail": f"再買一口→{lev:.1f}x 超過 {c['max_leverage']}x（權益{equity:,.0f}）"}
+    return {"action": "BUY", "price": price}
 
 
 # ─────────── 主流程 ───────────
@@ -237,14 +242,18 @@ def run():
         l["alerts"]["today_high"] = max(l["alerts"].get("today_high", 0.0), price)
         closes = local_recent_closes(H)
         ref = max(closes + [l["alerts"]["today_high"]]) if closes else l["alerts"]["today_high"]
-        avail = available_margin(api)
+        mg = api.margin(api.futopt_account)
+        avail = float(getattr(mg, "available_margin", 0.0))
+        equity = float(getattr(mg, "equity_amount", avail))
 
-        act = decide(l, price, ref, avail)      # 每輪最多一個動作
+        act = decide(l, price, ref, avail, equity)      # 每輪最多一個動作
         if act is None:
-            log(f"[{mode}] 現價{price:.0f} 近高{ref:.0f} 持倉{book}口 保證金{avail:,.0f} — 無動作")
+            log(f"[{mode}] 現價{price:.0f} 近高{ref:.0f} 持倉{book}口 "
+                f"權益{equity:,.0f} 可用{avail:,.0f} — 無動作")
             save_ledger(l); return
-        if act["action"] == "BLOCK_MARGIN":
-            tg(f"⚠️ 想買但保證金不足：需 ~{act['need']:,.0f}、可用 {act['have']:,.0f}。（{mode}模式）")
+        if act["action"] == "BLOCK":
+            tg(f"⚠️ 想買但{act['reason']}：{act['detail']}。（{mode}模式，此輪跳過）")
+            l["alerts"]["last_buy_level"] = price       # 去重，避免每根重覆發
             save_ledger(l); return
 
         # ── 提醒模式：只發 Telegram 建議，不下單、不動帳本（由你手動回報）──
