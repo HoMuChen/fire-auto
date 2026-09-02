@@ -155,10 +155,10 @@ def place_and_confirm(api, contract, action, price, octype):
     while waited < LMT_TIMEOUT_S:
         time.sleep(POLL_EVERY_S); waited += POLL_EVERY_S
         api.update_status(api.futopt_account)
-        st = str(trade.status.status)
+        st = str(trade.status.status)      # 例："OrderStatus.Filled"（含前綴，用子字串比對）
         if "Filled" in st:
             return "filled"
-        if st in ("Cancelled", "Failed", "Inactive"):
+        if any(x in st for x in ("Cancelled", "Failed", "Inactive")):
             return "cancelled"
     # 逾時未成交 → 撤單
     try:
