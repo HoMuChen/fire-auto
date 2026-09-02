@@ -612,14 +612,14 @@ def _append_trade(pos: dict, exit_price: float | None, exit_date: str):
         writer.writerow(row)
 
 
-def close_position(stock_id, close_price=None):
-    """關閉持倉，並記錄到 data/trades.csv"""
+def close_position(stock_id, close_price=None, exit_date=None):
+    """關閉持倉，並記錄到 data/trades.csv（exit_date 可指定，預設今天）"""
     positions = _load_positions()
     found = [p for p in positions if p["stock_id"] == stock_id]
     if not found:
         print(f"  找不到 {stock_id} 的持倉")
         return
-    exit_date = datetime.now().strftime("%Y-%m-%d")
+    exit_date = exit_date or datetime.now().strftime("%Y-%m-%d")
     exit_price = float(close_price) if close_price is not None else None
     for p in found:
         pnl_str = ""
