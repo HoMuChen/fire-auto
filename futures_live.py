@@ -260,7 +260,7 @@ def run():
         if not live:
             if act["action"] == "BUY":
                 tg(f"🟢 建議買進 1口 @~{price:.0f}（跌破近10日高{ref:.0f}的"
-                   f"{l['config']['step']:.0%}）｜持倉{book}口\n成交後回報：futures_live.py buy {price:.0f}")
+                   f"{l['config']['step']:.1%}）｜持倉{book}口\n成交後回報：futures_live.py buy {price:.0f}")
                 l["alerts"]["last_buy_level"] = price
             elif act["action"] == "SELL":
                 lot = act["lot"]
@@ -333,7 +333,7 @@ def cmd_status():
     mode = "下單 🔴" if ENABLE_FLAG.exists() else "提醒 🟡"
     kill = "｜AUTO_OFF 全停中 ⛔" if KILL_FLAG.exists() else ""
     print(f"[QFF 下單器] 模式：{mode}{kill}")
-    print(f"  設定：本金{c['capital']:,}/格{c['step']:.0%}/停利+{c['take']:.0%}/上限{c['max_leverage']}x")
+    print(f"  設定：本金{c['capital']:,}/格{c['step']:.1%}/停利+{c['take']:.1%}/上限{c['max_leverage']}x")
     print(f"  持倉 {net_lots(l)}口｜已實現 {l.get('realized', 0):+,.0f}")
     for x in sorted(l["lots"], key=lambda z: z["entry"]):
         print(f"    進場@{x['entry']:.0f} ×{x['contracts']}  →停利賣點 {x['entry']*(1+c['take']):.0f}")
