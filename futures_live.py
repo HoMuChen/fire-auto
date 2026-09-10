@@ -346,18 +346,32 @@ def run():
         if dts <= ROLL_DAYS_BEFORE:
             nxt = next((c for m, c in months if m > l["active_month"]), None)
             if nxt is not None:
-                if net_lots(l) == 0:
-                    l["active_month"] = nxt.delivery_month   # 空手：直接切次月
-                    contract = nxt
-                    log(f"近月 {dts} 天結算、空手 → active 切至 {nxt.delivery_month}")
-                elif live:
-                    if roll_position(api, l, contract, nxt):
-                        contract = nxt; save_ledger(l)       # 轉倉成功 → 改用次月續跑
-                    else:
-                        save_ledger(l); return               # 轉倉失敗 → 停
-                else:
+                # 提醒模式：持倉就叫你手動轉，不自動
+                if not live and net_lots(l) > 0:
                     tg(f"⚠️ 近月 {contract.delivery_month} 剩 {dts} 天結算、持倉 {net_lots(l)}口"
                        f" → 請跑 `futures_live.py roll` 轉倉（提醒模式不自動轉）")
+                    save_ledger(l); return
+                # ① 先讓「已達停利」的口正常停利出場（別花轉倉成本 carry 正要平的倉）
+                if live and net_lots(l) > 0:
+                    near_px = snapshot_price(api, contract)
+                    tp = [x for x in l["lots"]
+                          if near_px and near_px >= x["entry"] * (1 + l["config"]["take"])]
+                    for lot in tp:
+                        if place_and_confirm(api, contract, "Sell", near_px, "Cover") == "filled":
+                            pnl = (near_px - lot["entry"]) * MULT * lot["contracts"]
+                            l["lots"].remove(lot); l["realized"] = l.get("realized", 0.0) + pnl
+                            tg(f"✅ 轉倉日先停利 賣@{near_px:.0f}（平 {lot['entry']:.0f}那口 "
+                               f"{pnl:+,.0f}元）｜剩 {net_lots(l)}口")
+                # ② 停利後若空手 → 直接切次月、本輪結束（次月買點下一根再判）
+                if net_lots(l) == 0:
+                    l["active_month"] = nxt.delivery_month
+                    save_ledger(l)
+                    log(f"轉倉日：空手 → active 切至 {nxt.delivery_month}")
+                    return
+                # ③ 還有沒到停利的口 → 轉倉到次月
+                if roll_position(api, l, contract, nxt):
+                    contract = nxt; save_ledger(l)
+                else:
                     save_ledger(l); return
 
         # 對帳：下單模式不符即停機；提醒模式只警告（你手動 buy/sell 回報維持帳本）
