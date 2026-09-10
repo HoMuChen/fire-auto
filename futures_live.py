@@ -142,12 +142,17 @@ def snapshot_price(api, contract):
     return float(s.close) if s and s.close else None
 
 
-def place_and_confirm(api, contract, action, price, octype):
-    """下限價單，輪詢至成交或逾時撤單。回傳 'filled' / 'cancelled' / 'error'。"""
+def place_and_confirm(api, contract, action, price, octype, market=False):
+    """下單，輪詢至成交或逾時撤單。market=True 用市價(轉倉確保成交)。回傳 'filled'/'cancelled'。"""
     import shioaji as sj
-    order = api.Order(action=action, price=price, quantity=1,
-                      price_type="LMT", order_type="ROD", octype=octype,
-                      account=api.futopt_account)
+    if market:
+        order = api.Order(action=action, price=0, quantity=1,
+                          price_type="MKP", order_type="IOC", octype=octype,
+                          account=api.futopt_account)
+    else:
+        order = api.Order(action=action, price=price, quantity=1,
+                          price_type="LMT", order_type="ROD", octype=octype,
+                          account=api.futopt_account)
     trade = api.place_order(contract, order)
     tg(f"下單 {action} {octype} 1口 @{price:.0f}(限價)")
     log(f"place_order {action} {octype} @{price} -> {getattr(trade.status,'status','?')}")
@@ -166,6 +171,117 @@ def place_and_confirm(api, contract, action, price, octype):
     except Exception as e:
         log(f"cancel_order 失敗: {e}")
     return "cancelled"
+
+
+# ─────────── 轉倉（跨月）───────────
+
+ROLL_DAYS_BEFORE = 2             # 近月結算日 ≤ 此天數(日曆天) → 觸發轉倉
+
+def month_contracts(api):
+    """每個結算月挑成交量最大的合約，回傳 [(month, contract), ...] 依月份排序。
+    處理同月雙碼(如 QFFI6/QFFR1)——挑量大的那個才是真正流動的近月。"""
+    from collections import defaultdict
+    g = defaultdict(list)
+    for c in getattr(api.Contracts.Futures, SYMBOL):
+        g[c.delivery_month].append(c)
+    out = []
+    for m in sorted(g):
+        cs = g[m]
+        if len(cs) > 1:
+            snaps = api.snapshots(cs)
+            cs = [max(zip(cs, snaps),
+                      key=lambda z: float(getattr(z[1], "total_volume", 0) or 0))[0]]
+        out.append((m, cs[0]))
+    return out
+
+
+def active_contract(api, ledger):
+    """依帳本 active_month 選合約；沒設就用最近月並寫回。回傳 (contract, months)。"""
+    months = month_contracts(api)
+    am = ledger.get("active_month")
+    for m, c in months:
+        if m == am:
+            return c, months
+    ledger["active_month"] = months[0][0]          # 初始化/校正為最近月
+    return months[0][1], months
+
+
+def days_to_settle(contract):
+    from datetime import date
+    try:
+        return (date.fromisoformat(str(contract.delivery_date)) - date.today()).days
+    except Exception:
+        return 99
+
+
+def roll_position(api, ledger, near_c, next_c, dry=False):
+    """把近月部位轉到次月：先平近月、再開次月，帳本 entry 加價差。回傳 True/False。"""
+    n = net_lots(ledger)
+    near_px = snapshot_price(api, near_c)
+    next_px = snapshot_price(api, next_c)
+    if not near_px or not next_px:
+        tg("⛔ 轉倉中止：取不到近月/次月即時價"); return False
+    spread = next_px - near_px
+    head = (f"{near_c.delivery_month}→{next_c.delivery_month}｜{n}口｜"
+            f"近月{near_px:.0f} 次月{next_px:.0f} 價差{spread:+.0f}")
+    if dry:
+        print(f"[DRY 轉倉預覽] {head}")
+        for lot in ledger["lots"]:
+            print(f"  進場 {lot['entry']:.0f} → 調整後 {lot['entry']+spread:.0f}"
+                  f"（停利點 {(lot['entry']+spread)*(1+ledger['config']['take']):.0f}）")
+        print(f"  將：市價平近月 {n}口、市價開次月 {n}口、active_month→{next_c.delivery_month}")
+        return True
+    tg(f"🔄 開始轉倉 {head}（限價：先平近月、再開次月）")
+    # ① 先平近月（先平最安全：萬一次月開失敗頂多變空手）
+    #    賣掛在買價下緣、買掛在賣價上緣一點以確保成交（用已驗證的 LMT 路徑）
+    for _ in range(n):
+        if place_and_confirm(api, near_c, "Sell", near_px, "Cover") != "filled":
+            tg("⛔ 轉倉：平近月失敗（限價未成交）→ 停止，請人工檢查"); return False
+    # ② 再開次月
+    filled = 0
+    for _ in range(n):
+        if place_and_confirm(api, next_c, "Buy", next_px, "New") == "filled":
+            filled += 1
+        else:
+            tg(f"⚠️ 轉倉：開次月第{filled+1}口失敗（近月已全平）→ 現缺 {n-filled} 口，請人工補")
+            break
+    # ③ 帳本：只保留成功開的口，entry 加價差，切換月份
+    ledger["lots"] = ledger["lots"][:filled]
+    for lot in ledger["lots"]:
+        lot["entry"] = lot["entry"] + spread
+    ledger["active_month"] = next_c.delivery_month
+    tg(f"✅ 轉倉完成 → {next_c.delivery_month}，持倉 {filled} 口，entry 已 {spread:+.0f} 調整"
+       f"（停利點同步移動）")
+    return True
+
+
+def cmd_roll(dry=False):
+    """手動轉倉（dry=預覽不下單）。"""
+    l = load_ledger()
+    if net_lots(l) == 0:
+        # 空手：直接把 active_month 切到最近月即可（不需下單）
+        api, _ = sj_connect(need_ca=not dry)
+        try:
+            months = month_contracts(api)
+            l["active_month"] = months[0][0]
+            save_ledger(l)
+            print(f"空手，active_month 設為最近月 {months[0][0]}（無需下單）")
+        finally:
+            api.logout()
+        return
+    api, _ = sj_connect(need_ca=not dry)
+    try:
+        near_c, months = active_contract(api, l)
+        nxt = next((c for m, c in months if m > l["active_month"]), None)
+        if nxt is None:
+            print("找不到次月合約"); return
+        print(f"近月 {near_c.delivery_month}（結算 {near_c.delivery_date}，剩 {days_to_settle(near_c)} 天）"
+              f" → 次月 {nxt.delivery_month}")
+        ok = roll_position(api, l, near_c, nxt, dry=dry)
+        if ok and not dry:
+            save_ledger(l)
+    finally:
+        api.logout()
 
 
 # ─────────── 決策（與提醒版同邏輯，但用真實保證金/口數）───────────
@@ -222,7 +338,27 @@ def run():
 
     api = None
     try:
-        api, contract = sj_connect(need_ca=live)   # 提醒模式不啟用憑證
+        api, _ = sj_connect(need_ca=live)          # 提醒模式不啟用憑證
+        contract, months = active_contract(api, l)  # 依 active_month 選合約（支援轉倉後鎖次月）
+
+        # ── 轉倉檢查：近月將結算 ──
+        dts = days_to_settle(contract)
+        if dts <= ROLL_DAYS_BEFORE:
+            nxt = next((c for m, c in months if m > l["active_month"]), None)
+            if nxt is not None:
+                if net_lots(l) == 0:
+                    l["active_month"] = nxt.delivery_month   # 空手：直接切次月
+                    contract = nxt
+                    log(f"近月 {dts} 天結算、空手 → active 切至 {nxt.delivery_month}")
+                elif live:
+                    if roll_position(api, l, contract, nxt):
+                        contract = nxt; save_ledger(l)       # 轉倉成功 → 改用次月續跑
+                    else:
+                        save_ledger(l); return               # 轉倉失敗 → 停
+                else:
+                    tg(f"⚠️ 近月 {contract.delivery_month} 剩 {dts} 天結算、持倉 {net_lots(l)}口"
+                       f" → 請跑 `futures_live.py roll` 轉倉（提醒模式不自動轉）")
+                    save_ledger(l); return
 
         # 對帳：下單模式不符即停機；提醒模式只警告（你手動 buy/sell 回報維持帳本）
         broker = broker_net_position(api, contract)
@@ -357,8 +493,10 @@ def main():
         cmd_sell(a[1])
     elif a[0] == "status":
         cmd_status()
+    elif a[0] == "roll":
+        cmd_roll(dry=("--dry" in a or "dry" in a))
     else:
-        print(f"未知指令：{a[0]}（可用 buy/sell/status，或無參數＝跑一輪）")
+        print(f"未知指令：{a[0]}（可用 buy/sell/status/roll [--dry]，或無參數＝跑一輪）")
 
 
 if __name__ == "__main__":
