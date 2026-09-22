@@ -66,7 +66,7 @@ def tg(msg):
 
 def default_ledger():
     # config 沿用提醒版 QFF 的設定（30萬/2%/3x/固定停利）
-    cfg = {"capital": 300000, "step": 0.015, "take": 0.015,
+    cfg = {"capital": 300000, "step": 0.012, "take": 0.012,
            "max_leverage": 3.0, "intraday_once": True}
     return {"config": cfg, "lots": [], "realized": 0.0,
             "alerts": {"date": "", "today_high": 0.0, "last_buy_level": None}}
