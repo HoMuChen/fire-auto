@@ -7,7 +7,8 @@
 
 與股票版差異：
 - 期貨：1 口 = 100 股，1 點 = NT$100；每批 = contracts_per_lot 口。
-- 換月：對近月連續序列做「比例(ratio)還原」消除轉倉價差跳空（保留 % 走勢，供 % 網格用）。
+- 換月：預設用原始近月價(live-like)，留倉部位吃掉換月當天的真實 gap（跨 roll 不製造假獲利，
+  與 live 讀 CSV 原始價一致）；--back-adjust 才切回「比例還原(消gap)」，僅供對照。
 - 成本：期交稅 0.002%/邊（契約金額）+ 手續費/口/邊；轉倉另計每口點數成本。
 - 無槓桿檢查：回報實際槓桿（總名目/權益），套牢不強平（現金流策略前提）。
 - 視窗：30 分 K 僅 2025-01 起（~1.6 年，且為強多頭段），與股票版 6.5 年不可直接比。
@@ -34,28 +35,37 @@ DEFAULT_FEE_PER_SIDE = 20.0      # 手續費 元/口/邊（保守）
 DEFAULT_ROLL_COST_POINTS = 2.0   # 每口每次轉倉成本（點；價差+手續費估）
 
 
-def load_bars(start=None):
+def load_bars(start=None, back_adjust=True):
     rows = list(csv.DictReader(open(CSV, encoding="utf-8")))
     if start:
         rows = [r for r in rows if r["datetime"][:10] >= start]
     dt = [r["datetime"] for r in rows]
     con = [r["contract_date"] for r in rows]
     close = [float(r["close"]) for r in rows]
-    # 比例還原（ratio back-adjust）：把舊合約價按 roll 比例縮放到最新合約尺度，消跳空
     n = len(close)
-    factor = 1.0
-    adj = [0.0] * n
-    for i in range(n - 1, -1, -1):
-        if i < n - 1 and con[i] != con[i + 1] and close[i] > 0:
-            factor *= close[i + 1] / close[i]
-        adj[i] = close[i] * factor
+    if back_adjust:
+        # 比例還原（ratio back-adjust）：把舊合約價按 roll 比例縮放到最新合約尺度，消跳空。
+        # 缺點：換月當天把「舊約昨收→新約今開」整個 gap 抹平，連隔夜真實行情也一起抹掉，
+        # 導致跨換月的單筆損益失真（例：部位不必吃隔夜跌就直接吃反彈＝假獲利）。
+        factor = 1.0
+        adj = [0.0] * n
+        for i in range(n - 1, -1, -1):
+            if i < n - 1 and con[i] != con[i + 1] and close[i] > 0:
+                factor *= close[i + 1] / close[i]
+            adj[i] = close[i] * factor
+    else:
+        # 原始近月價（live-like）：不還原、直接用當日成交量最大合約的真實價。
+        # 換月當天的 gap 視為「真實行情」，留倉部位照吃（等同 live 讀 CSV 的原始價，
+        # 只差一個很小的同時刻價差＝以 roll_cost_points 估）。跨換月不再有假獲利。
+        adj = list(close)
     # 轉倉點：contract 改變的 bar index（開倉部位在此付轉倉成本）
     rolls = set(i for i in range(1, n) if con[i] != con[i - 1])
     return dt, con, close, adj, rolls
 
 
 def run(p):
-    dt, con, real, adj, rolls = load_bars(getattr(p, "start", None))
+    dt, con, real, adj, rolls = load_bars(getattr(p, "start", None),
+                                          getattr(p, "back_adjust", False))
     n = len(adj)
     H = p.h_days * BARS_PER_DAY
 
@@ -384,6 +394,10 @@ def main():
     ap.add_argument("--initial-margin", type=float, default=0.135, dest="initial_margin")
     ap.add_argument("--maintenance-margin", type=float, default=0.1035, dest="maintenance_margin")
     ap.add_argument("--start", default=None, help="回測起始日 YYYY-MM-DD（策略從此日啟動）")
+    ap.add_argument("--back-adjust", action=argparse.BooleanOptionalAction, default=False,
+                    dest="back_adjust",
+                    help="換月價格處理：預設原始近月價(live-like，留倉吃換月真實gap，跨roll不製造假獲利)；"
+                         "--back-adjust=比例還原(消gap，跨roll會失真，僅供對照)")
     ap.add_argument("--atr-mult", type=float, default=0.0, dest="atr_mult",
                     help="動態格距：格距=atr_mult×近期日波動（0=固定 --step）")
     ap.add_argument("--trail-tp", type=float, default=0.007, dest="trail_tp",
