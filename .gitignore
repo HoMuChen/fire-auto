@@ -19,6 +19,9 @@ data/monitor_state.json
 data/*.log
 data/morning_watchlist.txt
 data/watchlist_conditions.json
+data/macro_dashboard.txt
+data/macro_dashboard.json
+data/macro_snapshots/
 .venv/
 shioaji.log
 data/futures_grid_state*.json
