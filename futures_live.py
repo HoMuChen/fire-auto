@@ -286,8 +286,9 @@ def cmd_roll(dry=False):
 
 # ─────────── 決策（與提醒版同邏輯，但用真實保證金/口數）───────────
 
-def decide(l, price, ref, avail_margin, equity, timing_ok=True):
-    """回傳單一動作 dict 或 None。優先賣（停利），其次買。timing_ok=False 時不買（一天限次用）。"""
+def decide(l, price, ref, avail_margin, equity, timing_ok=True, dedup=True):
+    """回傳單一動作 dict 或 None。優先賣（停利），其次買。timing_ok=False 時不買（一天限次用）。
+    dedup=False（提醒模式用）：關閉『每格只提醒一次』，只要在買點之下每輪都回報。"""
     c = l["config"]
     # 賣：任一口漲到 entry×(1+take) → 平該口（成本最高的先平，貼近停利）
     tp = [x for x in l["lots"] if price >= x["entry"] * (1 + c["take"])]
@@ -298,7 +299,7 @@ def decide(l, price, ref, avail_margin, equity, timing_ok=True):
     near = any(abs(x["entry"] / price - 1) < c["step"] for x in l["lots"])
     lots_ok = net_lots(l) < HARD_MAX_LOTS
     last_lv = l["alerts"].get("last_buy_level")
-    fresh = last_lv is None or price <= last_lv * (1 - c["step"]) or price >= last_lv * (1 + c["step"])
+    fresh = (not dedup) or last_lv is None or price <= last_lv * (1 - c["step"]) or price >= last_lv * (1 + c["step"])
     if not (price <= buy_level and not near and lots_ok and fresh and timing_ok):
         return None
     # 兩道硬限：① 真實可用保證金夠 ② 買後真實槓桿 ≤ max_leverage（對真實權益）
@@ -401,8 +402,10 @@ def run():
         # （13:45 是收盤瞬間、掛單來不及成交，故用 13:15）
         is_close_run = (hm == "13:15")
         bought_today = l["alerts"].get("bought_today", False)
-        timing_ok = (not l["config"].get("intraday_once")) or (not bought_today) or is_close_run
-        act = decide(l, price, ref, avail, equity, timing_ok)   # 每輪最多一個動作
+        # 提醒模式：不限時機、不去重 → 只要在買點之下每輪都叫；下單模式維持一天2次+每格去重
+        timing_ok = True if not live else (
+            (not l["config"].get("intraday_once")) or (not bought_today) or is_close_run)
+        act = decide(l, price, ref, avail, equity, timing_ok, dedup=live)
         if act is None:
             log(f"[{mode}] 現價{price:.0f} 近高{ref:.0f} 持倉{book}口 "
                 f"權益{equity:,.0f} 可用{avail:,.0f} — 無動作")
@@ -415,11 +418,10 @@ def run():
         # ── 提醒模式：只發 Telegram 建議，不下單、不動帳本（由你手動回報）──
         if not live:
             if act["action"] == "BUY":
-                tg(f"🟢 建議買進 1口 @~{price:.0f}（跌破近10日高{ref:.0f}的"
-                   f"{l['config']['step']:.1%}）｜持倉{book}口\n成交後回報：futures_live.py buy {price:.0f}")
-                # 提醒模式只去重（last_buy_level），不設 bought_today：
-                # 讓它每跌一格(±step)就再提醒一次，供手動掌握深接；不受「一天2次」上限。
-                l["alerts"]["last_buy_level"] = price
+                drop = (ref - price) / ref * 100
+                tg(f"🟢 買點！現價 {price:.0f}｜近10日高 {ref:.0f}（−{drop:.1f}%）｜持倉{book}口\n"
+                   f"仍在買點，每根K持續提醒｜要接就下：futures_live.py buy {price:.0f}")
+                # 提醒模式不設 last_buy_level / bought_today（decide dedup=False）→ 在買點之下每輪都叫。
             elif act["action"] == "SELL":
                 lot = act["lot"]
                 tg(f"🔴 建議賣出 1口 @~{price:.0f}（平進場@{lot['entry']:.0f}那口，"
