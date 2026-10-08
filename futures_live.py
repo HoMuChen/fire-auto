@@ -417,8 +417,9 @@ def run():
             if act["action"] == "BUY":
                 tg(f"🟢 建議買進 1口 @~{price:.0f}（跌破近10日高{ref:.0f}的"
                    f"{l['config']['step']:.1%}）｜持倉{book}口\n成交後回報：futures_live.py buy {price:.0f}")
+                # 提醒模式只去重（last_buy_level），不設 bought_today：
+                # 讓它每跌一格(±step)就再提醒一次，供手動掌握深接；不受「一天2次」上限。
                 l["alerts"]["last_buy_level"] = price
-                l["alerts"]["bought_today"] = True
             elif act["action"] == "SELL":
                 lot = act["lot"]
                 tg(f"🔴 建議賣出 1口 @~{price:.0f}（平進場@{lot['entry']:.0f}那口，"
