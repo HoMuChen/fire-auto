@@ -154,7 +154,7 @@ def place_and_confirm(api, contract, action, price, octype, market=False):
                           price_type="LMT", order_type="ROD", octype=octype,
                           account=api.futopt_account)
     trade = api.place_order(contract, order)
-    tg(f"下單 {action} {octype} 1口 @{price:.0f}(限價)")
+    tg(f"下單 {action} {octype} 1口 @{price:.0f}（{'市價' if market else '限價'}）")
     log(f"place_order {action} {octype} @{price} -> {getattr(trade.status,'status','?')}")
     waited = 0
     while waited < LMT_TIMEOUT_S:
@@ -229,18 +229,18 @@ def roll_position(api, ledger, near_c, next_c, dry=False):
         for lot in ledger["lots"]:
             print(f"  進場 {lot['entry']:.0f} → 調整後 {lot['entry']+spread:.0f}"
                   f"（停利點 {(lot['entry']+spread)*(1+ledger['config']['take']):.0f}）")
-        print(f"  將：市價平近月 {n}口、市價開次月 {n}口、active_month→{next_c.delivery_month}")
+        print(f"  將：限價平近月 {n}口、市價開次月 {n}口、active_month→{next_c.delivery_month}")
         return True
-    tg(f"🔄 開始轉倉 {head}（限價：先平近月、再開次月）")
+    tg(f"🔄 開始轉倉 {head}（先限價平近月、再市價開次月）")
     # ① 先平近月（先平最安全：萬一次月開失敗頂多變空手）
     #    賣掛在買價下緣、買掛在賣價上緣一點以確保成交（用已驗證的 LMT 路徑）
     for _ in range(n):
         if place_and_confirm(api, near_c, "Sell", near_px, "Cover") != "filled":
             tg("⛔ 轉倉：平近月失敗（限價未成交）→ 停止，請人工檢查"); return False
-    # ② 再開次月
+    # ② 再開次月（市價 MKP/IOC：近月已全平，次月必須確實補回、不能像限價追不到留缺口）
     filled = 0
     for _ in range(n):
-        if place_and_confirm(api, next_c, "Buy", next_px, "New") == "filled":
+        if place_and_confirm(api, next_c, "Buy", next_px, "New", market=True) == "filled":
             filled += 1
         else:
             tg(f"⚠️ 轉倉：開次月第{filled+1}口失敗（近月已全平）→ 現缺 {n-filled} 口，請人工補")
