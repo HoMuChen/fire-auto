@@ -229,14 +229,14 @@ def roll_position(api, ledger, near_c, next_c, dry=False):
         for lot in ledger["lots"]:
             print(f"  進場 {lot['entry']:.0f} → 調整後 {lot['entry']+spread:.0f}"
                   f"（停利點 {(lot['entry']+spread)*(1+ledger['config']['take']):.0f}）")
-        print(f"  將：限價平近月 {n}口、市價開次月 {n}口、active_month→{next_c.delivery_month}")
+        print(f"  將：市價平近月 {n}口、市價開次月 {n}口、active_month→{next_c.delivery_month}")
         return True
-    tg(f"🔄 開始轉倉 {head}（先限價平近月、再市價開次月）")
+    tg(f"🔄 開始轉倉 {head}（市價：先平近月、再開次月）")
     # ① 先平近月（先平最安全：萬一次月開失敗頂多變空手）
-    #    賣掛在買價下緣、買掛在賣價上緣一點以確保成交（用已驗證的 LMT 路徑）
-    for _ in range(n):
-        if place_and_confirm(api, near_c, "Sell", near_px, "Cover") != "filled":
-            tg("⛔ 轉倉：平近月失敗（限價未成交）→ 停止，請人工檢查"); return False
+    #    市價 MKP/IOC：避免限價平到一半卡住（部分平倉→帳本/券商對不上）
+    for i in range(n):
+        if place_and_confirm(api, near_c, "Sell", near_px, "Cover", market=True) != "filled":
+            tg(f"⛔ 轉倉：平近月第{i+1}口失敗（已平 {i} 口、帳本未動）→ 停止，請人工檢查"); return False
     # ② 再開次月（市價 MKP/IOC：近月已全平，次月必須確實補回、不能像限價追不到留缺口）
     filled = 0
     for _ in range(n):
