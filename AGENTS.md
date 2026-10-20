@@ -249,8 +249,8 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 | ~~09:00–13:30 每10分~~ | ~~`monitor.py`~~ **2026-10-20 移除** | |
 | 20:30 平日 | `h2_monthly.py` — 僅「下一平日 ≥12 日且本月未換股」時計算 H2 top20、發 Telegram（只發 `TELEGRAM_CHAT_ID`，不發盤中名單）；狀態 `data/h2_state.json` | `data/h2_monthly.log` |
 | 18:00 平日 | `stock_cache.py today` — 更新全市場股價（盤後收盤資料） | `data/stock_update.log` |
-| 19:00 平日 | `ChipCache().update_all(sleep=1.2)` — 增量更新三大法人/融資融券（1,439 檔，融資券公布較晚為 T-1） | `data/chip_update.log` |
-| 22:00 平日 | 1) 停掉 backfill → 2) `broker_cache.py today` 更新當日券商分點 → 3) 重啟 backfill | `data/broker_daily.log`, `data/broker_backfill.log` |
+| 19:00 平日 | `ChipCache().update_all(sleep=1.2)` — 增量更新三大法人/融資融券（1,439 檔，融資券公布較晚為 T-1）。**2026-10-20 起僅為資料收集**（無策略使用；名單為舊流動股、無新上市/下市股，正式研究請另抓 data/v2） | `data/chip_update.log` |
+| 22:00 平日 | 1) 停掉 backfill → 2) `broker_cache.py today` 更新當日券商分點 → 3) 重啟 backfill（**僅資料收集**；2021-06 起，無法進 v2 dev 期） | `data/broker_daily.log`, `data/broker_backfill.log` |
 
 **券商分點 Backfill**：**已於 2026-06-22 全部補完**（1,439 檔 × 2021-06-30~，存 `data/broker/{id}.parquet`，每檔每日每分點 `buy/sell`，單位=股）。
 每晚 22:00 由 `broker_cache.py today` 增量更新當日。
