@@ -427,6 +427,12 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 
 ### 最佳策略組合（投組模擬結果）
 
+> **⚠ 2026-10-20 point-in-time 重驗：以下方案 A/B 績效含後見之明，不可當預期報酬。**
+> 原 209 檔 med_vol/trending 群組的波動率/趨勢 R² 是用 2020-01~2026-02 **全期**資料計算，已包含 B 期走勢。
+> 改成只用過去資料（2022 年底以前分群 + 當時有流動性才進場），B 期（2023-01~2026-10）三策略組合年化僅 **+2%~+9%**，
+> 輸大盤等權（約 +16%）；現行名單同期為 +22.4%。A 期 +34% 屬樣本內（策略本身在 A 期設計），無法誠實重測。
+> A 期個股篩選規則本身忠實，但樣本外無預測力。14 策略滾動 walk-forward：med_vol/trending 下三策略**全部不 VALID**；各策略比隨機進場的每筆優勢僅 +0.3~0.7pp（只有擠壓 t>2）。重驗腳本 `research/portfolio_sim_pit.py`；14 策略滾動 walk-forward 重驗見 `research/walkforward_validate.py`。
+
 目標群組：**med_vol/trending**（中波動趨勢股）。
 達標門檻：年化 ≥30%, DD ≤15%, Sharpe ≥1.5, 交易/年 ≥50。
 
