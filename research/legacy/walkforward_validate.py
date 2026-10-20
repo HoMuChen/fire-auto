@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-BASE = Path(__file__).resolve().parent.parent
+BASE = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BASE))
 import backtest as bt  # noqa: E402
 from validate_strategy_groups import compute_stock_features, assign_groups  # noqa: E402

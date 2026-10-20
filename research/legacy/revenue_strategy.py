@@ -23,7 +23,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent))
 import strat_lab as lab  # noqa: E402
 
-BASE = Path(__file__).parent.parent
+BASE = Path(__file__).parent.parent.parent
 REV_DIR = BASE / "data" / "revenue"
 
 

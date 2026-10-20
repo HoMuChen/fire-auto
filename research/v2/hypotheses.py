@@ -54,12 +54,131 @@ FNS = {"H1": (h1_mom12_1, "12-1 動能"), "H2": (h2_hi52, "52週高點接近度"
        "H4": (h4_rev1m, "短期反轉"), "H5": (h5_lowpbr, "低PBR"), "H6": (h6_dy, "高殖利率"),
        "H7": (h7_rev_yoy, "月營收YoY"), "H8": (h8_rev_price, "營收YoY+價>60MA"), "H9": (h9_amihud, "Amihud非流動性")}
 
+# ───────── 第二批 ─────────
+def h10_rev_high(P):
+    return P["rev3_high"]
+
+
+def h11_ey(P):
+    return (1 / P["per"]).where(P["per"] > 0)
+
+
+def h12_rev_persist(P):
+    return P["rev_pos6"] + 0.01 * P["rev_yoy3"]
+
+
+def h13_max(P):
+    r = P["close"].pct_change(fill_method=None)
+    return -r.rolling(21, min_periods=15).max()
+
+
+def h14_h2_h7(P):
+    a = h2_hi52(P).rank(axis=1, pct=True)
+    b = h7_rev_yoy(P).rank(axis=1, pct=True)
+    return (a + b) / 2
+
+
+FNS.update({"H10": (h10_rev_high, "營收創新高"), "H11": (h11_ey, "盈餘殖利率"), "H12": (h12_rev_persist, "營收YoY持續性"),
+            "H13": (h13_max, "彩券效應反向"), "H14": (h14_h2_h7, "H2×H7合成(事後)")})
+
+
+def _big_in_topq(score, P, n_hint=None):
+    """分數前 20% 中，近 60 日平均成交金額越大分數越高（其餘設 NaN）。topn 取前 20 即「前 20% 裡最大的 20 檔」。"""
+    elig = P["liq"] & (P["nbars"] >= 250)
+    s = score.where(elig)
+    q = s.rank(axis=1, pct=True)
+    m = P["money"].rolling(60, min_periods=40).mean()
+    return m.where(q > 0.8)
+
+
+def h15_rev_high_big(P):
+    return _big_in_topq(h10_rev_high(P), P)
+
+
+def h16_rev_persist_big(P):
+    return _big_in_topq(h12_rev_persist(P), P)
+
+
+def h17_rev_yoy_big(P):
+    return _big_in_topq(h7_rev_yoy(P), P)
+
+
+FNS.update({"H15": (h15_rev_high_big, "營收創新高・大型"), "H16": (h16_rev_persist_big, "營收持續性・大型"),
+            "H17": (h17_rev_yoy_big, "營收YoY・大型")})
+
+
+# ───────── 第四批（籌碼；dev 自 2012-07）─────────
+def _vol_sum(P, n):
+    return P["volume"].rolling(n, min_periods=int(n * 0.8)).sum()
+
+
+def h22_trust(P):
+    return P["inst_t"].rolling(20, min_periods=16).sum() / _vol_sum(P, 20)
+
+
+def h23_foreign(P):
+    return P["inst_f"].rolling(20, min_periods=16).sum() / _vol_sum(P, 20)
+
+
+def h24_margin_cut(P):
+    m = P["margin_bal"]
+    return -(m / m.shift(20) - 1).where(m >= 100)
+
+
+def h25_inst60(P):
+    tot = P["inst_f"] + P["inst_t"] + P["inst_d"]
+    return tot.rolling(60, min_periods=48).sum() / _vol_sum(P, 60)
+
+
+FNS.update({"H22": (h22_trust, "投信認養20日"), "H23": (h23_foreign, "外資買超20日"),
+            "H24": (h24_margin_cut, "融資減肥20日"), "H25": (h25_inst60, "法人合計60日")})
+CHIP = {"H22", "H23", "H24", "H25"}
+
+
+# ───────── 第五批（事後複合）─────────
+def _pct(x):
+    return x.rank(axis=1, pct=True)
+
+
+def h29_double_high(P):
+    return (_pct(h2_hi52(P)) + _pct(h10_rev_high(P))) / 2
+
+
+def h30_rev_combo(P):
+    return (_pct(h7_rev_yoy(P)) + _pct(h10_rev_high(P)) + _pct(h12_rev_persist(P))) / 3
+
+
+FNS.update({"H29": (h29_double_high, "雙新高(事後)"), "H30": (h30_rev_combo, "營收複合(事後)")})
+
+
+# ───────── 第五批（財報；事前）─────────
+def h26_roe(P):
+    return P["roe_ttm"]
+
+
+def h27_gpa(P):
+    return P["gpa_ttm"]
+
+
+def h28_sue(P):
+    return P["sue"].replace([np.inf, -np.inf], np.nan)
+
+
+FNS.update({"H26": (h26_roe, "ROE(TTM)"), "H27": (h27_gpa, "毛利資產比"), "H28": (h28_sue, "盈餘驚喜SUE")})
+FIN = {"H26": "2013-05-01", "H27": "2013-05-01", "H28": "2011-06-01"}
+
+
 if __name__ == "__main__":
     period, keys = sys.argv[1], sys.argv[2:]
-    res, P = xs.run({k: FNS[k] for k in keys}, period, note="事前登記假設")
+    n = int(next((a.split("=")[1] for a in keys if a.startswith("--topn=")), 30))
+    keys = [k for k in keys if not k.startswith("--")]
+    chip = bool(CHIP & set(keys))
+    fin = [FIN[k] for k in keys if k in FIN]
+    start = "2012-07-01" if chip else (max(fin) if fin else None)
+    res, P = xs.run({k: FNS[k] for k in keys}, period, note="事前登記假設", topn=n, start=start, chips=chip, fin=bool(fin))
     rows = []
     for k, (R, st) in res.items():
-        for col in ("top_q", "top30"):
+        for col in ("top_q", "topn"):
             rows.append(dict(H=k, name=FNS[k][1], port=col, **{a: b for a, b in st[col].items()}))
     df = pd.DataFrame(rows)
     for c in ("CAGR", "bench_CAGR", "ex_ann", "MDD", "turnover"):

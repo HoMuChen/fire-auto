@@ -39,10 +39,10 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import backtest as bt  # noqa: E402  復用策略函數、指標、成本常數
 
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parent.parent.parent
 FILTERED_PATH = BASE_DIR / "strategies" / "filtered_stock_lists.json"
 
 INITIAL_CAPITAL = 3_000_000          # 三池各 1/3 = 各 1,000,000

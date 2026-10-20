@@ -9,7 +9,7 @@ import urllib.request
 import urllib.parse
 from pathlib import Path
 
-BASE = Path(__file__).parent.parent
+BASE = Path(__file__).parent.parent.parent
 REV_DIR = BASE / "data" / "revenue"
 STOCKS = BASE / "individual_stocks.json"
 URL = "https://api.finmindtrade.com/api/v4/data"

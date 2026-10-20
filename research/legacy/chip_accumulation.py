@@ -16,11 +16,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import backtest as bt  # noqa: E402
 from momentum_pullback import metrics  # noqa: E402  復用績效輸出
 
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parent.parent.parent
 INST_DIR = BASE_DIR / "data" / "institutional"
 STOCKS_PATH = BASE_DIR / "individual_stocks.json"
 INITIAL_CAPITAL = 1_000_000

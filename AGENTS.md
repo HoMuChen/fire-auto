@@ -96,6 +96,8 @@ FinMind API 限制：600 req/hr（有 token）。全市場一天 = 1 call（~46,
 
 ## 每日掃描器 `scan.py`
 
+> **⛔ 已停用（2026-10-20）**：三策略（擠壓/超跌/AD）在 v2 防前視框架重驗失效（見「策略研究原則」）；scan.py / monitor.py 的 cron 已移除，程式保留供查閱。實盤改跑 `h2_monthly.py`（見下方排程）。
+
 掃描三策略（波動率擠壓 / 超跌反彈 / AD背離）的進場信號 + 追蹤持倉出場條件。
 
 **使用者說「跑 scan」、「掃描」、「今天有什麼信號」、「更新資料」時，就執行 `python3 scan.py`。**
@@ -137,6 +139,8 @@ scan.py（日掃）與 monitor.py（盤中）的觸發信號都會套用斷路�
 - 斷路邏輯自測：`python3 circuit_breaker.py`
 
 ## 持倉管理
+
+> **⛔ 已停用（2026-10-20）**：本節為舊三策略持倉流程，隨 scan.py 停用。H2 月換股不設停損、不經 positions.json。
 
 ### 持倉生命週期
 
@@ -241,8 +245,9 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 
 | 時間 | 動作 | Log |
 |------|------|-----|
-| 08:00 平日 | `scan.py --no-update` — 掃描前日信號（含斷路器）、存 `watchlist_conditions.json`、發 Telegram 早晨摘要 | `data/morning_watchlist.txt` |
-| 09:00–13:30 每10分 | `monitor.py` — 盤中掃濾網名單即時信號，套斷路器+防重複，觸發時發 Telegram | `data/monitor.log` |
+| ~~08:00 平日~~ | ~~`scan.py --no-update`~~ **2026-10-20 移除**（舊三策略失效） | |
+| ~~09:00–13:30 每10分~~ | ~~`monitor.py`~~ **2026-10-20 移除** | |
+| 20:30 平日 | `h2_monthly.py` — 僅「下一平日 ≥12 日且本月未換股」時計算 H2 top20、發 Telegram（只發 `TELEGRAM_CHAT_ID`，不發盤中名單）；狀態 `data/h2_state.json` | `data/h2_monthly.log` |
 | 18:00 平日 | `stock_cache.py today` — 更新全市場股價（盤後收盤資料） | `data/stock_update.log` |
 | 19:00 平日 | `ChipCache().update_all(sleep=1.2)` — 增量更新三大法人/融資融券（1,439 檔，融資券公布較晚為 T-1） | `data/chip_update.log` |
 | 22:00 平日 | 1) 停掉 backfill → 2) `broker_cache.py today` 更新當日券商分點 → 3) 重啟 backfill | `data/broker_daily.log`, `data/broker_backfill.log` |
@@ -253,6 +258,8 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 
 ## 券商分點「買方集中度」過濾器（2026-06-23）
 
+> **⚠ 未經 v2 重驗（2026-10-20）**：分點資料僅 2021-06 起，無法放進 dev 2010-19；原驗證建立在已失效的三策略與群組上，結論不可信。腳本已移至 `research/legacy/`。
+
 **結論：「高」買方集中度是正向訊號（非低），但只當「排序器」不當「硬過濾」。** 指標越集中=主力鎖籌/吃貨。詳見 **`strategies/broker_concentration_filter.md`**。
 
 - **每筆品質**：在 trending 群組對三策略加「高集中度」條件能提升每筆報酬、把超跌反彈群組驗證 ✗→✓（VALID 4→5），且獨立於股本規模（非小股本代理）。
@@ -261,7 +268,7 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
   - `scan.py` 自動增量補集中度表（`broker_concentration.ensure_current()`，不依賴 cron；當天首次跑付一次補算成本）。
 - 模組：`broker_concentration.py`（`build` 全建 / `update` 增量 / `median` 摘要）→ `data/broker_concentration.parquet`。
 - 指標：某股某日「買超前 5 大分點買進股數 ÷ 全分點總買進股數」；門檻＝當日全市場橫斷面中位數。
-- 驗證腳本：`research/broker_filter_{validate,groupval,collinearity,groupval_ownmedian}.py`、`research/pool_period_report{,_filtered}.py`。
+- 驗證腳本：`research/legacy/broker_filter_{validate,groupval,collinearity,groupval_ownmedian}.py`、`research/legacy/pool_period_report{,_filtered}.py`。
 - **待辦**：monitor.py 盤中標記（用 T-1 集中度）尚未做。
 
 ## 策略研究原則
@@ -270,7 +277,9 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 > - 期間固定：**dev 2010-2019**（開發）／**val 2020-2023**（規則凍結後才跑）／**holdout 2024-**（封存，需 `unseal=True`，只看一次）
 > - harness 強制：期間截斷、`leak_check()` 前視檢查（截斷重算訊號須一致）、pit 流動性股票池（含下市、不含興櫃）、次日開盤成交、一字漲跌停處理、下市以最後收盤出場
 > - 評估看「超額 vs pit 等權大盤」與「edge vs 同停損隨機進場」，t 值以進場月 cluster；**每次跑都自動記到 `research/v2/experiments.jsonl`（進版控），試過幾個變體一目了然**
-> - **★ 第一個三段都過關的策略：H2「52 週高點接近度」**（每月第一個 ≥12 日交易日開盤換股，買「前一日收盤 / 近 252 日最高收盤」最高的 30 檔等權；股票池＝上市櫃、60 日均量 ≥200 張、≥250 根 K；無停損無濾網）。top30 CAGR：dev +17.7% / val +52.0% / **holdout +54.7%**（大盤等權 +4.3/+20.2/+19.7%），每段每年都贏大盤，日線 MDD −27~−30%（大盤 −34~−38%），月換手 ~87%（成本已計）。詳見 `research/v2/HYPOTHESES.md`。holdout 已於 2026-10-20 開封，之後只剩實盤是樣本外。
+> - **★ 第一個三段都過關的策略：H2「52 週高點接近度」**（每月第一個 ≥12 日交易日開盤換股，買「前一日收盤 / 近 252 日最高收盤」最高的 30 檔等權；股票池＝上市櫃、60 日均量 ≥200 張、≥250 根 K；無停損無濾網）。top30 CAGR：dev +17.7% / val +52.0% / **holdout +54.7%**（大盤等權 +4.3/+20.2/+19.7%），每段每年都贏大盤，日線 MDD −27~−30%（大盤 −34~−38%），月換手 ~87%（成本已計）。詳見 `research/v2/HYPOTHESES.md`。holdout 已於 2026-10-20 開封，之後只剩實盤是樣本外。**實盤執行版用 20 檔**（使用者決定；20~50 檔三段結果相近，20 檔 holdout +57.6%、日線 MDD −30%），其餘規則不變。
+> - **★ 第二個三段皆過：H29「雙新高」**（H2 分數與「近 3 月營收 / 12 個月內最高 3 月營收」各自橫斷面百分位平均，取前 20 檔，其餘同 H2）。top20 CAGR：dev +22.8% / val +66.9% / **holdout +74.1%**，日線 MDD −28~−32%（與 H2 相同）。與 H2 選股重疊 ~34%、月超額相關 0.65；holdout 每年都贏 H2 但差距 t 1.33 不顯著。⚠ 看過結果後提出的組合（事後）。**實盤狀態：備選（使用者資金不足以同跑兩個 → 現行只跑 H2，H29 可直接替換）**。
+> - 舊研究腳本（三策略投組、產業輪動、營收動能、籌碼、分點過濾、walk-forward 重驗）已移至 `research/legacy/`，結論見各節 ⛔ 標記。
 > - 舊 14 策略是在 2020-26 設計的 → 對它們只有 dev 2010-19 是真樣本外（`research/v2/run_legacy14.py`）：扣成本後**沒有一個顯著贏大盤**；相對隨機進場只有 AD背離（edge +0.98pp, t 3.1, 10/10 年）與唐奇安改良（+0.52pp, t 3.5）有優勢，但超額本身僅 +0.35% / −0.10% 每筆；擠壓 +0.24pp(t 1.3)、超跌 −0.28pp、KD 系列顯著為負
 
 ### 核心哲學
@@ -303,6 +312,8 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 
 ### 回測規範
 
+> **⛔ 舊規範（2 年資料、收盤成交、無下市股），新研究改用 v2 harness。**
+
 - **標的範圍**：`individual_stocks.json` 全部個股（有股價資料的 2,369 檔）
 - **資料來源**：`data/stock_prices/` 本地 CSV（透過 `stock_cache.py` 讀取）
 - **資料期間**：2024-02-15 ~ 2026-02-25
@@ -317,7 +328,9 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
   - 停損類型：`fixed_pct`（固定百分比）、`atr`（ATR 倍數）、`trailing_pct`（移動停損）
 - **績效指標**：勝率、平均報酬、最大回撤、獲利因子（Profit Factor）、夏普比率
 
-### 策略驗證標準（必須遵守）
+### 策略驗證標準（舊，已停用）
+
+> **⛔ 群組驗證是前視來源之一（群組用全期特徵）；新標準見本節開頭 v2 說明與 `research/v2/HYPOTHESES.md`。**
 
 **一個策略要被保留，必須通過「群組驗證」**：
 
@@ -356,6 +369,8 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 | low_vol/sideways | 低 | 無 | 194 | 0 |
 
 ## 回測引擎 `backtest.py`
+
+> **⛔ 本節策略的「群組驗證」結論已失效（2026-10-20）**：舊驗證有前視（全期分群、2024-26 流動性名單）、倖存者偏誤、同日收盤成交。v2 重驗（`research/v2/run_legacy14.py`、`seasonal.py`）：14 技術策略扣成本無一贏大盤；春節行情 dev 過、val 弱；金融股 11 月無效；AI 伺服器 2 月/航運 12 月/蘋果 3 月**未重測**（資料挖掘來源，視同無效）。`backtest.py` 的策略函數仍可被 v2 harness 呼叫。
 
 唯一的回測腳本，所有策略都在這裡定義與執行。
 
@@ -444,11 +459,13 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 
 ### 最佳策略組合（投組模擬結果）
 
+> **⛔ 方案 A/B 已失效、已停止實盤（2026-10-20）**。下方數字僅供歷史參考。
+
 > **⚠ 2026-10-20 point-in-time 重驗：以下方案 A/B 績效含後見之明，不可當預期報酬。**
 > 原 209 檔 med_vol/trending 群組的波動率/趨勢 R² 是用 2020-01~2026-02 **全期**資料計算，已包含 B 期走勢。
 > 改成只用過去資料（2022 年底以前分群 + 當時有流動性才進場），B 期（2023-01~2026-10）三策略組合年化僅 **+2%~+9%**，
 > 輸大盤等權（約 +16%）；現行名單同期為 +22.4%。A 期 +34% 屬樣本內（策略本身在 A 期設計），無法誠實重測。
-> A 期個股篩選規則本身忠實，但樣本外無預測力。14 策略滾動 walk-forward：med_vol/trending 下三策略**全部不 VALID**；各策略比隨機進場的每筆優勢僅 +0.3~0.7pp（只有擠壓 t>2）。重驗腳本 `research/portfolio_sim_pit.py`；14 策略滾動 walk-forward 重驗見 `research/walkforward_validate.py`。
+> A 期個股篩選規則本身忠實，但樣本外無預測力。14 策略滾動 walk-forward：med_vol/trending 下三策略**全部不 VALID**；各策略比隨機進場的每筆優勢僅 +0.3~0.7pp（只有擠壓 t>2）。重驗腳本 `research/legacy/portfolio_sim_pit.py`；14 策略滾動 walk-forward 重驗見 `research/legacy/walkforward_validate.py`。
 
 目標群組：**med_vol/trending**（中波動趨勢股）。
 達標門檻：年化 ≥30%, DD ≤15%, Sharpe ≥1.5, 交易/年 ≥50。
@@ -502,10 +519,12 @@ Python 路徑：`/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pand
 **絕對不可以用「共享池」**（所有策略信號丟進同一個池搶位置）：
 - 長持有策略（超跌 30 天、AD 46 天）會堵住位置，短持有策略（擠壓 13.5 天）進不了場
 - 共享池會嚴重低估績效（同樣三策略，分池 +30.8% vs 共享池 +18.7%）
-- 分池的正確實作已重建為 **`research/portfolio_sim.py`**（原參考腳本 `random_50_test.py` 的 `triple_combo()` 在 /tmp、已隨環境清除；本檔復用 backtest.py 策略函數重建，`--exec close` 對齊引擎、`--exec next_open` 為 next-bar 保守版）
+- 分池的正確實作已重建為 **`research/legacy/portfolio_sim.py`**（原參考腳本 `random_50_test.py` 的 `triple_combo()` 在 /tmp、已隨環境清除；本檔復用 backtest.py 策略函數重建，`--exec close` 對齊引擎、`--exec next_open` 為 next-bar 保守版）
   - 驗證：Period A（2020-2022）重現基準 DD 9.1% / CAGR +36.1% / Sharpe 2.66；完整期 2020-2026 CAGR +33.0%、兩期都強正
 
 ### 籌碼策略研究結論（2026-03-01）
+
+> **⛔ 已被 v2 推翻**：H22~H25（投信/外資/融資/法人合計，dev 2012-19）全部不過，外資與融資反向。
 
 - 13 個 volume-normalized 籌碼策略全部通過群組驗證，但投組年化最高 ~14%，**單獨無法達到 30% 門檻**
 - 正確的籌碼資料用法：volume-normalized ratio（net_buy/volume）、rolling window 累積、1-day lag（收盤後才公布）

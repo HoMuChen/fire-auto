@@ -20,12 +20,12 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 import portfolio_sim as PS  # noqa: E402
 import backtest as bt  # noqa: E402
 from validate_strategy_groups import compute_stock_features, assign_groups  # noqa: E402
 
-BASE = Path(__file__).resolve().parent.parent
+BASE = Path(__file__).resolve().parent.parent.parent
 LIQ_SHARES = 200_000          # 200 張
 A_END, B_START = "2022-12-31", "2023-01-01"
 STOP = {"squeeze": 0.04, "oversold": 0.08, "ad": 0.08}
