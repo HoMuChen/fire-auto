@@ -1,0 +1,41 @@
+"""抓 v2 基本面：月營收（TaiwanStockMonthRevenue）、日本益比/淨值比/殖利率（TaiwanStockPER），2009 起。
+
+輸出 data/v2/revenue/{id}.parquet、data/v2/per/{id}.parquet（空表也存；已存在跳過＝斷點續抓）。
+月營收前視防護：create_time 舊資料多為空 → 一律視為「營收月份次月 10 日收盤後」才可用（法規截止日）。
+"""
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from build_data_v2 import OUT, RateLimiter, api  # noqa: E402
+
+JOBS = {"revenue": "TaiwanStockMonthRevenue", "per": "TaiwanStockPER"}
+
+
+def fetch(lim, sid, kind):
+    f = OUT / kind / f"{sid}.parquet"
+    if f.exists():
+        return "skip"
+    df = api(lim, dataset=JOBS[kind], data_id=sid, start_date="2009-01-01")
+    if df is None:
+        return "fail"
+    df.to_parquet(f, index=False)
+    return "ok" if len(df) else "empty"
+
+
+if __name__ == "__main__":
+    lim = RateLimiter(int(sys.argv[sys.argv.index("--rate") + 1]) if "--rate" in sys.argv else 85)
+    u = pd.read_csv(OUT / "universe.csv", dtype=str)
+    for k in JOBS:
+        (OUT / k).mkdir(exist_ok=True)
+    jobs = [(s, k) for k in JOBS for s in u.stock_id]
+    stats = {}
+    with ThreadPoolExecutor(6) as ex:
+        for i, r in enumerate(ex.map(lambda j: fetch(lim, *j), jobs)):
+            stats[r] = stats.get(r, 0) + 1
+            if i % 400 == 0:
+                print(f"[{i}/{len(jobs)}] {stats}", flush=True)
+    print("完成", stats, flush=True)
