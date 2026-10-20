@@ -12,6 +12,7 @@ data/futures/
 data/polymarket/
 data/sector_rotation/
 data/walkforward/
+data/v2/
 data/broker_concentration.parquet
 data/cache_meta.json
 data/broker_cache_meta.json
