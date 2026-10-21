@@ -168,6 +168,53 @@ FNS.update({"H26": (h26_roe, "ROE(TTM)"), "H27": (h27_gpa, "毛利資產比"), "
 FIN = {"H26": "2013-05-01", "H27": "2013-05-01", "H28": "2011-06-01"}
 
 
+# ───────── 第七批（新類型）─────────
+def h35_overnight(P):
+    on = np.log(P["open"] / P["close"].shift(1))
+    return on.rolling(60, min_periods=48).sum()
+
+
+def h36_intraday_rev(P):
+    intra = np.log(P["close"] / P["open"])
+    return -intra.rolling(60, min_periods=48).sum()
+
+
+def h38_seasonal(P):
+    O = P["open"]
+    idx = O.index
+    rd = xs.rebalance_dates(idx, idx[0], idx[-1])
+    win = pd.DataFrame({d: O.loc[d2] / O.loc[d] - 1 for d, d2 in zip(rd[:-1], rd[1:])}).T   # 每個換股窗口報酬（已實現才用）
+    out = pd.DataFrame(np.nan, index=idx, columns=O.columns)
+    for i, d in enumerate(rd):
+        past = [rd[i - 12 * k] for k in range(1, 6) if i - 12 * k >= 0 and rd[i - 12 * k] in win.index]
+        if len(past) < 3:
+            continue
+        k = idx.get_loc(d)
+        if k == 0:
+            continue
+        w = win.loc[past]
+        sc = w.mean().where(w.notna().sum() >= 3)
+        out.iloc[k - 1] = sc.values          # 放在換股日前一日（backtest 用 shift(1) 取用）
+    return out
+
+
+def h39_ind_rev(P):
+    u = pd.read_csv(xs.H.D / "universe.csv", dtype=str).set_index("stock_id").industry
+    ind = u.reindex(P["close"].columns)
+    C = P["close"].ffill()
+    r = (C / C.shift(21) - 1).where(P["liq"] & (P["nbars"] >= 250))
+    out = pd.DataFrame(np.nan, index=r.index, columns=r.columns)
+    for g, cols in ind.dropna().groupby(ind.dropna()).groups.items():
+        x = r[list(cols)]
+        cnt = x.notna().sum(axis=1)
+        out[list(cols)] = (-(x.sub(x.mean(axis=1), axis=0))).where(cnt >= 5, axis=0)
+    return out
+
+
+FNS.update({"H35": (h35_overnight, "隔夜動能"), "H36": (h36_intraday_rev, "盤中反向"),
+            "H38": (h38_seasonal, "同窗季節性"), "H39": (h39_ind_rev, "產業內相對反轉")})
+
+
 if __name__ == "__main__":
     period, keys = sys.argv[1], sys.argv[2:]
     n = int(next((a.split("=")[1] for a in keys if a.startswith("--topn=")), 30))
