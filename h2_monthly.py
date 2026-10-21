@@ -5,8 +5,9 @@
   股票池 = 上市/上櫃普通股、近 60 交易日均量 ≥ 200 張、已有 ≥ 250 根 K
   分數   = 前一交易日還原收盤 / 近 252 交易日最高還原收盤；取最高 20 檔等權
 
-排程：平日 20:30 跑（避開 19:00 籌碼更新的 API 尖峰）。只有「下一個平日 ≥12 日且本月還沒換過」時才算並發
-Telegram（只發 TELEGRAM_CHAT_ID＝早晨摘要收件人，不發盤中名單）。遇假日則清單順延到下一個交易日開盤，仍有效。
+排程：平日 20:30 跑（避開 19:00 籌碼更新的 API 尖峰）。只有「下一個平日是本月第 1~3 個 ≥12 日的平日、且本月還沒換過」
+時才算並發 Telegram（只發 TELEGRAM_CHAT_ID＝早晨摘要收件人，不發盤中名單）。第 2~3 個只是前一晚失敗時的補發；
+月中不會發（2026-10-21 曾因狀態檔不存在而在月中誤發）。遇假日則清單順延到下一個交易日開盤，仍有效。
 
 用法：
   python3 h2_monthly.py                  # 排程用：非換股前夕直接結束
@@ -35,6 +36,17 @@ def next_weekday(d):
     while d.weekday() >= 5:
         d += timedelta(days=1)
     return d
+
+
+def is_rebalance_eve(target, window=3):
+    """target（下一個平日）是否為本月第 1~window 個 ≥12 日的平日。"""
+    if target.day < 12:
+        return False
+    d, k = target.replace(day=12), 0
+    while d <= target:
+        k += d.weekday() < 5
+        d += timedelta(days=1)
+    return k <= window
 
 
 def load_state():
@@ -128,7 +140,7 @@ def main():
     target = next_weekday(today)
     st = load_state()
     month = target.strftime("%Y-%m")
-    if not force and (target.day < 12 or month in st["months"]):
+    if not force and (not is_rebalance_eve(target) or month in st["months"]):
         return
     top, names, close_today, last_day, n_pool, n_tie = pick(today)
     prev_m = sorted(m for m in st["months"] if m < month)
