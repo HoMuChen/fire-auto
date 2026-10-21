@@ -5,10 +5,10 @@
 從 Polymarket（Gamma API，免金鑰）抓取對台股有間接影響的預測市場即時機率，
 計算與前一交易日的機率變化（Δ 才是真正的訊號，非絕對水位），
 再用 `claude -p`（headless）產生一段繁中台股總經解讀，
-印終端 + 存檔 + 發早晨 Telegram（緊接在 scan.py 早晨摘要之後）。
+印終端 + 存檔 + 發早晨 Telegram（平日 08:01）。
 
 ⚠️ 定位：這是「參考儀表」，不是可回測的 alpha 訊號。
-    不進 scan.py、不碰斷路器、不影響任何已驗證策略。
+    不進任何策略、不影響 H2 等已驗證策略。
 
 用法：
     python3 macro_dashboard.py              # 抓資料 + LLM 分析 + 存檔 + 發 Telegram

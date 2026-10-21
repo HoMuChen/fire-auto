@@ -12,6 +12,7 @@
 """
 import sys
 sys.path.insert(0, "/Users/mu/fire-auto")
+sys.path.insert(0, "/Users/mu/fire-auto/legacy")
 import json
 from datetime import date
 
@@ -30,7 +31,7 @@ CFG = {
 
 
 def load_universe():
-    d = json.load(open("/Users/mu/fire-auto/strategies/filtered_stock_lists.json"))
+    d = json.load(open("/Users/mu/fire-auto/legacy/strategies/filtered_stock_lists.json"))
     return {v["label"]: [x["stock_id"] for x in v["kept"]] for v in d["strategies"].values()}
 
 

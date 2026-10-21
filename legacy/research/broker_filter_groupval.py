@@ -10,6 +10,7 @@
 """
 import sys
 sys.path.insert(0, "/Users/mu/fire-auto")
+sys.path.insert(0, "/Users/mu/fire-auto/legacy")
 import csv
 
 import pandas as pd

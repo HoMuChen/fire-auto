@@ -43,7 +43,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import backtest as bt  # noqa: E402  復用策略函數、指標、成本常數
 
 BASE_DIR = Path(__file__).parent.parent.parent
-FILTERED_PATH = BASE_DIR / "strategies" / "filtered_stock_lists.json"
+FILTERED_PATH = BASE_DIR / "legacy" / "strategies" / "filtered_stock_lists.json"
 
 INITIAL_CAPITAL = 3_000_000          # 三池各 1/3 = 各 1,000,000
 BUY_FEE = bt.BUY_FEE                  # 0.001425

@@ -11,6 +11,7 @@ v2：驗證「高買方集中度 = 正向過濾」假設（使用者事前假設
 import json
 import sys
 sys.path.insert(0, "/Users/mu/fire-auto")
+sys.path.insert(0, "/Users/mu/fire-auto/legacy")
 
 import pandas as pd
 
@@ -32,7 +33,7 @@ def net_return(b, s):
 
 
 def load_filters():
-    lists = json.load(open("/Users/mu/fire-auto/strategies/filtered_stock_lists.json"))
+    lists = json.load(open("/Users/mu/fire-auto/legacy/strategies/filtered_stock_lists.json"))
     return {k: [x["stock_id"] for x in v["kept"]] for k, v in lists["strategies"].items()}
 
 

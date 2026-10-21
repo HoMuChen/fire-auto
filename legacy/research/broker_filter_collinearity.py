@@ -11,7 +11,8 @@
 """
 import sys
 sys.path.insert(0, "/Users/mu/fire-auto")
-sys.path.insert(0, "/Users/mu/fire-auto/research")
+sys.path.insert(0, "/Users/mu/fire-auto/legacy")
+sys.path.insert(0, "/Users/mu/fire-auto/legacy/research")
 import csv
 
 import pandas as pd

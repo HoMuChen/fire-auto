@@ -19,7 +19,8 @@ from pathlib import Path
 
 import pandas as pd
 
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(__file__).resolve().parent.parent       # 已搬到 legacy/，資料仍在根目錄
+sys.path.insert(0, str(BASE_DIR))
 BROKER_DIR = BASE_DIR / "data" / "broker"
 OUT_PATH = BASE_DIR / "data" / "broker_concentration.parquet"
 STOCKS_PATH = BASE_DIR / "individual_stocks.json"

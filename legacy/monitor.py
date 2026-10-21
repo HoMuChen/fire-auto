@@ -23,10 +23,11 @@ import urllib.parse
 from datetime import datetime
 from pathlib import Path
 
-BASE_DIR = Path(__file__).parent
+LEGACY_DIR = Path(__file__).resolve().parent          # 舊系統已搬到 legacy/（2026-10-21）
+BASE_DIR = LEGACY_DIR.parent                            # 資料、快取模組仍在 repo 根目錄
 DATA_DIR = BASE_DIR / "data" / "stock_prices"
 INDIVIDUAL_STOCKS_PATH = BASE_DIR / "individual_stocks.json"
-FILTERED_LISTS_PATH = BASE_DIR / "strategies" / "filtered_stock_lists.json"
+FILTERED_LISTS_PATH = LEGACY_DIR / "strategies" / "filtered_stock_lists.json"
 STATE_PATH = BASE_DIR / "data" / "monitor_state.json"
 ENV_PATH = BASE_DIR / ".env.local"
 FINMIND_SNAPSHOT_URL = "https://api.finmindtrade.com/api/v4/taiwan_stock_tick_snapshot"

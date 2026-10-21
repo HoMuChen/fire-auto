@@ -9,7 +9,8 @@ DD = 平倉結算階梯式（非逐日盯市），僅供相對比較，不等於
 """
 import sys
 sys.path.insert(0, "/Users/mu/fire-auto")
-sys.path.insert(0, "/Users/mu/fire-auto/research")
+sys.path.insert(0, "/Users/mu/fire-auto/legacy")
+sys.path.insert(0, "/Users/mu/fire-auto/legacy/research")
 import json
 
 import pandas as pd
