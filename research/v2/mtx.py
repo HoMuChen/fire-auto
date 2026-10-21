@@ -196,13 +196,52 @@ def strategy(h, F):
         w = (vol.expanding(60).median() / vol).clip(0, 2)
         k = np.arange(len(idx)) % 5 == 0
         return from_signal(pd.Series(np.where(k, w, np.nan), index=idx).ffill().fillna(0).values)
+    if h == "H60":
+        mg = _aux("mkt_margin", idx)
+        bal = mg[mg.name == "MarginPurchaseMoney"].set_index("date").TodayBalance.reindex(idx)
+        tx = _aux("taiex", idx).set_index("date").close.reindex(idx)
+        ratio = bal / tx
+        chg = ratio / ratio.shift(20) - 1
+        return from_signal(np.where(chg.isna(), 0, np.where(chg > 0, -1, 1)))
+    if h == "H61":
+        ins = _aux("mkt_inst", idx)
+        ins = ins[ins.name.isin(["Foreign_Investor", "Foreign_Dealer_Self"])]
+        net = (ins.buy - ins.sell).groupby(ins.date).sum().reindex(idx)
+        s20 = net.rolling(20).sum()
+        return from_signal(np.where(s20.isna(), 0, np.where(s20 > 0, 1, -1)))
+    if h == "H62":
+        vix = pd.read_parquet(RAW.parent / "TXO_vix.parquet").vix.reindex(idx)
+        rv = S.pct_change().rolling(21).var() * 252
+        vrp = (vix / 100) ** 2 - rv
+        return from_signal(monthly(np.where(vrp.isna(), 0, np.where(vrp > 0, 1, -1)), idx))
+    if h == "H63":
+        us = _aux("gspc", idx).set_index("date").Close
+        us = us[us.index < idx[-1] + pd.Timedelta(days=1)]
+        ur = us.pct_change()
+        k = us.index.searchsorted(idx, side="left") - 1                      # 台股日 t 開盤前最後一個美股交易日
+        sig = np.where(k >= 1, np.sign(ur.values[np.clip(k, 0, None)]), 0)
+        sig = np.nan_to_num(sig)
+        return sig.copy(), sig                                               # 開盤依美股方向建倉，抱到下個開盤
+    if h == "H64":
+        mo = idx.month
+        d = np.where((mo >= 11) | (mo <= 4), 1.0, -1.0)
+        return np.r_[d[1:], d[-1]], d                                        # 換季於收盤（日曆規則）
+    if h == "H65":
+        mg = _aux("mkt_margin", idx)
+        sh = mg[mg.name == "ShortSale"].set_index("date").TodayBalance.reindex(idx)
+        mp = mg[mg.name == "MarginPurchase"].set_index("date").TodayBalance.reindex(idx)
+        r = sh / mp
+        ma = r.rolling(20).mean()
+        return from_signal(np.where(ma.isna(), 0, np.where(r > ma, 1, -1)))
     raise KeyError(h)
 
 
 NAMES = {"BH": "(a) MTX 連續做多", "H47": "H47 200日線多空", "H48": "H48 200日線多/空手", "H49": "H49 時間序列動能",
          "H50": "H50 波動管理做多", "H51": "H51 只抱夜間", "H52": "H52 月初效應", "H53": "H53 唐奇安突破多空", "H54": "H54 RSI(2)回歸多空",
          "H55": "H55 特定法人淨部位多空", "H56": "H56 特定法人淨部位多/空手", "H57": "H57 P/C未平倉比多空",
-         "H58": "H58 萬聖節效應", "H59": "H59 波動目標做多(事後)"}
+         "H58": "H58 萬聖節效應", "H59": "H59 波動目標做多(事後)",
+         "H60": "H60 融資槓桿反向多空", "H61": "H61 外資現貨動能多空", "H62": "H62 VRP擇時多空(月)",
+         "H63": "H63 美股隔夜延續多空", "H64": "H64 萬聖節多空", "H65": "H65 券資比反向多空"}
 
 
 def metrics(r, bench=None):
@@ -246,12 +285,109 @@ def fetch_aux():
     print(len(lt), p.columns.tolist(), p.index.min(), p.index.max())
 
 
+def fetch_aux2():
+    """第十二批資料：全市場融資券、全市場法人、加權指數、S&P 500（逐年）、TXO 全序列結算價（逐月）→ data/v2/futures/。"""
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from build_data_v2 import RateLimiter, api
+    lim, out = RateLimiter(80), RAW.parent
+    jobs = {"mkt_margin": dict(dataset="TaiwanStockTotalMarginPurchaseShortSale"),
+            "mkt_inst": dict(dataset="TaiwanStockTotalInstitutionalInvestors"),
+            "taiex": dict(dataset="TaiwanStockPrice", data_id="TAIEX"),
+            "gspc": dict(dataset="USStockPrice", data_id="^GSPC")}
+    for name, kw in jobs.items():
+        parts = [api(lim, start_date=f"{y}-01-01", end_date=f"{y}-12-31", **kw) for y in range(2008, pd.Timestamp.today().year + 1)]
+        df = pd.concat([x for x in parts if x is not None and len(x)], ignore_index=True)
+        df.to_parquet(out / f"{name}.parquet")
+        print(name, len(df), df.date.min(), df.date.max())
+    chain = []
+    for m in pd.date_range("2009-01-01", pd.Timestamp.today(), freq="MS"):
+        o = api(lim, dataset="TaiwanOptionDaily", data_id="TXO", start_date=f"{m:%Y-%m-%d}", end_date=f"{m + pd.offsets.MonthEnd(0):%Y-%m-%d}")
+        if o is not None and len(o):
+            o = o[(o.trading_session == "position") & o.contract_date.str.fullmatch(r"\d{6}")]
+            chain.append(o[["date", "contract_date", "strike_price", "call_put", "settlement_price"]])
+    pd.concat(chain, ignore_index=True).to_parquet(out / "TXO_chain.parquet")
+    print("TXO chain", sum(len(c) for c in chain))
+
+
+def _term_var(c, p, T, R=0.015):
+    """CBOE 單一到期變異數（同 research/txo_vix.py term_variance）。c/p：strike → 結算價。"""
+    ks = sorted(k for k in c.index if k in p.index)
+    if len(ks) < 5:
+        return None
+    kstar = min(ks, key=lambda k: abs(c[k] - p[k]))
+    F = kstar + np.exp(R * T) * (c[kstar] - p[kstar])
+    below = [k for k in ks if k <= F]
+    if not below:
+        return None
+    K0 = max(below)
+    sel = {K0: (c[K0] + p[K0]) / 2}
+    for side, seq in ((p, [k for k in reversed(ks) if k < K0]), (c, [k for k in ks if k > K0])):
+        zeros = 0
+        for k in seq:
+            q = side[k]
+            if q <= 0:
+                zeros += 1
+                if zeros >= 2:
+                    break
+                continue
+            zeros = 0
+            sel[k] = q
+    sk = sorted(sel)
+    if len(sk) < 3:
+        return None
+    tot = 0.0
+    for i, k in enumerate(sk):
+        dk = sk[1] - sk[0] if i == 0 else (sk[-1] - sk[-2] if i == len(sk) - 1 else (sk[i + 1] - sk[i - 1]) / 2)
+        tot += dk / k ** 2 * np.exp(R * T) * sel[k]
+    return 2 / T * tot - (F / K0 - 1) ** 2 / T
+
+
+def build_vix():
+    """TXO 全序列 → 每日 30 天 VIX（近/次月剩餘 ≥7 天，到期日用第三個週三）→ data/v2/futures/TXO_vix.parquet。"""
+    ch = pd.read_parquet(RAW.parent / "TXO_chain.parquet")
+    ch["cp"] = ch.call_put.str[0].str.upper()
+    exp = {cd: pd.Timestamp(int(cd[:4]), int(cd[4:]), 15) + pd.Timedelta(days=(2 - pd.Timestamp(int(cd[:4]), int(cd[4:]), 15).weekday()) % 7)
+           for cd in ch.contract_date.unique()}
+    rows = []
+    for d, g in ch.groupby("date"):
+        D = pd.Timestamp(d)
+        cds = sorted(cd for cd in g.contract_date.unique() if (exp[cd] - D).days >= 7)[:2]
+        terms = []
+        for cd in cds:
+            h = g[g.contract_date == cd]
+            c = h[h.cp == "C"].groupby("strike_price").settlement_price.last()
+            p = h[h.cp == "P"].groupby("strike_price").settlement_price.last()
+            n = (exp[cd] - D).days
+            v = _term_var(c, p, n / 365)
+            if v is not None:
+                terms.append((n, v))
+        if len(terms) < 2:
+            continue
+        (n1, v1), (n2, v2) = terms
+        w1 = (n2 - 30) / (n2 - n1)
+        v30 = (n1 / 365 * v1 * w1 + n2 / 365 * v2 * (1 - w1)) * 365 / 30
+        if v30 > 0:
+            rows.append((D, 100 * np.sqrt(v30)))
+    v = pd.DataFrame(rows, columns=["date", "vix"]).set_index("date")
+    v.to_parquet(RAW.parent / "TXO_vix.parquet")
+    print(len(v), v.index.min(), v.index.max())
+
+
+def _aux(name, idx):
+    df = pd.read_parquet(RAW.parent / f"{name}.parquet").assign(date=lambda x: pd.to_datetime(x.date))
+    return df[df.date <= idx[-1]]
+
+
 if __name__ == "__main__":
     if sys.argv[1] == "fetch":
         fetch()
         sys.exit()
     if sys.argv[1] == "fetch_aux":
         fetch_aux()
+        sys.exit()
+    if sys.argv[1] == "fetch_aux2":
+        fetch_aux2()
+        build_vix()
         sys.exit()
     period = sys.argv[1]
     unseal = "--unseal" in sys.argv
