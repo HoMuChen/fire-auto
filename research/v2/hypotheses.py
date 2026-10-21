@@ -215,14 +215,179 @@ FNS.update({"H35": (h35_overnight, "隔夜動能"), "H36": (h36_intraday_rev, "�
             "H38": (h38_seasonal, "同窗季節性"), "H39": (h39_ind_rev, "產業內相對反轉")})
 
 
+# ───────── 第十六批（多種新切入點）─────────
+NO_IND = {"其他", "其他電子業"}
+
+
+def _elig(P):
+    return P["liq"] & (P["nbars"] >= 250)
+
+
+def h76_ind_mom(P):
+    u = pd.read_csv(xs.H.D / "universe.csv", dtype=str).set_index("stock_id").industry
+    ind = u.reindex(P["close"].columns)
+    C = P["close"].ffill()
+    r = (C / C.shift(126) - 1).where(_elig(P))
+    own = r.rank(axis=1, pct=True)
+    out = pd.DataFrame(np.nan, index=r.index, columns=r.columns)
+    for g, cols in ind.dropna().groupby(ind.dropna()).groups.items():
+        if g in NO_IND:
+            continue
+        x = r[list(cols)]
+        m = x.mean(axis=1).where(x.notna().sum(axis=1) >= 5)
+        out[list(cols)] = (x * 0 + 1).mul(m, axis=0) + 1e-6 * own[list(cols)]   # 可交易者 = 產業分數，同業內自身報酬排序
+    return out
+
+
+def h77_resid_mom(P, B=21, NB=36):
+    """換股日前一日：以 21 交易日為一「月」，36 個月對 pit 等權市場回歸；分數 = 殘差（跳過最近一月的 11 個月）合計 / 標準差。"""
+    C = P["close"].ffill()
+    E = _elig(P)
+    idx = C.index
+    out = pd.DataFrame(np.nan, index=idx, columns=C.columns)
+    for d in rebalance_dates_all(idx):
+        k = idx.get_loc(d) - 1
+        if k - B * NB < 0:
+            continue
+        pts = [k - B * j for j in range(NB, -1, -1)]                      # 37 個時點 → 36 段
+        px = C.iloc[pts].values
+        R = px[1:] / px[:-1] - 1                                          # 36 × N（舊 → 新）
+        e0 = E.iloc[pts[:-1]].values
+        mkt = np.nanmean(np.where(e0, R, np.nan), axis=1)
+        ok = np.isfinite(R).all(axis=0) & E.iloc[k].values
+        if not ok.any():
+            continue
+        Y = R[:, ok]
+        x = mkt - mkt.mean()
+        beta = (x[:, None] * (Y - Y.mean(axis=0))).sum(axis=0) / (x ** 2).sum()
+        res = Y - Y.mean(axis=0) - beta * x[:, None]
+        w = res[-12:-1]                                                   # 最近 12 段去掉最後一段
+        sc = np.full(C.shape[1], np.nan)
+        sc[ok] = w.sum(axis=0) / w.std(axis=0, ddof=1)
+        out.iloc[k] = sc
+    return out
+
+
+def rebalance_dates_all(idx):
+    return xs.rebalance_dates(idx, idx[0], idx[-1])
+
+
+def h78_abn_vol(P):
+    V = P["volume"].astype(float)
+    return (V.rolling(5, min_periods=4).mean() / V.shift(5).rolling(50, min_periods=40).mean()).replace([np.inf, -np.inf], np.nan)
+
+
+def h79_fip(P):
+    C = P["close"].ffill()
+    pret = (C.shift(21) / C.shift(252) - 1).where(_elig(P))
+    r = P["close"].pct_change(fill_method=None)
+    pos = (r > 0).astype(float).where(r.notna()).shift(21).rolling(231, min_periods=180).mean()
+    neg = (r < 0).astype(float).where(r.notna()).shift(21).rolling(231, min_periods=180).mean()
+    idd = np.sign(pret) * (neg - pos)
+    return (-idd).where(pret.rank(axis=1, pct=True) > 0.7)
+
+
+def h80_asset_growth(P):
+    return -P["ta_g"]
+
+
+def h81_cfy(P):
+    return P["cfo_ttm"] / P["mv"].where(P["mv"] > 0)
+
+
+def h82_fscore(P):
+    pbr = P["pbr"].where((P["pbr"] > 0) & _elig(P))
+    return (P["fscore"] - pbr / 100).where(pbr.rank(axis=1, pct=True) <= 0.2)
+
+
+def h83_accrual(P):
+    return -P["accr"].replace([np.inf, -np.inf], np.nan)
+
+
+def h84_small(P):
+    return -P["mv"].where(P["mv"] > 0)
+
+
+def h85_big_holder(P):
+    return P["big_chg"]
+
+
+def h86_holders_drop(P):
+    return -P["holders_chg"].replace([np.inf, -np.inf], np.nan)
+
+
+FNS.update({"H76": (h76_ind_mom, "產業動能"), "H77": (h77_resid_mom, "殘差動能"), "H78": (h78_abn_vol, "異常成交量"),
+            "H79": (h79_fip, "連續資訊動能"), "H80": (h80_asset_growth, "低資產成長"), "H81": (h81_cfy, "現金流殖利率"),
+            "H82": (h82_fscore, "F-score(低PBR)"), "H83": (h83_accrual, "低應計"), "H84": (h84_small, "小型股"),
+            "H85": (h85_big_holder, "千張大戶增持"), "H86": (h86_holders_drop, "股東人數減少")})
+V16 = {"H76": None, "H77": "2013-01-01", "H78": None, "H79": None, "H80": "2011-06-01", "H81": "2013-04-01",
+       "H82": "2013-04-01", "H83": "2013-04-01", "H84": None, "H85": None, "H86": None}
+
+
+
+# ───────── 第十七批（網路線索 + 台股實務篩選）─────────
+def h87_sur(P):
+    return P["sur"]
+
+
+def h88_margin3(P):
+    return P["margin3"]
+
+
+def h89_ni_high(P):
+    return P["ni_high"]
+
+
+def h90_inv_drop(P):
+    return -P["inv_chg"].replace([np.inf, -np.inf], np.nan)
+
+
+def h91_lowturn_winner(P):
+    C = P["close"].ffill()
+    pret = (C.shift(21) / C.shift(252) - 1).where(_elig(P))
+    return (-P["turn60"]).where(pret.rank(axis=1, pct=True) > 0.7)
+
+
+def h92_state_mom(P):
+    r = P["tr_r252"]
+    m = h1_mom12_1(P)
+    return m.where(r > 0, -m, axis=0).where(r.notna(), axis=0)
+
+
+FNS.update({"H87": (h87_sur, "月營收驚喜SUR"), "H88": (h88_margin3, "三率三升"), "H89": (h89_ni_high, "盈餘創新高"),
+            "H90": (h90_inv_drop, "存貨減少"), "H91": (h91_lowturn_winner, "低換手贏家"), "H92": (h92_state_mom, "市場狀態動能")})
+V17 = {"H87": "2011-02-01", "H88": "2010-06-01", "H89": "2012-01-01", "H90": "2014-04-01", "H91": None, "H92": None}
+
+
+def h93_sur_hi52(P):
+    return (_pct(h2_hi52(P)) + _pct(h87_sur(P))) / 2
+
+
+def h94_triple(P):
+    return (_pct(h2_hi52(P)) + _pct(h10_rev_high(P)) + _pct(h87_sur(P))) / 3
+
+
+FNS.update({"H93": (h93_sur_hi52, "驚喜新高(事後)"), "H94": (h94_triple, "三重(事後)")})
+V17.update({"H93": "2011-02-01", "H94": "2011-02-01"})
+
 if __name__ == "__main__":
     period, keys = sys.argv[1], sys.argv[2:]
     n = int(next((a.split("=")[1] for a in keys if a.startswith("--topn=")), 30))
+    extra = next((a.split("=", 1)[1] for a in keys if a.startswith("--note=")), "")
     keys = [k for k in keys if not k.startswith("--")]
     chip = bool(CHIP & set(keys))
     fin = [FIN[k] for k in keys if k in FIN]
     start = "2012-07-01" if chip else (max(fin) if fin else None)
-    res, P = xs.run({k: FNS[k] for k in keys}, period, note="事前登記假設", topn=n, start=start, chips=chip, fin=bool(fin))
+    batch = next(((B, nm, fl) for B, nm, fl in ((V16, "第十六批", "v16"), (V17, "第十七批", "v17")) if set(keys) <= set(B)), None)
+    if batch:                                              # 第十六批起：載入一次、依各自起始日分組跑
+        B, nm, fl = batch
+        res, P = {}, None
+        for st in sorted({B[k] or "" for k in keys}):
+            grp = {k: FNS[k] for k in keys if (B[k] or "") == st}
+            r_, P = xs.run(grp, period, P=P, note=f"{nm} 事前登記{('；' + extra) if extra else ''}", topn=n, start=st or None, **{fl: True})
+            res.update(r_)
+    else:
+        res, P = xs.run({k: FNS[k] for k in keys}, period, note="事前登記假設", topn=n, start=start, chips=chip, fin=bool(fin))
     rows = []
     for k, (R, st) in res.items():
         for col in ("top_q", "topn"):

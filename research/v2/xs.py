@@ -164,6 +164,151 @@ def add_chips(P):
     P["margin_bal"] = pd.DataFrame(mb).reindex(index=idx, columns=cols).where(P["close"].notna())
 
 
+def _pivot(f):
+    if not f.exists():
+        return None
+    d = pd.read_parquet(f)
+    if not len(d):
+        return None
+    q = d.pivot_table(index="date", columns="type", values="value", aggfunc="last")
+    q.index = pd.to_datetime(q.index)
+    return q
+
+
+INT32_MAX = 2_147_483_647
+
+
+def add_v16(P):
+    """第十六批：mv（日市值）、big_chg / holders_chg（集保：換股月前一月底 vs 前兩月底快照）、
+    季報衍生 ta_g、cfo_ttm、accr、fscore（現金流量表為年初累計 → 拆單季；依法定截止 +1 天對齊）。
+    mv 修正：FinMind 股數有 int32 溢位（2,147,483,647；2010 初大型股最多，2330 市值錯 19 天），隱含股數（市值 / 原始收盤）
+    與集保總股數（7 天前以前最近一次有效快照）差超過 2 倍時改用集保股數 × 原始收盤；兩邊都無效 → 缺值。"""
+    idx, cols = P["close"].index, P["close"].columns
+    per = idx.to_period("M")
+    mv, big, hol, tsh = {}, {}, {}, {}
+    out = {k: {} for k in ("ta_g", "cfo_ttm", "accr", "fscore")}
+    for s in cols:
+        f = H.D / "mv" / f"{s}.parquet"
+        if f.exists():
+            d = pd.read_parquet(f)
+            if len(d):
+                mv[s] = d.assign(date=pd.to_datetime(d.date)).drop_duplicates("date").set_index("date").market_value.astype(float)
+        f = H.D / "hold" / f"{s}.parquet"
+        if f.exists():
+            d = pd.read_parquet(f)
+            if len(d):
+                d["date"] = pd.to_datetime(d.date)
+                t = d[d.HoldingSharesLevel == "total"].drop_duplicates("date").set_index("date").unit.astype(float).sort_index()
+                t = t[t != INT32_MAX]
+                if len(t):
+                    t.index = t.index + pd.Timedelta(days=7)
+                    tsh[s] = t.reindex(t.index.union(idx)).ffill().reindex(idx)
+                for lev, col, dst in (("more than 1,000,001", "percent", big), ("total", "people", hol)):
+                    x = d[d.HoldingSharesLevel == lev].drop_duplicates("date").set_index("date")[col].astype(float).sort_index()
+                    if len(x):
+                        m = x.groupby(x.index.to_period("M")).last()            # 每月最後一個快照
+                        m = m.reindex(pd.period_range(m.index.min(), m.index.max(), freq="M"))
+                        chg = m - m.shift(1) if col == "percent" else m / m.shift(1) - 1
+                        dst[s] = pd.Series(chg.shift(1).reindex(per).values, index=idx)   # 月 M 的交易日用 (M−1) vs (M−2)
+        q, b, c = (_pivot(H.D / k / f"{s}.parquet") for k in ("fin", "bs", "cf"))
+        if q is None or b is None:
+            continue
+        qi = pd.date_range(min(q.index.min(), b.index.min()), max(q.index.max(), b.index.max()), freq="QE")
+        q, b = q.reindex(qi), b.reindex(qi)
+        g = lambda df, k: df[k] if k in df else pd.Series(np.nan, index=qi)   # noqa: E731
+        ta = g(b, "TotalAssets").where(lambda x: x > 0)
+        ttm = lambda x: x.rolling(4, min_periods=4).sum()                      # noqa: E731
+        ni, gp, rev = ttm(g(q, "IncomeAfterTaxes")), ttm(g(q, "GrossProfit")), ttm(g(q, "Revenue"))
+        feats = {"ta_g": ta / ta.shift(4) - 1}
+        cfo = None
+        if c is not None:
+            cum = c["CashFlowsFromOperatingActivities"] if "CashFlowsFromOperatingActivities" in c else g(c, "NetCashInflowFromOperatingActivities")
+            cum = cum.reindex(qi)
+            one = cum - cum.shift(1)
+            cfo = ttm(cum.where(qi.quarter == 1, one))                      # Q1 = 累計值，其餘 = 累計差
+            feats["cfo_ttm"] = cfo
+            feats["accr"] = (ni - cfo) / ((ta + ta.shift(4)) / 2)
+            roa = ni / ta.shift(4)
+            ltd = g(b, "LongtermBorrowings").fillna(0).where(ta.notna())
+            lev, cr = ltd / ta, g(b, "CurrentAssets") / g(b, "CurrentLiabilities").where(lambda x: x > 0)
+            cs = g(b, "CapitalStock")
+            gm, at = gp / rev.where(rev > 0), rev / ta.shift(4)
+            parts = [(roa, roa > 0), (cfo, cfo > 0), (roa.shift(4), roa > roa.shift(4)), (ni, cfo > ni),
+                     (lev.shift(4), lev <= lev.shift(4)), (cr.shift(4), cr > cr.shift(4)), (cs.shift(4), cs <= cs.shift(4)),
+                     (gm.shift(4), gm > gm.shift(4)), (at.shift(4), at > at.shift(4))]
+            ok = pd.concat([x.notna() & cfo.notna() & roa.notna() for x, _ in parts], axis=1).all(axis=1)
+            feats["fscore"] = sum(v.astype(float) for _, v in parts).where(ok)
+        av = _q_avail(qi)
+        for k, v in feats.items():
+            a_ = _align(pd.Series(v.values, index=av), idx, stale=200)
+            if a_ is not None:
+                out[k][s] = a_
+    rc = P["raw_close"].where(P["raw_close"] > 0)
+    mv = pd.DataFrame(mv).reindex(index=idx, columns=cols)
+    ts = pd.DataFrame(tsh).reindex(index=idx, columns=cols).where(lambda x: x > 0)
+    z = mv / rc / ts
+    ovf = ((mv / rc / INT32_MAX - 1).abs() < 0.02) & ts.isna()
+    P["mv"] = mv.mask((z < 0.5) | (z > 2), ts * rc).mask(ovf).where(P["close"].notna())
+    P["big_chg"] = pd.DataFrame(big).reindex(columns=cols)
+    P["holders_chg"] = pd.DataFrame(hol).reindex(columns=cols)
+    for k, x in out.items():
+        P[k] = pd.DataFrame(x).reindex(index=idx, columns=cols)
+
+
+def add_v17(P):
+    """第十七批：sur（月營收驚喜）、margin3（三率三升）、ni_high（盈餘創新高）、inv_chg（存貨變動）、turn60（換手率）、tr_r252（加權報酬指數近 252 日報酬）。"""
+    idx, cols = P["close"].index, P["close"].columns
+    out = {k: {} for k in ("sur", "margin3", "ni_high", "inv_chg")}
+    for s in cols:
+        f = H.D / "revenue" / f"{s}.parquet"
+        if f.exists():
+            d = pd.read_parquet(f)
+            if len(d):
+                d["ym"] = pd.PeriodIndex.from_fields(year=d.revenue_year.astype(int), month=d.revenue_month.astype(int), freq="M")
+                d = d.drop_duplicates("ym", keep="last").set_index("ym").revenue.astype(float)
+                d = d.reindex(pd.period_range(d.index.min(), d.index.max(), freq="M"))
+                dif = d - d.shift(12)
+                h = dif.shift(1).rolling(24, min_periods=12)
+                avail = (d.index + 1).to_timestamp() + pd.Timedelta(days=10)
+                v = _align(pd.Series(((dif - h.mean()) / h.std()).values, index=avail), idx)
+                if v is not None:
+                    out["sur"][s] = v
+        q, b = _pivot(H.D / "fin" / f"{s}.parquet"), _pivot(H.D / "bs" / f"{s}.parquet")
+        feats = {}
+        if q is not None:
+            qi = pd.date_range(q.index.min(), q.index.max(), freq="QE")
+            q = q.reindex(qi)
+            g = lambda df, k: df[k] if k in df else pd.Series(np.nan, index=df.index)   # noqa: E731
+            rev = g(q, "Revenue").where(lambda x: x > 0)
+            ni = g(q, "IncomeAfterTaxes").combine_first(g(q, "NetIncome"))     # 2013 前（舊制）淨利欄位叫 NetIncome
+            dm = [(x / rev).diff(4) for x in (g(q, "GrossProfit"), g(q, "OperatingIncome"), ni)]
+            ok = pd.concat([x.notna() for x in dm], axis=1).all(axis=1)
+            feats["margin3"] = (sum((x > 0).astype(float) for x in dm) + 0.1 * dm[1].clip(-1, 1)).where(ok)
+            ttm = ni.rolling(4, min_periods=4).sum()
+            hi = ttm.rolling(12, min_periods=8).max()
+            gr = (ttm / ttm.shift(4).where(lambda x: x > 0) - 1).clip(-1, 10).fillna(0)
+            feats["ni_high"] = (ttm / hi + 1e-4 * gr).where((ttm > 0) & (hi > 0))
+        if b is not None and "Inventories" in b:
+            qi = pd.date_range(b.index.min(), b.index.max(), freq="QE")
+            b = b.reindex(qi)
+            ta = b["TotalAssets"].where(lambda x: x > 0) if "TotalAssets" in b else pd.Series(np.nan, index=qi)
+            inv = b["Inventories"]
+            feats["inv_chg"] = (inv - inv.shift(4)) / ((ta + ta.shift(4)) / 2)
+        for k, v in feats.items():
+            a_ = _align(pd.Series(v.values, index=_q_avail(v.index)), idx, stale=200)
+            if a_ is not None:
+                out[k][s] = a_
+    for k, x in out.items():
+        P[k] = pd.DataFrame(x).reindex(index=idx, columns=cols)
+    if "mv" not in P:
+        add_v16(P)
+    sh = P["mv"] / P["raw_close"].where(P["raw_close"] > 0)
+    P["turn60"] = P["volume"].astype(float).rolling(60, min_periods=40).mean() / sh.where(sh > 0)
+    t = pd.read_parquet(H.D / "taiex_tr.parquet")
+    t = t.assign(date=pd.to_datetime(t.date)).drop_duplicates("date").set_index("date").price.astype(float)
+    P["tr_r252"] = (t / t.shift(252) - 1).reindex(t.index.union(idx)).ffill().reindex(idx)   # 2005 起算，2010 即有值
+
+
 def rebalance_dates(idx, p0, p1):
     s = pd.Series(idx, index=idx)
     s = s[(s >= p0) & (s <= p1) & (s.dt.day >= 12)]
@@ -230,7 +375,7 @@ def stats(R):
     return out
 
 
-def run(fns, period="dev", P=None, unseal=False, note="", topn=30, start=None, chips=False, fin=False):
+def run(fns, period="dev", P=None, unseal=False, note="", topn=30, start=None, chips=False, fin=False, v16=False, v17=False):
     if period == "holdout" and not unseal:
         raise PermissionError("holdout 封存中")
     p0, p1 = H.PERIODS[period]
@@ -242,6 +387,10 @@ def run(fns, period="dev", P=None, unseal=False, note="", topn=30, start=None, c
             add_chips(P)
         if fin:
             add_fin(P)
+        if v16:
+            add_v16(P)
+        if v17:
+            add_v17(P)
     res = {}
     for name, (fn, desc) in fns.items():
         bad = leak_check_xs(fn, P) if period == "dev" else []

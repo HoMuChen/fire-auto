@@ -8,8 +8,8 @@
 |------|------|
 | `harness.py` | 核心：`PERIODS`、`universe()`、`load_stock()`、逐檔 `simulate()`（次日開盤、一字漲跌停、下市出場）、`leak_check()`、`run()`（含隨機進場基準） |
 | `xs.py` | 橫斷面（排名換股）：`load_panel(end, fundamentals)`、`add_chips` / `add_fin`、`rebalance_dates`（每月第一個 ≥12 日交易日）、`backtest`（分位 + topN）、`leak_check_xs`、`run` |
-| `hypotheses.py` | 橫斷面假設的分數函數 `FNS`（H1~H39）；`python3 research/v2/hypotheses.py dev H2 H10 --topn=20` |
-| `fetch_fundamentals.py` | 抓 `data/v2/` 基本面：`--kinds revenue,per` / `inst,margin` / `fin,bs` |
+| `hypotheses.py` | 橫斷面假設的分數函數 `FNS`（H1~H39、H76~H94）；`python3 research/v2/hypotheses.py dev H2 H10 --topn=20`（第十六/十七批：`add_v16` / `add_v17` 載入集保、市值、現金流量表等） |
+| `fetch_fundamentals.py` | 抓 `data/v2/` 基本面：`--kinds revenue,per` / `inst,margin` / `fin,bs` / `hold,mv,cf`（集保股權分散、日市值、現金流量表）。⚠ FinMind 股數有 int32 溢位（2010 初大型股），`xs.add_v16` 已修正市值 |
 | `run_legacy14.py` | 舊 14 技術策略在 dev 的真樣本外重驗 |
 | `seasonal.py` | H18 春節、H19 金融股 11 月 |
 | `timing.py` | H20/H21 大盤 200 日線擇時 |
@@ -22,7 +22,7 @@
 
 holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使用者同意**。
 
-## 假設總表（75 個）
+## 假設總表（94 個）
 
 狀態：★ 三段皆過／✓ dev+val 過（holdout 未開）／✗ 不過。「事後」= 看過其他結果才提出，可信度打折。
 
@@ -68,8 +68,16 @@ holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使�
 | H71 | 做多 + 1σ 寬跨式疊加（事後） | ✗ | Sharpe 0.72 過，但 MDD −30.4% 比做多深 |
 | H72~H74 | 台指週選賣方：1σ 寬跨式、ATM 賣權、1σ 價外賣權（dev 2013-19） | ✗ | 0.36 / 0.88 / 0.45 < 0.89 |
 | H75 | 做多 MTX + 每週賣 1σ 價外買權 | ✓ dev+val（holdout 未開） | dev 0.93 > 0.89、val 0.95 > 0.93；但疊加層單獨無溢價（Sharpe ≈ 0），只是降波動，勝做多 ~0.03 不顯著 |
+| H76~H79 | 產業動能、殘差動能、異常成交量、連續資訊動能（frog in the pan） | ✗ | 「改良動能」都沒勝過 H2 |
+| H80~H83 | 低資產成長、現金流殖利率、F-score（低 PBR）、低應計 | ✗ | 分位方向對但弱，top20 集中後為負 |
+| H84 | 小型股 | ✗ | top20 +8.3% / t 1.78，分位不單調 |
+| H85 / H86 | 千張大戶增持 / 股東人數減少（集保） | ✗ | 換手高、毛效果小；大戶增持略反向 |
+| H87 | 月營收驚喜 SUR | ✗（top20） | **分位最單調、價差最大**（−9.1→+9.5，top 20% t 5.41），top20 t 1.78 |
+| H88~H92 | 三率三升、盈餘創新高、存貨減少、低換手贏家、市場狀態動能 | ✗ | 空頭後改反轉更差（台股空頭後仍延續） |
+| H93 / H94 | H2 + SUR / H2 + H10 + SUR（事後） | ✗ | dev/val 主判定都過，但 val 輸 H29（−0.59% / −0.30% 月）→ 對 H29 無增量 |
 
 （無 H37。）舊 14 技術策略、舊三策略：dev 扣成本無一顯著贏大盤（`run_legacy14.py`）。
 
 ## 下一步可能方向（尚未做）
 - H2 部位打折（如 60% + 現金）降回撤：純比例縮放，不需再驗證。
+- **H2 平手處理**：62% 的換股日有 > 20 檔分數同為 1（創 252 日新高），凍結規則依代號小→大取 20 檔 → 實際偏上市老公司。H29 以營收分數打破平手。H2 holdout 已開封，變體沒有乾淨的最終檢驗。
