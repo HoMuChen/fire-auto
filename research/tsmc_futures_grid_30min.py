@@ -35,10 +35,12 @@ DEFAULT_FEE_PER_SIDE = 20.0      # 手續費 元/口/邊（保守）
 DEFAULT_ROLL_COST_POINTS = 2.0   # 每口每次轉倉成本（點；價差+手續費估）
 
 
-def load_bars(start=None, back_adjust=True):
+def load_bars(start=None, back_adjust=True, end=None):
     rows = list(csv.DictReader(open(CSV, encoding="utf-8")))
     if start:
         rows = [r for r in rows if r["datetime"][:10] >= start]
+    if end:
+        rows = [r for r in rows if r["datetime"][:10] <= end]
     dt = [r["datetime"] for r in rows]
     con = [r["contract_date"] for r in rows]
     close = [float(r["close"]) for r in rows]
@@ -65,7 +67,8 @@ def load_bars(start=None, back_adjust=True):
 
 def run(p):
     dt, con, real, adj, rolls = load_bars(getattr(p, "start", None),
-                                          getattr(p, "back_adjust", False))
+                                          getattr(p, "back_adjust", False),
+                                          getattr(p, "end", None))
     n = len(adj)
     H = p.h_days * BARS_PER_DAY
 
@@ -202,7 +205,8 @@ def run(p):
                         continue
                 rem.append(lot)
             else:
-                if c >= lot["price"] * (1 + take_i):
+                # gap_target：跳空買深的批，停利價=買進當下上方最近一批的買價（存於 lot["target"]）
+                if c >= max(lot["price"] * (1 + take_i), lot.get("target", 0)):
                     do_close(lot, c)
                 else:
                     rem.append(lot)
@@ -219,6 +223,8 @@ def run(p):
         # RSI 超賣過濾：只在 RSI < gate 時吃網格買點
         rsi_ok = (not getattr(p, "rsi_gate", 0)) or \
             (rsi_series[i] is not None and rsi_series[i] < p.rsi_gate)
+        # 外部濾網：p.buy_block = 禁止開新倉的日期集合（如 VIX 濾網，由研究腳本算好傳入）
+        rsi_ok = rsi_ok and day not in (getattr(p, "buy_block", None) or ())
         # 口數調整（兩種相反哲學，擇一）：
         #  ① depth_scale：跌越深買越多（底部重壓，需預留資金）
         #  ② shallow_boost：淺回檔買越多（常態多賺，深跌靠補錢）
@@ -241,12 +247,18 @@ def run(p):
                 and not any(abs(l["price"] / c - 1) < step_i for l in lots)):
             realized -= p.fee_per_side * cpl  # 買進手續費
             mcf[ym] -= p.fee_per_side * cpl
-            lots.append({"price": c, "contracts": cpl, "real": real[i]})
+            new_lot = {"price": c, "contracts": cpl, "real": real[i]}
+            if getattr(p, "gap_target", False):
+                above = [l["price"] for l in lots if l["price"] > c]
+                # gap_min：上一批比本批高出超過此比例才套用（0=任何更深都套用）
+                if above and min(above) / c - 1 > getattr(p, "gap_min", 0.0):
+                    new_lot["target"] = min(above)
+            lots.append(new_lot)
             mbuy[ym] += 1
             bought_today = True
             trade_log.append({"dt": dt[i], "action": "買", "price": real[i],
                               "adj_price": c, "contracts": cpl, "entry_adj": None,
-                              "pnl": None})
+                              "pnl": None, "target": new_lot.get("target")})
 
         # 反彈減碼：低接累積後,若槓桿超過舒適值,且當根在反彈(上漲),
         # 就賣掉「最接近獲利(成本最低)」的批,把槓桿降回目標(最小實現虧損)
@@ -416,6 +428,10 @@ def main():
                     help="淺回檔加碼：近高處每格買越多口(上限3)，跌深後回1口；深跌靠補錢")
     ap.add_argument("--shallow-taper", type=float, default=0.15, dest="shallow_taper",
                     help="淺回檔加碼的遞減深度（跌到此%後回到1口，預設15%）")
+    ap.add_argument("--gap-target", action="store_true", dest="gap_target",
+                    help="跳空買深的批：停利價=max(買價×(1+take), 買進當下上方最近一批的買價)")
+    ap.add_argument("--gap-min", type=float, default=0.0, dest="gap_min",
+                    help="gap_target 門檻：上一批買價高出本批超過此比例才套用（如 0.024=跳過一格）")
     ap.add_argument("--derisk-lev", type=float, default=0.0, dest="derisk_lev",
                     help="反彈減碼：槓桿>此值且當根上漲時,賣最接近獲利的批降回此槓桿(0=關)")
     p = ap.parse_args()
