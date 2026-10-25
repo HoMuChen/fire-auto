@@ -370,6 +370,111 @@ def h94_triple(P):
 FNS.update({"H93": (h93_sur_hi52, "驚喜新高(事後)"), "H94": (h94_triple, "三重(事後)")})
 V17.update({"H93": "2011-02-01", "H94": "2011-02-01"})
 
+
+# ───────── 第十八批（湊滿 100：六個不同方向）─────────
+def h95_breakout(P):
+    C = P["close"]
+    return C / C.shift(1).rolling(251, min_periods=199).max()
+
+
+def h96_limit_up(P):
+    raw = P["raw_close"].where(P["raw_close"] > 0)
+    r = raw / raw.shift(1) - 1
+    lim = pd.Series(np.where(raw.index < pd.Timestamp("2015-06-01"), 0.07, 0.10), index=raw.index)
+    hit = r.ge(lim - 0.005, axis=0) & r.le(lim + 0.005, axis=0)          # 上限擋掉減資恢復交易等非漲停跳動
+    n = hit.astype(float).where(r.notna()).rolling(60, min_periods=40).sum()
+    C = P["close"].ffill()
+    return n + 0.001 * (C / C.shift(60) - 1).clip(-1, 10)
+
+
+def h97_rev_window(P):
+    C = P["close"].ffill()
+    per = C.index.to_period("M")
+    base = C.groupby(per).last().shift(1).reindex(per)                   # 上月最後交易日收盤
+    return C / base.values - 1
+
+
+def h98_lt_reversal(P):
+    C = P["close"].ffill()
+    return -(C.shift(252) / C.shift(756) - 1)
+
+
+def h99_trend(P, LS=(3, 5, 10, 20, 50, 100, 200), NB=12):
+    """Han-Zhou-Zhu 趨勢因子：換股日前一日的 MA_L / 收盤，橫斷面 OLS 係數取最近 12 期平均 × 本期訊號。"""
+    C = P["close"]
+    A = C.values
+    ok = np.isfinite(A)
+    cs = np.vstack([np.zeros((1, A.shape[1])), np.cumsum(np.where(ok, A, 0), axis=0)])
+    cn = np.vstack([np.zeros((1, A.shape[1])), np.cumsum(ok, axis=0)])
+    E = _elig(P).values
+    idx = C.index
+    ks = [idx.get_loc(d) - 1 for d in rebalance_dates_all(idx) if idx.get_loc(d) >= 1]
+
+    def sig(k):
+        x = np.full((A.shape[1], len(LS)), np.nan)
+        for i, L in enumerate(LS):
+            if k + 1 - L >= 0:
+                full = (cn[k + 1] - cn[k + 1 - L]) == L
+                x[:, i] = np.where(full & ok[k], (cs[k + 1] - cs[k + 1 - L]) / L / A[k], np.nan)
+        return x
+
+    out = pd.DataFrame(np.nan, index=idx, columns=C.columns)
+    X = [sig(k) for k in ks]
+    betas = []
+    for j in range(1, len(ks)):
+        y = (A[ks[j]] / A[ks[j - 1]] - 1).clip(-0.95, 10)                  # 上期訊號 → 本期報酬（本期收盤已知）
+        x = X[j - 1]
+        m = E[ks[j - 1]] & np.isfinite(y) & np.isfinite(x).all(axis=1)
+        b = None
+        if m.sum() > 100:
+            b = np.linalg.lstsq(np.column_stack([np.ones(m.sum()), x[m]]), y[m], rcond=None)[0]
+        betas.append(b)
+        last = betas[-NB:]
+        if len(last) == NB and all(v is not None for v in last):
+            out.iloc[ks[j]] = X[j] @ np.mean(last, axis=0)[1:]
+    return out
+
+
+FNS.update({"H95": (h95_breakout, "突破幅度版52週高"), "H96": (h96_limit_up, "漲停次數"), "H97": (h97_rev_window, "營收公布窗報酬"),
+            "H98": (h98_lt_reversal, "長期反轉"), "H99": (h99_trend, "趨勢因子")})
+V18 = {"H95": None, "H96": None, "H97": None, "H98": "2013-01-01", "H99": "2012-01-01"}
+
+
+def h100_div_month(P):
+    """去年同期（本換股日 −1 年 ~ 下個換股日 −1 年；下個換股日以「次月第一個 ≥12 日的平日」近似）有現金除息者，依殖利率排序。"""
+    ex, dy = P["exdiv"], P["dy"]
+    idx = ex.index
+    out = pd.DataFrame(np.nan, index=idx, columns=ex.columns)
+    for d in rebalance_dates_all(idx):
+        k = idx.get_loc(d) - 1
+        if k < 0:
+            continue
+        nxt = (d + pd.offsets.MonthBegin(1)).replace(day=12)
+        while nxt.weekday() >= 5:
+            nxt += pd.Timedelta(days=1)
+        w = ex.loc[d - pd.DateOffset(years=1): nxt - pd.DateOffset(years=1) - pd.Timedelta(days=1)]
+        if not len(w) or w.index[0] > d - pd.DateOffset(years=1) + pd.Timedelta(days=7):
+            continue                                                      # 一年前還沒有資料
+        out.iloc[k] = dy.iloc[k].fillna(0).where(w.any(axis=0)).values
+    return out
+
+
+FNS.update({"H100": (h100_div_month, "除息月溢酬")})
+V18.update({"H100": "2011-01-01"})
+
+
+# ───────── 第十九批（多訊號合成，事後；對照 H29）─────────
+def h104_hi52_trend(P):
+    return (_pct(h2_hi52(P)) + _pct(h99_trend(P))) / 2
+
+
+def h105_double_high_window(P):
+    return (_pct(h29_double_high(P)) + _pct(h97_rev_window(P))) / 2
+
+
+FNS.update({"H104": (h104_hi52_trend, "H2+趨勢因子(事後)"), "H105": (h105_double_high_window, "H29+公布窗(事後)")})
+V19 = {"H104": "2012-01-01", "H105": None}
+
 if __name__ == "__main__":
     period, keys = sys.argv[1], sys.argv[2:]
     n = int(next((a.split("=")[1] for a in keys if a.startswith("--topn=")), 30))
@@ -378,7 +483,7 @@ if __name__ == "__main__":
     chip = bool(CHIP & set(keys))
     fin = [FIN[k] for k in keys if k in FIN]
     start = "2012-07-01" if chip else (max(fin) if fin else None)
-    batch = next(((B, nm, fl) for B, nm, fl in ((V16, "第十六批", "v16"), (V17, "第十七批", "v17")) if set(keys) <= set(B)), None)
+    batch = next(((B, nm, fl) for B, nm, fl in ((V16, "第十六批", "v16"), (V17, "第十七批", "v17"), (V18, "第十八批", "v18")) if set(keys) <= set(B)), None)
     if batch:                                              # 第十六批起：載入一次、依各自起始日分組跑
         B, nm, fl = batch
         res, P = {}, None

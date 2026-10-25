@@ -233,7 +233,27 @@ def strategy(h, F):
         r = sh / mp
         ma = r.rolling(20).mean()
         return from_signal(np.where(ma.isna(), 0, np.where(r > ma, 1, -1)))
+    if h == "H101":
+        return from_signal(maint_flag(idx, 140, 160))
     raise KeyError(h)
+
+
+def maint_flag(idx, lo=140, hi=160):
+    """大盤融資維持率狀態：收盤 < lo 進入「斷頭區」(1)，直到收盤 > hi 才解除(0)。< 50 視為無資料（2010 前）。"""
+    mt = pd.read_parquet(RAW.parent / "mkt_maint.parquet").maint
+    mt.index = pd.to_datetime(mt.index)
+    mt = mt.reindex(idx).values
+    s, p = np.zeros(len(idx)), 0
+    for i, v in enumerate(mt):
+        if np.isnan(v) or v < 50:
+            s[i] = p
+            continue
+        if p == 0 and v < lo:
+            p = 1
+        elif p == 1 and v > hi:
+            p = 0
+        s[i] = p
+    return s
 
 
 NAMES = {"BH": "(a) MTX 連續做多", "H47": "H47 200日線多空", "H48": "H48 200日線多/空手", "H49": "H49 時間序列動能",
@@ -241,7 +261,8 @@ NAMES = {"BH": "(a) MTX 連續做多", "H47": "H47 200日線多空", "H48": "H48
          "H55": "H55 特定法人淨部位多空", "H56": "H56 特定法人淨部位多/空手", "H57": "H57 P/C未平倉比多空",
          "H58": "H58 萬聖節效應", "H59": "H59 波動目標做多(事後)",
          "H60": "H60 融資槓桿反向多空", "H61": "H61 外資現貨動能多空", "H62": "H62 VRP擇時多空(月)",
-         "H63": "H63 美股隔夜延續多空", "H64": "H64 萬聖節多空", "H65": "H65 券資比反向多空"}
+         "H63": "H63 美股隔夜延續多空", "H64": "H64 萬聖節多空", "H65": "H65 券資比反向多空",
+         "H101": "H101 維持率底部做多"}
 
 
 def metrics(r, bench=None):

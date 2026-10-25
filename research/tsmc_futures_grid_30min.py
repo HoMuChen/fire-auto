@@ -173,6 +173,9 @@ def run(p):
             mcf[ym] -= roll_cost
 
         step_i = dyn_step(i)
+        # 外部日期覆寫：p.step_days = 使用替代格距 p.step_alt 的日期集合（如維持率斷頭區，由研究腳本算好傳入）
+        if getattr(p, "step_days", None) and day in p.step_days:
+            step_i = p.step_alt
         take_i = step_i if getattr(p, "atr_mult", 0) else p.take
 
         # 賣：逐批漲到買價 +TAKE 平倉；移動停利模式則達標後改追蹤高點回落

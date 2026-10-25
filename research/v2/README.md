@@ -8,8 +8,8 @@
 |------|------|
 | `harness.py` | 核心：`PERIODS`、`universe()`、`load_stock()`、逐檔 `simulate()`（次日開盤、一字漲跌停、下市出場）、`leak_check()`、`run()`（含隨機進場基準） |
 | `xs.py` | 橫斷面（排名換股）：`load_panel(end, fundamentals)`、`add_chips` / `add_fin`、`rebalance_dates`（每月第一個 ≥12 日交易日）、`backtest`（分位 + topN）、`leak_check_xs`、`run` |
-| `hypotheses.py` | 橫斷面假設的分數函數 `FNS`（H1~H39、H76~H94）；`python3 research/v2/hypotheses.py dev H2 H10 --topn=20`（第十六/十七批：`add_v16` / `add_v17` 載入集保、市值、現金流量表等） |
-| `fetch_fundamentals.py` | 抓 `data/v2/` 基本面：`--kinds revenue,per` / `inst,margin` / `fin,bs` / `hold,mv,cf`（集保股權分散、日市值、現金流量表）。⚠ FinMind 股數有 int32 溢位（2010 初大型股），`xs.add_v16` 已修正市值 |
+| `hypotheses.py` | 橫斷面假設的分數函數 `FNS`（H1~H39、H76~H100）；`python3 research/v2/hypotheses.py dev H2 H10 --topn=20`（第十六~十八批：`add_v16` / `add_v17` / `add_v18` 載入集保、市值、現金流量表、除息日等） |
+| `fetch_fundamentals.py` | 抓 `data/v2/` 基本面：`--kinds revenue,per` / `inst,margin` / `fin,bs` / `hold,mv,cf`（集保股權分散、日市值、現金流量表）/ `div`（股利、除息日）。⚠ FinMind 股數有 int32 溢位（2010 初大型股），`xs.add_v16` 已修正市值 |
 | `run_legacy14.py` | 舊 14 技術策略在 dev 的真樣本外重驗 |
 | `seasonal.py` | H18 春節、H19 金融股 11 月 |
 | `timing.py` | H20/H21 大盤 200 日線擇時 |
@@ -19,10 +19,12 @@
 | `neutral.py` | H42~H46 期貨多空中性（配對、產業中性）；`python3 research/v2/neutral.py dev H46` |
 | `mtx.py` | H47~H65 小台指單一標的：`fetch` / `fetch_aux`（大額交易人、TXO 未平倉）/ `fetch_aux2`（全市場融資券、法人、加權指數、S&P 500、TXO 月選全序列 → 自建 VIX）→ `data/v2/futures/`；連續近月（到期前一日轉倉）、次日開盤成交；`python3 research/v2/mtx.py dev H56` |
 | `options.py` | H66~H71 台指月選、H72~H75 週選賣方：`weekly` 抓週選、`fsp` 抓期交所最後結算價；每個到期日收盤建倉、持有到下一到期日現金結算、逐日結算價盯市；`python3 research/v2/options.py dev H66` |
+| `maint.py` | 自建**大盤融資維持率**（2010 起）：`fetch`（補抓上市 ETF/DR/特別股融資與價格 → `data/v2/margin_x`、`raw_x`）/ `build` → `data/v2/futures/mkt_maint.parquet` / `show`。與官方常引用值相符（2020-03-19 136%、2025-04-09 127%） |
+| `maint_overlay.py`、`batch19_xs.py` | 第十九批：H102 H2 + 斷頭區加碼小台指；H104/H105 橫斷面合成（對照 H29）。H101 在 `mtx.py`，H103 在 `research/grid_maint.py` |
 
 holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使用者同意**。
 
-## 假設總表（94 個）
+## 假設總表（105 個）
 
 狀態：★ 三段皆過／✓ dev+val 過（holdout 未開）／✗ 不過。「事後」= 看過其他結果才提出，可信度打折。
 
@@ -75,9 +77,16 @@ holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使�
 | H87 | 月營收驚喜 SUR | ✗（top20） | **分位最單調、價差最大**（−9.1→+9.5，top 20% t 5.41），top20 t 1.78 |
 | H88~H92 | 三率三升、盈餘創新高、存貨減少、低換手贏家、市場狀態動能 | ✗ | 空頭後改反轉更差（台股空頭後仍延續） |
 | H93 / H94 | H2 + SUR / H2 + H10 + SUR（事後） | ✗ | dev/val 主判定都過，但 val 輸 H29（−0.59% / −0.30% 月）→ 對 H29 無增量 |
+| H95 | 突破幅度版 52 週高（H2 連續版，解同分） | ✗ | dev 過且勝 H2，val t 1.93、輸 H2 −0.52%/月 → H2 的代號順序平手不需改 |
+| H96~H99 | 漲停次數、營收公布窗報酬、長期反轉、趨勢因子（MA 組合） | ✗ | 公布窗與趨勢因子分位單調，但換手高 / top20 不過 |
+| H100 | 除息月溢酬（預期除息股挑高殖利率） | ✗ | top20 −1.0%/月；但預期除息股**全體**毛超額 +0.72%/月、t 5.96（事後診斷，未扣稅與成本） |
+| H101 / H102 | 大盤融資維持率 < 140% 底部做多（MTX）/ H2 加 50% 小台指 | ✗ | dev 只觸發 1 次（2011-08~2012-02）；Sharpe 0.14；疊加讓 H2 Sharpe 1.07→1.04、MDD 更深 |
+| H103 | QFF 網格維持率斷頭區格距 0.8% | ✗ | 與無濾網完全相同：斷頭區時網格已 5~6 口、槓桿 9.6x > 上限，格距再窄也買不到 |
+| H104 / H105 | H2 + 趨勢因子 / H29 + 營收公布窗（事後，對照 H29） | ✗ | 主判定過（t 4.1 / 4.4），但勝 H29 僅 +0.55 / +0.57%/月、t 1.45 / 1.74 < 2，換手與 MDD 更高 → 不跑 val。與 H93/H94 同型 |
 
 （無 H37。）舊 14 技術策略、舊三策略：dev 扣成本無一顯著贏大盤（`run_legacy14.py`）。
 
 ## 下一步可能方向（尚未做）
 - H2 部位打折（如 60% + 現金）降回撤：純比例縮放，不需再驗證。
-- **H2 平手處理**：62% 的換股日有 > 20 檔分數同為 1（創 252 日新高），凍結規則依代號小→大取 20 檔 → 實際偏上市老公司。H29 以營收分數打破平手。H2 holdout 已開封，變體沒有乾淨的最終檢驗。
+- **H2 平手處理**：62% 的換股日有 > 20 檔分數同為 1（創 252 日新高），凍結規則依代號小→大取 20 檔 → 實際偏上市老公司。H29 以營收分數打破平手；H95 以突破幅度打破平手 val 反而輸 H2。
+- **除息月溢酬**：6~8 月預期除息股全體毛超額 +0.72%/月（H100 診斷，事後），要利用須另登記，並考慮股利稅。
