@@ -4,6 +4,7 @@
       python3 research/v2/breadth.py val          # dev 過才跑；門檻沿用 dev
       python3 research/v2/breadth.py build        # 只重建指標
       python3 research/v2/breadth.py dev --rising [--rise-pp 5]   # H108 惡化型背離（加「B20 60 日上升」條件，第二十二批）
+      python3 research/v2/breadth.py warn                         # H108 當「警示」用的事件層級評估（dev/val 描述統計，不含 holdout）
 """
 import json
 import sys
@@ -168,6 +169,46 @@ def analyse(B, p0, p1, thresh=None, timing_only=False):
     return thresh, res, out
 
 
+def warn(B):
+    """H108 警示段（間隔 >20 日為一段）起點後 120 日內指數最深跌幅、命中（≥10%）率；
+    反向：從強勢跌到 ≤−10% 的事件前 120 日有無警示；以及基準率（任一 120 日窗含警示的機率）。描述統計，非判定。"""
+    B = B.copy()
+    B["dB"] = B.B20 - B.B20.shift(RISE_WIN)
+    thresh = json.load(open(THRESH_FILE))["B20_thresh"]
+    flag = (B.idx_dd >= NEAR - 1) & (B.B20 > thresh) & (B.dB > 0)
+    px, idx, n = B.taiex.values, B.index, len(B)
+    mindd = np.array([px[i + 1:i + 121].min() / px[i] - 1 if i + 121 <= n else np.nan for i in range(n)])
+    anyflag = flag.rolling(120).max()
+    for name in ("dev", "val"):
+        p0, p1 = H.PERIODS[name]
+        m = (idx >= p0) & (idx <= p1)
+        days = np.where((flag & m).values)[0]
+        eps, s0, prev = [], days[0], days[0]
+        for d in days[1:]:
+            if d - prev > 20:
+                eps.append((s0, prev)); s0 = d
+            prev = d
+        eps.append((s0, prev))
+        print(f"\n[{name}] 警示段 {len(eps)} 段")
+        hits = 0
+        for s0, e in eps:
+            fut = px[s0 + 1:s0 + 121]
+            drop, r120 = fut.min() / px[s0] - 1, fut[-1] / px[s0] - 1
+            hits += drop <= -0.10
+            print(f"  {idx[s0].date()}~{idx[e].date()} ({e-s0+1:>3} 日, 起點 B20 {B.B20.iloc[s0]*100:.0f}%)  120 日最深 {drop*100:+5.1f}%  120 日報酬 {r120*100:+5.1f}%  {'★跌≥10%' if drop <= -0.10 else ''}")
+        print(f"  命中（起點後 120 日內跌 ≥10%）{hits}/{len(eps)}")
+        ev, last, arr = [], -999, B.idx_dd.values
+        for i in np.where(m)[0]:
+            if arr[i] <= -0.10 and i - last > 120 and (arr[max(0, i - 120):i] >= NEAR - 1).any():
+                ev.append(i); last = i
+        for i in ev:
+            print(f"  從高點跌 ≥10% 事件 {idx[i].date()}：前 120 日警示天數 {int(flag.iloc[max(0, i-120):i].sum())}")
+        ok = m & ~np.isnan(mindd)
+        d10 = pd.Series(mindd <= -0.10, index=idx)
+        print(f"  120 日內跌 ≥10% 機率：警示日 {d10[ok & flag].mean()*100:.0f}% | 強勢日 {d10[ok & (B.idx_dd >= NEAR-1)].mean()*100:.0f}% | 全部日 {d10[ok].mean()*100:.0f}%；"
+              f"隨機 120 日窗含警示 {anyflag[m].mean()*100:.0f}%")
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "dev"
     if cmd == "build" or not OUT.exists():
@@ -176,6 +217,8 @@ def main():
         B = pd.read_parquet(OUT)
     if cmd == "build":
         return
+    if cmd == "warn":
+        warn(B); return
     if cmd == "holdout":
         raise SystemExit("holdout 需使用者明確同意後再開")
     p0, p1 = H.PERIODS[cmd]
