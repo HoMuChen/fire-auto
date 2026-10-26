@@ -3,6 +3,7 @@
 用法：python3 research/v2/breadth.py dev          # 建指標（快取 data/v2/futures/breadth.parquet）+ dev 判定
       python3 research/v2/breadth.py val          # dev 過才跑；門檻沿用 dev
       python3 research/v2/breadth.py build        # 只重建指標
+      python3 research/v2/breadth.py dev --rising [--rise-pp 5]   # H108 惡化型背離（加「B20 60 日上升」條件，第二十二批）
 """
 import json
 import sys
@@ -18,6 +19,9 @@ OUT = H.D / "futures" / "breadth.parquet"
 LOG = Path(__file__).resolve().parent / "experiments.jsonl"
 WIN, NEAR, HORIZONS = 252, 0.97, (20, 60, 120, 250)
 THRESH_FILE = H.D / "results" / "h107_thresh.json"
+RISING = "--rising" in sys.argv                      # H108：再要求 B20 比 60 日前高（寬度惡化中）
+RISE_WIN = 60
+RISE_PP = float(sys.argv[sys.argv.index("--rise-pp") + 1]) / 100 if "--rise-pp" in sys.argv else 0.0
 
 
 def build(end="2026-12-31"):
@@ -73,6 +77,8 @@ def fwd(tr, h):
 
 
 def analyse(B, p0, p1, thresh=None, timing_only=False):
+    B = B.copy()
+    B["dB"] = B.B20 - B.B20.shift(RISE_WIN)
     d = B[(B.index >= p0) & (B.index <= p1)].copy()
     full = B  # 未來報酬要跨期末，用全表 shift
     for h in HORIZONS:
@@ -82,14 +88,22 @@ def analyse(B, p0, p1, thresh=None, timing_only=False):
     if thresh is None:
         thresh = float(strong.B20.median())
     print(f"\n[{p0}~{p1}] 交易日 {len(d)}，強勢日 {len(strong)}（{len(strong)/len(d)*100:.0f}%），創高日 {len(newhigh)}；"
-          f"B20 門檻（dev 強勢日中位數）= {thresh*100:.1f}%")
+          f"B20 門檻（dev 強勢日中位數）= {thresh*100:.1f}%" + (f"；H108 加 B20 {RISE_WIN} 日變化 > {RISE_PP*100:+.0f}pp" if RISING else ""))
     print(f"  B10 / B20 全期中位 {d.B10.median()*100:.0f}% / {d.B20.median()*100:.0f}%；強勢日 {strong.B10.median()*100:.0f}% / {strong.B20.median()*100:.0f}%")
     res = {}
     rows = []
     if timing_only:
         print("  （主判定 dev 未過，val 不看；只跑次判定擇時）")
-    groups = {} if timing_only else {"全部交易日": d, "強勢日（距高 ≤3%）": strong, "創 252 日新高日": newhigh,
-              "強勢且 B20 高（背離）": strong[strong.B20 > thresh], "強勢且 B20 低": strong[strong.B20 <= thresh]}
+    if RISING:
+        div_mask = (strong.B20 > thresh) & (strong.dB > RISE_PP)
+        groups = {} if timing_only else {"全部交易日": d, "強勢日（距高 ≤3%）": strong,
+                  "強勢且 B20 高且惡化中（H108 背離）": strong[div_mask],
+                  "強勢且 B20 高但改善中（對照）": strong[(strong.B20 > thresh) & ~(strong.dB > RISE_PP)],
+                  "其他強勢日": strong[~div_mask]}
+    else:
+        div_mask = strong.B20 > thresh
+        groups = {} if timing_only else {"全部交易日": d, "強勢日（距高 ≤3%）": strong, "創 252 日新高日": newhigh,
+                  "強勢且 B20 高（背離）": strong[div_mask], "強勢且 B20 低": strong[~div_mask]}
     for nm, g in groups.items():
         r = {"組": nm, "天": len(g)}
         for h in HORIZONS:
@@ -103,10 +117,10 @@ def analyse(B, p0, p1, thresh=None, timing_only=False):
       print("  未來報酬均值（%）與為負的比例（%）")
       print(T.round(1).to_string())
       # 主判定：強勢日內 高半 − 低半，NW t
-      print("  主判定：強勢日內，B20 高半 − 低半（加權報酬指數未來報酬差）")
+      print("  主判定：強勢日內，背離 − 其他強勢日（加權報酬指數未來報酬差）")
       for h in HORIZONS:
         s = strong.dropna(subset=[f"f{h}"])
-        b, t = nw_t(s[f"f{h}"].values, (s.B20 > thresh).astype(float).values, lag=h)
+        b, t = nw_t(s[f"f{h}"].values, div_mask.reindex(s.index).astype(float).values, lag=h)
         res[h] = (b, t)
         print(f"    {h:>3} 日：差 {b*100:+.2f}%  NW t {t:+.2f}")
       # 三分位
@@ -120,8 +134,13 @@ def analyse(B, p0, p1, thresh=None, timing_only=False):
       print(f"  連續版：強勢日 f60 對 B20 斜率 {b:+.2f}（B20 +10pp → {b*0.1*100:+.2f}%）NW t {t:+.2f}")
     # 次判定：擇時（+ 兩個對照：只看大盤位置、反向組）
     strong_f = (B.idx_dd >= NEAR - 1)
-    flags = {"擇時（背離→現金）": (strong_f & (B.B20 > thresh)), "對照：強勢日→現金（不看寬度）": strong_f,
-             "對照：強勢且 B20 低→現金（反向）": (strong_f & (B.B20 <= thresh))}
+    if RISING:
+        flags = {"擇時（背離→現金）": (strong_f & (B.B20 > thresh) & (B.dB > RISE_PP)),
+                 "對照：H107 背離（不看方向）→現金": (strong_f & (B.B20 > thresh)),
+                 "對照：強勢且 B20 高但改善中→現金": (strong_f & (B.B20 > thresh) & ~(B.dB > RISE_PP))}
+    else:
+        flags = {"擇時（背離→現金）": (strong_f & (B.B20 > thresh)), "對照：強勢日→現金（不看寬度）": strong_f,
+                 "對照：強勢且 B20 低→現金（反向）": (strong_f & (B.B20 <= thresh))}
     ret = B.tr.pct_change()
     m = (B.index >= p0) & (B.index <= p1)
     out, yr = {}, {}
@@ -161,15 +180,17 @@ def main():
         raise SystemExit("holdout 需使用者明確同意後再開")
     p0, p1 = H.PERIODS[cmd]
     thresh = None
-    if cmd == "val":
+    if cmd == "val" or RISING:   # H108 沿用 H107 凍結門檻，不重算
         thresh = json.load(open(THRESH_FILE))["B20_thresh"]
     thresh, res, out = analyse(B, p0, p1, thresh, timing_only="--timing-only" in sys.argv)
-    if cmd == "dev":
+    if cmd == "dev" and not RISING:
         THRESH_FILE.parent.mkdir(exist_ok=True)
         json.dump({"B20_thresh": thresh}, open(THRESH_FILE, "w"))
+    strategy, note = ("H108", f"第二十二批 事後：H107 + B20 {RISE_WIN} 日上升 > {RISE_PP*100:+.0f}pp（惡化型背離）") if RISING \
+        else ("H107", "第二十一批 事前登記：寬度背離（B20 高 且 大盤距 52 週高 ≤3%）")
     with open(LOG, "a") as f:
-        f.write(json.dumps(dict(ts=pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), kind="breadth", period=cmd, strategy="H107",
-                                note="第二十一批 事前登記：寬度背離（B20 高 且 大盤距 52 週高 ≤3%）", B20_thresh=thresh,
+        f.write(json.dumps(dict(ts=pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), kind="breadth", period=cmd, strategy=strategy,
+                                note=note, B20_thresh=thresh, rise_pp=RISE_PP if RISING else None,
                                 diff={str(h): {"d": float(b), "t": float(t)} for h, (b, t) in res.items()},
                                 timing={k: {a: float(b) for a, b in v.items()} for k, v in out.items()}), ensure_ascii=False) + "\n")
 
