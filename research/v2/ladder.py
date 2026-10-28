@@ -1,4 +1,4 @@
-"""H121 條件疊加梯度：L0（pit 池）→ L1 H2≥0.95 → L2 +營收 3 月創 12 月新高 → L3 +YoY≥30% → L4 +SUR≥2。
+"""H125 條件疊加梯度：L0（pit 池）→ L1 H2≥0.95 → L2 +營收 3 月創 12 月新高 → L3 +YoY≥30% → L4 +SUR≥2。
 每月換股日開盤買、下一換股日開盤賣；看各層勝率（淨報酬 > 0）相對 L0 提高多少、同月隨機抽樣 p。
 
 用法：python3 research/v2/ladder.py dev|val
@@ -116,7 +116,7 @@ def main(period):
     names = list(COND)
     ok = {k: COND[k](T).fillna(False).values for k in names}
     base = level_stats(T, np.ones(len(T), bool), rng)
-    print(f"H121 {period} {p0}~{p1}\nL0 pit 池     {fmt(base)}")
+    print(f"H125 {period} {p0}~{p1}\nL0 pit 池     {fmt(base)}")
     ladder, mask = [], np.ones(len(T), bool)
     for i, k in enumerate(names, 1):
         mask = mask & ok[k]
@@ -142,7 +142,7 @@ def main(period):
                       f"均={sel.ret.mean()*100:+5.2f}% 中位={sel.ret.median()*100:+5.2f}%")
     with open(H.LOG, "a") as f:
         f.write(json.dumps(dict(ts=time.strftime("%Y-%m-%d %H:%M:%S"), kind="ladder", period=period,
-                                strategy="H121 條件疊加梯度", note="事前登記；勝=淨報酬>0", base=base,
+                                strategy="H125 條件疊加梯度", note="事前登記；勝=淨報酬>0", base=base,
                                 levels={f"L{i}": st for i, st in enumerate(ladder, 1)}),
                            ensure_ascii=False, default=float) + "\n")
 
