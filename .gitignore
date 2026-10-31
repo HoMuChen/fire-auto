@@ -36,3 +36,6 @@ data/futures_grid_state*.json
 data/live_ledger*.json
 data/LIVE_*_ENABLED
 data/AUTO_OFF
+
+# ── 股票月換股狀態（h2_monthly.py 寫入；檔名沿用 H2）──
+data/h2_state.json

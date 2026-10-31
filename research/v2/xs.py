@@ -309,6 +309,25 @@ def add_v17(P):
     P["tr_r252"] = (t / t.shift(252) - 1).reindex(t.index.union(idx)).ffill().reindex(idx)   # 2005 起算，2010 即有值
 
 
+def add_v18(P):
+    """第十八批：exdiv（現金除息交易日 = True；TaiwanStockDividend 的 CashExDividendTradingDate）。"""
+    idx, cols = P["close"].index, P["close"].columns
+    ex = pd.DataFrame(False, index=idx, columns=cols)
+    for s in cols:
+        f = H.D / "div" / f"{s}.parquet"
+        if not f.exists():
+            continue
+        d = pd.read_parquet(f)
+        if not len(d) or "CashExDividendTradingDate" not in d:
+            continue
+        cash = d.CashEarningsDistribution.astype(float).fillna(0) + d.CashStatutorySurplus.astype(float).fillna(0)
+        t = pd.to_datetime(d.CashExDividendTradingDate[cash > 0], errors="coerce").dropna()
+        t = t[t.isin(idx)]
+        if len(t):
+            ex.loc[t, s] = True
+    P["exdiv"] = ex
+
+
 def rebalance_dates(idx, p0, p1):
     s = pd.Series(idx, index=idx)
     s = s[(s >= p0) & (s <= p1) & (s.dt.day >= 12)]
@@ -375,7 +394,7 @@ def stats(R):
     return out
 
 
-def run(fns, period="dev", P=None, unseal=False, note="", topn=30, start=None, chips=False, fin=False, v16=False, v17=False):
+def run(fns, period="dev", P=None, unseal=False, note="", topn=30, start=None, chips=False, fin=False, v16=False, v17=False, v18=False):
     if period == "holdout" and not unseal:
         raise PermissionError("holdout 封存中")
     p0, p1 = H.PERIODS[period]
@@ -391,6 +410,8 @@ def run(fns, period="dev", P=None, unseal=False, note="", topn=30, start=None, c
             add_v16(P)
         if v17:
             add_v17(P)
+        if v18:
+            add_v18(P)
     res = {}
     for name, (fn, desc) in fns.items():
         bad = leak_check_xs(fn, P) if period == "dev" else []
