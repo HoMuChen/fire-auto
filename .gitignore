@@ -13,6 +13,7 @@ data/polymarket/
 data/sector_rotation/
 data/walkforward/
 data/v2/
+data/v2_backup_*/
 data/orderbook/
 data/lake/
 data/broker_concentration.parquet

@@ -12,8 +12,10 @@
   python3 lake/lake.py verify               # 用本機目錄檔跑一致性檢查（筆數、與 harness.load_stock 比對）
   python3 lake/lake.py upload [--dry-run]   # 只傳 sha256 變了的檔 → catalog.duckdb → _manifest.json → 刪 R2 上的孤兒檔
   python3 lake/lake.py status               # 本機 manifest 摘要
+  python3 lake/lake.py daily                # 排程用：lake/update.py 增量更新 data/v2 → build → verify → upload（有 token 才傳）；失敗發 Telegram
 環境變數（.env.local）：R2_ACCOUNT_ID、R2_BUCKET（預設 tw-market）、R2_WRITE_ACCESS_KEY_ID、R2_WRITE_SECRET_ACCESS_KEY
-規則：只有這台機器寫入；過去年份的分區內容不變就不改寫（hash 相同），讀者可放心快取。
+規則：只有這台機器寫入；內容沒變的檔不改寫（sha256 相同）。新股回補歷史、除權息重新還原（adj_* 整段改）時
+      過去年份的分區也會變 → 讀者以 _manifest.json 的 sha256 判斷要不要重抓。
 """
 import argparse
 import hashlib
@@ -249,7 +251,7 @@ def build(names):
     man.update(version=PREFIX, generated_at=datetime.now().isoformat(timespec="seconds"),
                source="FinMind（個人使用，勿公開散布）＋ fire-auto 自建指標",
                conventions={"date": "date32；交易日", "stock_id": "字串", "avail_date": "保守可得日（研究防前視用）",
-                            "units": "金額＝元、股數＝股（margin 為張）", "partition": "year=YYYY 分區；過去年份內容不變就不改寫"})
+                            "units": "金額＝元、股數＝股（margin 為張）", "partition": "year=YYYY 分區；內容沒變不改寫，有變以各檔 sha256 為準（新股回補、除權息會動到過去年份）"})
     (STAGE / MANIFEST).write_text(json.dumps(man, ensure_ascii=False, indent=1))
 
 
@@ -388,10 +390,42 @@ def status():
     print(f"  合計 {tot/1e6:,.0f} MB")
 
 
+def daily():
+    """每日排程：增量更新 → build → verify → upload。任何一步失敗都發 Telegram（主 chat）並以非 0 結束。"""
+    sys.path.insert(0, str(ROOT))
+    import notify
+    import traceback
+    step = "update"
+    try:
+        sys.path.insert(0, str(ROOT / "lake"))
+        import update
+        st = update.run()
+        step = "build"
+        build([])
+        step = "verify"
+        if not verify():
+            raise RuntimeError("verify 未通過")
+        env = load_env()
+        if all(env.get(k) for k in ("R2_ACCOUNT_ID", "R2_WRITE_ACCESS_KEY_ID", "R2_WRITE_SECRET_ACCESS_KEY")):
+            step = "upload"
+            upload()
+        else:
+            print("未設定 R2 token → 只更新本機，不上傳")
+        man = load_manifest()
+        print(f"daily 完成：price 至 {man['datasets']['price']['max_date']}；" + "；".join(f"{k} {v}" for k, v in list(st.items())[:4]))
+    except Exception as e:
+        msg = f"⚠️ 資料湖 daily 失敗（{step}）：{e}"
+        print(msg)
+        traceback.print_exc()
+        notify.send(msg)
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["build", "verify", "upload", "status"])
+    ap.add_argument("cmd", choices=["build", "verify", "upload", "status", "daily"])
     ap.add_argument("names", nargs="*")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
-    {"build": lambda: build(a.names), "verify": verify, "upload": lambda: upload(a.dry_run), "status": status}[a.cmd]()
+    {"build": lambda: build(a.names), "verify": verify, "upload": lambda: upload(a.dry_run), "status": status,
+     "daily": daily}[a.cmd]()

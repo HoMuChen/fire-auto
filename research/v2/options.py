@@ -22,11 +22,11 @@ FD = H.D / "futures"
 TAX, COMM = 0.001, 0.4                                     # 權利金期交稅、每口每邊手續費（點）
 
 
-def fetch_fsp():
-    """期交所「選擇權最後結算價」→ data/v2/futures/TXO_final_settle.parquet（月選）。"""
+def fetch_fsp(years=None):
+    """期交所「選擇權最後結算價」→ data/v2/futures/TXO_final_settle.parquet（月選）。years 給定時只抓這些年並與既有檔合併（每日增量用）。"""
     import requests
     rows = []
-    for y in range(2009, pd.Timestamp.today().year + 1):
+    for y in years or range(2009, pd.Timestamp.today().year + 1):
         r = requests.post("https://www.taifex.com.tw/cht/5/optIndxFSP", headers={"User-Agent": "Mozilla/5.0"}, timeout=60,
                           data=dict(start_year=str(y), start_month="01", end_year=str(y), end_month="12", all="all", _all="on"))
         t = pd.read_html(io.StringIO(r.content.decode("utf-8", "ignore")))[0].iloc[:, :3]
@@ -35,7 +35,11 @@ def fetch_fsp():
     df = pd.concat(rows, ignore_index=True).astype({"contract": str})
     df = df[df.contract.str.fullmatch(r"\d{6}(W\d)?")].copy()
     df["date"], df["txo"] = pd.to_datetime(df.date), pd.to_numeric(df.txo, errors="coerce")
-    df.drop_duplicates("contract").sort_values("date").reset_index(drop=True).to_parquet(FD / "TXO_final_settle.parquet")
+    if years and (FD / "TXO_final_settle.parquet").exists():
+        df = pd.concat([pd.read_parquet(FD / "TXO_final_settle.parquet"), df], ignore_index=True)
+    df = df.drop_duplicates("contract", keep="last").sort_values("date", kind="stable").reset_index(drop=True)
+    df.to_parquet(FD / "TXO_final_settle.parquet")
+    return df
 
 
 def fetch_weekly():

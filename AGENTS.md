@@ -21,7 +21,7 @@
 | `backtest.py`、`validate_strategy_groups.py` | 舊函式庫（技術指標、成本常數）；TSMC 網格研究與 `research/v2/run_legacy14.py` 仍 import，**不要搬** |
 | `tsmc_dual_pool_strategy.py`、`gen_tsmc_report.py` | TSMC v4 三 sleeve 現金流策略與報告（台積電專屬，未經 v2 驗證） |
 | `research/v2/` | ★ 現行研究框架與所有假設紀錄（見 `research/v2/README.md`） |
-| `lake/` | 資料湖：`lake.py build/verify/upload` 把 `data/v2` 等轉長表 parquet 發布到 Cloudflare R2（bucket `tw-market/v1`，含 `catalog.duckdb`），供其他專案唯讀；讀法見 `lake/README.md`。第 1 階段＝v2 快照，尚未每日更新 |
+| `lake/` | 資料湖：`lake.py build/verify/upload` 把 `data/v2` 等轉長表 parquet 發布到 Cloudflare R2（bucket `tw-market/v1`，含 `catalog.duckdb`），供其他專案唯讀；讀法見 `lake/README.md`。`lake/update.py` 每日增量更新 `data/v2`（`lake.py daily`；cron 由使用者加） |
 | `research/build_data_v2.py` | 重建 `data/v2/`（含下市股、還原權息、2010 起） |
 | `research/futures_cache*.py`、`research/tsmc_*`、`research/grid_*`、`research/txo_vix.py` | 期貨 / TSMC 網格研究與 30 分 K 快取（使用者主導的研究線） |
 | `strategies/` | 仍有效的研究筆記：TSMC 網格收租、外資棄守退場、外資大賣→長紅（統計）、美國數據公布前（迷思） |
@@ -96,7 +96,7 @@
 
 - **FinMind API** 是唯一資料來源（token：`.env.local` 的 `FINMIND_API_TOKEN`；使用者方案 **6000 次/小時**）。Supabase 已停用。
 - 打網路的指令在沙盒內會被擋 → 需 `dangerouslyDisableSandbox`。
-- **`data/v2/`（研究專用，gitignore，`research/build_data_v2.py` 重建約 65 分鐘）**：`universe.csv`（2,594 檔普通股，含 58 檔不在 TaiwanStockInfo 的下市股，`delist_date` 標 2010 後下市）、`raw/{id}.parquet`（原始價：流動性、漲跌停）、`adj/{id}.parquet`（還原權息：報酬；下市股自建）、`revenue/ per/ inst/ margin/ fin/ bs/`（`research/v2/fetch_fundamentals.py`）、`taiex_tr.parquet`（加權報酬指數）。raw 有 close=0 停牌日需防護。
+- **`data/v2/`（研究專用，gitignore，`research/build_data_v2.py` 重建約 65 分鐘；2026-10-31 起由 `lake/update.py` 增量更新，不再是凍結快照——最近 10 個交易日、最新 3 季財報會被覆蓋修正，除權息會改寫 adj 歷史）**：`universe.csv`（2,594 檔普通股，含 58 檔不在 TaiwanStockInfo 的下市股，`delist_date` 標 2010 後下市）、`raw/{id}.parquet`（原始價：流動性、漲跌停）、`adj/{id}.parquet`（還原權息：報酬；下市股自建）、`revenue/ per/ inst/ margin/ fin/ bs/`（`research/v2/fetch_fundamentals.py`）、`taiex_tr.parquet`（加權報酬指數）。raw 有 close=0 停牌日需防護。
 - **每日快取（gitignore，可重抓）**：`data/stock_prices/{id}.csv`（近 2 年未還原、無下市股，**不可用於研究**）、`data/institutional/`、`data/margin/`、`data/broker/{id}.parquet`（2021-06 起分點）、`data/futures/`（QFF/SEF 30 分 K、TXO 日資料與自建台指 VIX）。用法：`StockCache().get/update_today()`、`ChipCache().get_institutional/get_margin()`、`BrokerCache().get()`。
 - `individual_stocks.json`：舊個股清單（快取模組用來決定抓哪些股票）；`data/low_liquidity_stocks.json`：舊流動性名單。
 - **進版控的個人紀錄**：`data/trades.csv`（股票成交，舊三策略時期）、`data/futures_trades.csv`（台新帳戶手動期貨）。其餘 data 檔一律 gitignore。
