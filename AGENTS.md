@@ -21,6 +21,7 @@
 | `backtest.py`、`validate_strategy_groups.py` | 舊函式庫（技術指標、成本常數）；TSMC 網格研究與 `research/v2/run_legacy14.py` 仍 import，**不要搬** |
 | `tsmc_dual_pool_strategy.py`、`gen_tsmc_report.py` | TSMC v4 三 sleeve 現金流策略與報告（台積電專屬，未經 v2 驗證） |
 | `research/v2/` | ★ 現行研究框架與所有假設紀錄（見 `research/v2/README.md`） |
+| `lake/` | 資料湖：`lake.py build/verify/upload` 把 `data/v2` 等轉長表 parquet 發布到 Cloudflare R2（bucket `tw-market/v1`，含 `catalog.duckdb`），供其他專案唯讀；讀法見 `lake/README.md`。第 1 階段＝v2 快照，尚未每日更新 |
 | `research/build_data_v2.py` | 重建 `data/v2/`（含下市股、還原權息、2010 起） |
 | `research/futures_cache*.py`、`research/tsmc_*`、`research/grid_*`、`research/txo_vix.py` | 期貨 / TSMC 網格研究與 30 分 K 快取（使用者主導的研究線） |
 | `strategies/` | 仍有效的研究筆記：TSMC 網格收租、外資棄守退場、外資大賣→長紅（統計）、美國數據公布前（迷思） |
