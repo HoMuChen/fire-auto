@@ -5,7 +5,7 @@ fire-auto 的研究級台股資料（2009/2010 起、含下市股、還原權息
 
 ## 讀者：三步驟
 
-1. 取得**唯讀** token（Cloudflare → R2 → Manage API tokens → Object Read only，限定 bucket `tw-market`），放進自己專案的環境變數：
+1. 取得**唯讀** token（Cloudflare → R2 → Manage API tokens → Object Read only，限定 bucket `trading-homuchen-com`），放進自己專案的環境變數：
    `R2_ACCOUNT_ID`、`R2_READ_ACCESS_KEY_ID`、`R2_READ_SECRET_ACCESS_KEY`
 2. 安裝 DuckDB（≥ 1.1；Python `pip install duckdb`，或 CLI / Node / R 版皆可）
 3. 掛載目錄檔，直接用表名查：
@@ -13,9 +13,9 @@ fire-auto 的研究級台股資料（2009/2010 起、含下市股、還原權息
 ```python
 import os, duckdb
 con = duckdb.connect()
-con.execute(f"""CREATE SECRET (TYPE r2, KEY_ID '{os.environ["R2_READ_ACCESS_KEY_ID"]}',
-                SECRET '{os.environ["R2_READ_SECRET_ACCESS_KEY"]}', ACCOUNT_ID '{os.environ["R2_ACCOUNT_ID"]}')""")
-con.execute("ATTACH 'r2://tw-market/v1/catalog.duckdb' AS tw (READ_ONLY)")
+con.sql(f"""CREATE SECRET (TYPE r2, KEY_ID '{os.environ["R2_READ_ACCESS_KEY_ID"]}',
+            SECRET '{os.environ["R2_READ_SECRET_ACCESS_KEY"]}', ACCOUNT_ID '{os.environ["R2_ACCOUNT_ID"]}')""")
+con.sql("ATTACH 'r2://trading-homuchen-com/v1/catalog.duckdb' AS tw (READ_ONLY)")
 
 df = con.sql("""SELECT date, stock_id, close, adj_close, volume
                 FROM tw.price WHERE stock_id = '2330' AND date >= '2024-01-01' ORDER BY date""").df()
@@ -23,12 +23,15 @@ con.sql("SELECT * FROM tw.market.taiex ORDER BY date DESC LIMIT 5").show()
 con.sql("SELECT schema_name, view_name, comment FROM duckdb_views() WHERE database_name = 'tw'").show()   # 表清單與說明
 ```
 
+DuckDB 2.0 注意：一律用 `con.sql(...)` 再接 `.df()` / `.fetchall()` / `.show()`；2.0 的查詢結果已沒有 `fetchone()`，
+而 `con.execute()` 的結果沒讀完前，同一個連線不能再下其他指令。
+
 DuckDB 只會抓需要的欄位與年份分區（`WHERE date >= …` 會跳過其他年份的檔）；下載流量免費。
 
 **不用 DuckDB**：`_manifest.json` 列出每個資料集的所有檔案路徑，polars / pandas / pyarrow 用 S3 介面讀即可
 （endpoint `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`、region `auto`）。
 
-**快取由讀者自行決定**。要整批放本機：`rclone sync r2:tw-market/v1/price ./cache/price`（只下載有變的檔）。
+**快取由讀者自行決定**。要整批放本機：`rclone sync r2:trading-homuchen-com/v1/price ./cache/price`（只下載有變的檔）。
 內容沒變的檔絕不改寫；有沒有變以 `_manifest.json` 各檔的 `sha256` 為準。平常每天只有今年的分區與小檔會變，
 但**新股上市（回補歷史）與除權息（`adj_*` 整段重新還原）會動到過去年份**——除權息旺季 `price` 可能每天全部更新（約 280 MB，下載免費）。
 
@@ -69,7 +72,7 @@ python3 lake/lake.py upload     # 只傳變動檔 → 連 R2 建 catalog.duckdb 
 python3 lake/lake.py status
 ```
 
-寫入 token（Object Read & Write）只放這台機器的 `.env.local`：`R2_ACCOUNT_ID`、`R2_WRITE_ACCESS_KEY_ID`、`R2_WRITE_SECRET_ACCESS_KEY`（`R2_BUCKET` 預設 `tw-market`）。
+寫入 token（Object Read & Write）只放這台機器的 `.env.local`：`R2_ACCOUNT_ID`、`R2_WRITE_ACCESS_KEY_ID`、`R2_WRITE_SECRET_ACCESS_KEY`（`R2_BUCKET` 預設 `trading-homuchen-com`）。
 發布順序保證讀者不會看到半套：資料檔先傳，`_manifest.json` 最後才換；孤兒檔在 manifest 切換後才刪。
 
 ## 每日更新（第 2 階段）

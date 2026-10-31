@@ -1,6 +1,6 @@
 """台股資料湖：本機研究資料（data/v2 等）→ 長表 parquet → Cloudflare R2，供其他專案唯讀。
 
-結構（bucket 內，前綴 v1/）：
+結構（bucket＝.env.local 的 R2_BUCKET，目前 trading-homuchen-com；前綴 v1/）：
   _manifest.json                每個資料集的欄位、筆數、日期範圍、各檔 sha256（最後才上傳＝發布完成的訊號）
   catalog.duckdb                只有 view 定義（明確列檔，不用萬用字元 → 讀者不需 LIST、看到固定的檔案組合）
   universe.parquet、revenue.parquet、fin/bs/cf/dividend.parquet
@@ -13,7 +13,7 @@
   python3 lake/lake.py upload [--dry-run]   # 只傳 sha256 變了的檔 → catalog.duckdb → _manifest.json → 刪 R2 上的孤兒檔
   python3 lake/lake.py status               # 本機 manifest 摘要
   python3 lake/lake.py daily                # 排程用：lake/update.py 增量更新 data/v2 → build → verify → upload（有 token 才傳）；失敗發 Telegram
-環境變數（.env.local）：R2_ACCOUNT_ID、R2_BUCKET（預設 tw-market）、R2_WRITE_ACCESS_KEY_ID、R2_WRITE_SECRET_ACCESS_KEY
+環境變數（.env.local）：R2_ACCOUNT_ID、R2_BUCKET（預設 trading-homuchen-com）、R2_WRITE_ACCESS_KEY_ID、R2_WRITE_SECRET_ACCESS_KEY
 規則：只有這台機器寫入；內容沒變的檔不改寫（sha256 相同）。新股回補歷史、除權息重新還原（adj_* 整段改）時
       過去年份的分區也會變 → 讀者以 _manifest.json 的 sha256 判斷要不要重抓。
 """
@@ -329,7 +329,7 @@ def load_env():
 
 
 def bucket():
-    return load_env().get("R2_BUCKET", "tw-market")
+    return load_env().get("R2_BUCKET", "trading-homuchen-com")
 
 
 def r2_client():
