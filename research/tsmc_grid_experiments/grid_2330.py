@@ -13,7 +13,9 @@
 對照：buy & hold 2330。
 """
 import sys
-sys.path.insert(0, "/Users/mu/fire-auto")
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 import backtest as bt
 
 BUY_FEE, SELL_FEE, SELL_TAX = bt.BUY_FEE, bt.SELL_FEE, bt.SELL_TAX

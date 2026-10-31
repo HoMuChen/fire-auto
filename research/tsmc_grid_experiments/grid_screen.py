@@ -9,10 +9,12 @@
 排序：震盪強度（路徑長度/淨位移）由高到低 —— 越高=來回擺盪越多，網格越有得賺。
 """
 import sys, json, math, csv
-sys.path.insert(0, "/Users/mu/fire-auto")
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 import validate_strategy_groups as vsg
 
-names = {s["stock_id"]: s["stock_name"] for s in json.load(open("/Users/mu/fire-auto/individual_stocks.json"))}
+names = {s["stock_id"]: s["stock_name"] for s in json.load(open(ROOT / "individual_stocks.json"))}
 
 
 def features(prices):
@@ -38,7 +40,7 @@ def features(prices):
 
 
 def main():
-    stocks = json.load(open("/Users/mu/fire-auto/individual_stocks.json"))
+    stocks = json.load(open(ROOT / "individual_stocks.json"))
     liquid = [s for s in stocks if s.get("low_liquidity") is False]
     rows = []
     for s in liquid:

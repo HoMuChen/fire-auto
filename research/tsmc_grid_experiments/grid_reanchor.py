@@ -5,7 +5,9 @@
 """
 import sys, statistics
 from collections import defaultdict
-sys.path.insert(0, "/Users/mu/fire-auto")
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 import backtest as bt
 
 # 券商手續費打 28 折（0.1425% × 0.28 ≈ 0.04%/邊），證交稅 0.3% 不打折 → 來回約 0.38%
