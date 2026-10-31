@@ -50,6 +50,9 @@ DuckDB 只會抓需要的欄位與年份分區（`WHERE date >= …` 會跳過�
 | `holding` | 集保股權分散（級距、人數、%、股） | year | 2010 |
 | `dividend` | 股利政策與除權息日（FinMind 原欄位） | — | 2009 |
 | `market.*` | `taiex`、`taiex_tr`（報酬指數）、`mtx_daily`、`txo_chain`、`txo_weekly`、`txo_final_settle`、`tx_large_traders`、`mkt_inst`、`mkt_margin`、`gspc`；自建：`txo_vix`、`txo_oi`、`ad`、`breadth`、`mkt_maint` | — | 2005~2012 |
+| `broker` | 券商分點：每檔每日依券商加總的買賣**股數**（`securities_trader_id`、`securities_trader`、`buy`、`sell`）；⚠ **只有舊個股清單 1,439 檔**，非全市場 | year / month | 2021-06-30 |
+| `orderbook.tick_hist` | 歷史逐筆（Shioaji `api.ticks` 回補）：`ts`、`close`、`volume`、當下買一 / 賣一價量、`tick_type`（1 外盤 / 2 內盤）；`code` 為合約 | day | 2330：2019；期貨：回補時仍掛牌的合約 |
+| `orderbook.tick` / `orderbook.bidask` | 每日盤中錄製的逐筆成交 / 五檔（QFF 近兩月、TXF 近月、2330）；`simtrade=True` 為開盤前試撮、不是成交；現股沒有的欄位為 null | day | 2026-10-27 |
 | `futures_30min.qff` / `.sef` | 小型台積電 / 小型智邦期 30 分 K（日盤、連續近月；datetime 台北時間、K 棒起始） | — | 2021 / 2024 |
 
 慣例：`date` 為 date 型別、`stock_id` 為字串；除 `price` 外欄位名沿用 FinMind 原名（可對照 FinMind 文件）。
@@ -93,4 +96,8 @@ python3 lake/lake.py status
 建議 cron（由使用者加；放在 broker 22:00 之後、避開 API 尖峰）：
 `30 23 * * 1-5 cd /Users/mu/fire-auto && /usr/local/bin/python3 lake/lake.py daily >> data/lake_daily.log 2>&1`
 
-第 3 階段（未做）：分點（`data/broker`）、訂單簿（`data/orderbook`）。
+第 3 階段（2026-10-31）：分點（`data/broker` → 月分區，`broker_cache.py` 22:00 更新後由 daily 重建）、
+訂單簿（`data/orderbook` → 一天一檔；錄製中的日子略過，日子結束後內容不變）。
+
+查訂單簿請帶 `day` 條件（例如 `WHERE day = '2026-10-30'`），DuckDB 只會讀命中的檔：
+`SELECT * FROM tw.orderbook.bidask WHERE day = '2026-10-30' AND code = 'QFFK6' ORDER BY datetime`

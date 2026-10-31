@@ -6,6 +6,7 @@
   universe.parquet、revenue.parquet、fin/bs/cf/dividend.parquet
   price|per|inst|margin|mv|holding/year=YYYY/data.parquet
   market/*.parquet、futures_30min/*.parquet
+  broker/year=YYYY/month=MM/data.parquet、orderbook/{tick_hist|tick|bidask}/day=YYYY-MM-DD/{合約}.parquet
 
 用法（/usr/local/bin/python3）：
   python3 lake/lake.py build [名稱 ...]     # 重建本機 data/lake/v1（只有內容變了的檔才會改寫）
@@ -139,6 +140,8 @@ def normalize(df):
     for c in df.columns:
         if c in ("date", "avail_date", "delist_date"):
             df[c] = pd.to_datetime(df[c], errors="coerce").dt.normalize()
+        elif c in ("datetime", "recv", "ts"):
+            df[c] = pd.to_datetime(df[c], errors="coerce")
         elif c == "stock_id":
             df[c] = df[c].astype(str)
     keys = [c for c in ("stock_id", "date", "datetime") if c in df.columns]
@@ -232,6 +235,104 @@ def build_market(ds):
     print(f"  market / futures_30min：{len(MARKET)} + {len(FUT30)} 檔", flush=True)
 
 
+# ─────────── 第 3 階段：分點、訂單簿 ───────────
+BROKER = ROOT / "data" / "broker"
+OB = ROOT / "data" / "orderbook"
+
+
+def build_broker(ds):
+    """data/broker/{sid}.parquet（每檔每日依券商加總）→ broker/year=YYYY/month=MM/data.parquet。
+    DuckDB 一次讀入並依 (月, stock_id, date, 券商) 全排序 → 每月切片寫檔（排序唯一 → 位元組可重現）。"""
+    import duckdb
+    t0 = time.time()
+    con = duckdb.connect()
+    t = con.execute(f"""
+        SELECT substr(date, 1, 7) AS ym, regexp_extract(filename, '([^/]+)\\.parquet$', 1) AS stock_id,
+               CAST(date AS DATE) AS date, securities_trader_id, securities_trader, buy, sell
+        FROM read_parquet('{BROKER}/*.parquet', filename = true)
+        ORDER BY ym, stock_id, date, securities_trader_id""").to_arrow_table()
+    con.close()
+    yms = t.column("ym").to_numpy(zero_copy_only=False)
+    bounds = np.flatnonzero(np.r_[True, yms[1:] != yms[:-1], True])
+    files = {}
+    for a, b in zip(bounds[:-1], bounds[1:]):
+        ym = yms[a]
+        rel = f"broker/year={ym[:4]}/month={ym[5:7]}/data.parquet"
+        files[rel] = write(t.slice(a, b - a).drop_columns(["ym"]).replace_schema_metadata(None), rel)
+    for old in (STAGE / "broker").glob("year=*/month=*/data.parquet"):
+        if str(old.relative_to(STAGE)) not in files:
+            old.unlink()
+    lo, hi = str(t.column("date")[0]), str(t.column("date")[len(t) - 1])
+    ds["broker"] = {"description": "券商分點（每檔每日依券商加總買賣股數）；**只含舊個股清單 1,439 檔**（individual_stocks.json），非全市場；2021-06-30 起",
+                    "partition": "year/month", "rows": int(t.num_rows), "min_date": lo, "max_date": hi,
+                    "columns": {f.name: str(f.type) for f in t.schema if f.name != "ym"}, "files": files}
+    print(f"  broker     {t.num_rows:>12,} 筆  {len(files):>3} 檔  {lo} ~ {hi}  {time.time()-t0:.0f}s", flush=True)
+
+
+def _ob_files():
+    """(資料集, 來源檔, 日期, 合約)；錄製中（CSV 比 parquet 新）的日子略過。"""
+    out = []
+    for f in sorted((OB / "hist").glob("*.parquet")):
+        d, code = f.stem.split("_", 1)
+        out.append(("tick_hist", f, d, code))
+    for day in sorted(OB.glob("20*")):
+        for f in sorted(day.glob("*.parquet")):
+            kind, code = f.stem.split("_", 1)
+            csv = f.with_suffix(".csv")
+            if csv.exists() and csv.stat().st_mtime > f.stat().st_mtime:
+                continue
+            out.append((kind, f, day.name, code))
+    return out
+
+
+OB_DESC = {
+    "tick_hist": "歷史逐筆（api.ticks 回補）：ts、close、volume、當下買一 / 賣一價量、tick_type（1 外盤 / 2 內盤）；2330 2019 起、期貨只有回補時仍掛牌的合約",
+    "tick": "每日錄製逐筆成交（Shioaji v1 串流）；simtrade=True 為開盤前試撮、不是成交",
+    "bidask": "每日錄製五檔（每次變動一筆）；simtrade=True 為試撮",
+}
+
+
+def _conform(tables):
+    """同資料集的檔補成同一組欄位（先出現的順序；缺欄填 null）→ view 不需 union_by_name，查詢只讀命中的檔。"""
+    fields = {}
+    for t in tables:
+        for f in t.schema:
+            fields.setdefault(f.name, f.type)
+    sch = pa.schema([pa.field(n, typ) for n, typ in fields.items()])
+    out = []
+    for t in tables:
+        cols = [t.column(n).cast(typ) if n in t.column_names else pa.nulls(t.num_rows, typ) for n, typ in fields.items()]
+        out.append(pa.Table.from_arrays(cols, schema=sch))
+    return out
+
+
+def build_orderbook(ds):
+    """一天一檔、合約一檔：orderbook/{kind}/day=YYYY-MM-DD/{code}.parquet（日子結束後內容不變）。"""
+    t0 = time.time()
+    by_kind = {k: [] for k in OB_DESC}
+    for kind, f, d, code in _ob_files():
+        df = pd.read_parquet(f)
+        if not len(df):
+            continue
+        if "code" not in df.columns:
+            df.insert(0, "code", code)
+        by_kind[kind].append((d, code, to_table(normalize(df))))
+    for kind, items in by_kind.items():
+        files = {}
+        for (d, code, _), t in zip(items, _conform([x[2] for x in items])):
+            rel = f"orderbook/{kind}/day={d}/{code}.parquet"
+            files[rel] = write(t, rel)
+        for old in (STAGE / "orderbook" / kind).glob("day=*/*.parquet"):
+            if str(old.relative_to(STAGE)) not in files:
+                old.unlink()
+        if files:
+            days = sorted({x[0] for x in items})
+            sample = pq.read_schema(STAGE / sorted(files)[-1])
+            ds[f"orderbook.{kind}"] = {"description": OB_DESC[kind], "partition": "day", "rows": sum(x[2].num_rows for x in items),
+                                       "min_date": days[0], "max_date": days[-1],
+                                       "columns": {f.name: str(f.type) for f in sample}, "files": files}
+    print(f"  orderbook  " + "、".join(f"{k} {len(v)} 檔" for k, v in by_kind.items()) + f"  {time.time()-t0:.0f}s", flush=True)
+
 def load_manifest(path=None):
     p = path or STAGE / MANIFEST
     return json.loads(Path(p).read_text()) if Path(p).exists() else {"version": PREFIX, "datasets": {}}
@@ -241,11 +342,15 @@ def build(names):
     STAGE.mkdir(parents=True, exist_ok=True)
     man = load_manifest()
     ds = man["datasets"]
-    want = names or list(SPEC) + ["market"]
+    want = names or list(SPEC) + ["market", "broker", "orderbook"]
     print(f"build → {STAGE}")
     for n in want:
         if n == "market":
             build_market(ds)
+        elif n == "broker":
+            build_broker(ds)
+        elif n == "orderbook":
+            build_orderbook(ds)
         else:
             build_dataset(n, ds)
     man.update(version=PREFIX, generated_at=datetime.now().isoformat(timespec="seconds"),
@@ -275,7 +380,7 @@ def write_catalog(path, base, man, setup=()):
         con.execute(f"CREATE SCHEMA cat.{schema}")
     for n, e in sorted(man["datasets"].items()):
         files = ", ".join(f"'{base}/{rel}'" for rel in sorted(e["files"]))
-        hive = ", hive_partitioning = true, union_by_name = true" if e.get("partition") else ""
+        hive = ", hive_partitioning = true" if e.get("partition") else ""   # 各檔欄位一致（_conform）→ 不用 union_by_name
         con.execute(f"CREATE VIEW cat.{view_name(n)} AS SELECT * FROM read_parquet([{files}]{hive})")
         con.execute(f"COMMENT ON VIEW cat.{view_name(n)} IS '{e['description'].replace(chr(39), chr(39)*2)}'")
     con.execute("DETACH cat")
@@ -310,6 +415,17 @@ def verify():
     print(f"    2330 最新營收 {r[0]}-{r[1]:02d} 可得日 {r[2]}")
     f = con.execute("SELECT date, avail_date FROM tw.fin WHERE stock_id='2330' ORDER BY date DESC LIMIT 1").fetchone()
     print(f"    2330 最新財報 {f[0]} 可得日 {f[1]}")
+    if "broker" in man["datasets"]:                       # 分點：抽 2330 與原始快取逐列比對
+        src = pd.read_parquet(BROKER / "2330.parquet").sort_values(["date", "securities_trader_id"]).reset_index(drop=True)
+        got = con.execute("""SELECT CAST(date AS VARCHAR) AS date, securities_trader_id, securities_trader, buy, sell
+                             FROM tw.broker WHERE stock_id = '2330' ORDER BY date, securities_trader_id""").df()
+        ok = len(src) == len(got) and (src[["buy", "sell"]].values == got[["buy", "sell"]].values).all() \
+            and (src.date.astype(str).values == got.date.values).all()
+        bad += not ok
+        print(f"  {'✓' if ok else '✗'} broker 2330 與 data/broker 逐列一致（{len(got):,} 列）")
+    if "orderbook.tick_hist" in man["datasets"]:
+        n = con.execute("SELECT count(DISTINCT day) FROM tw.orderbook.tick_hist WHERE code = '2330'").fetchone()[0]
+        print(f"    orderbook.tick_hist 2330 {n} 天")
     con.close()
     cat.unlink()
     print("全部通過" if not bad else f"{bad} 項失敗")
@@ -364,10 +480,13 @@ def upload(dry=False):
         for r in todo[:30]:
             print("  +", r)
         return
-    for i, rel in enumerate(todo, 1):
-        s3.upload_file(str(STAGE / rel), b, f"{PREFIX}/{rel}", ExtraArgs={"ContentType": "application/vnd.apache.parquet"})
-        if i % 20 == 0 or i == len(todo):
-            print(f"  {i}/{len(todo)}", flush=True)
+    from concurrent.futures import ThreadPoolExecutor
+    put = lambda rel: s3.upload_file(str(STAGE / rel), b, f"{PREFIX}/{rel}",                   # noqa: E731
+                                     ExtraArgs={"ContentType": "application/vnd.apache.parquet"})
+    with ThreadPoolExecutor(8) as ex:                      # boto3 client 可跨執行緒共用
+        for i, _ in enumerate(ex.map(put, todo), 1):       # 任一檔失敗會在這裡拋出 → 不會換 manifest
+            if i % 200 == 0 or i == len(todo):
+                print(f"  {i}/{len(todo)}", flush=True)
     env = load_env()
     secret = (f"CREATE SECRET (TYPE r2, KEY_ID '{env['R2_WRITE_ACCESS_KEY_ID']}', SECRET '{env['R2_WRITE_SECRET_ACCESS_KEY']}', "
               f"ACCOUNT_ID '{env['R2_ACCOUNT_ID']}')")
