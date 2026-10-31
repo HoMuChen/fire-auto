@@ -93,8 +93,8 @@ python3 lake/lake.py status
 | universe | TaiwanStockInfo + Delisting | 新股逐檔抓完整歷史；下市標 delist_date |
 | market.* | 從最後日期所在月 / 年重抓 | 依日期覆蓋；自建 txo_vix / ad / breadth / mkt_maint 整段重算 |
 
-建議 cron（由使用者加；放在 broker 22:00 之後、避開 API 尖峰）：
-`30 23 * * 1-5 cd /Users/mu/fire-auto && /usr/local/bin/python3 lake/lake.py daily >> data/lake_daily.log 2>&1`
+建議 cron（由使用者加；放在 broker 22:00 跑完之後。過午夜所以星期欄是 `2-6`＝週二~六凌晨處理前一個平日）：
+`30 0 * * 2-6 cd /Users/mu/fire-auto && /usr/local/bin/python3 lake/lake.py daily >> data/lake_daily.log 2>&1`
 
 第 3 階段（2026-10-31）：分點（`data/broker` → 月分區，`broker_cache.py` 22:00 更新後由 daily 重建）、
 訂單簿（`data/orderbook` → 一天一檔；錄製中的日子略過，日子結束後內容不變）。

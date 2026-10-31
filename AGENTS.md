@@ -21,7 +21,7 @@
 | `backtest.py`、`validate_strategy_groups.py` | 舊函式庫（技術指標、成本常數）；TSMC 網格研究與 `research/v2/run_legacy14.py` 仍 import，**不要搬** |
 | `tsmc_dual_pool_strategy.py`、`gen_tsmc_report.py` | TSMC v4 三 sleeve 現金流策略與報告（台積電專屬，未經 v2 驗證） |
 | `research/v2/` | ★ 現行研究框架與所有假設紀錄（見 `research/v2/README.md`） |
-| `lake/` | 資料湖：`lake.py build/verify/upload` 把 `data/v2` 等轉長表 parquet 發布到 Cloudflare R2（bucket `trading-homuchen-com`、前綴 `v1/`，含 `catalog.duckdb`），供其他專案唯讀；讀法見 `lake/README.md`。`lake/update.py` 每日增量更新 `data/v2`（`lake.py daily` 23:30）；另含分點（`data/broker`，月分區）與訂單簿（`data/orderbook`，一天一檔） |
+| `lake/` | 資料湖：`lake.py build/verify/upload` 把 `data/v2` 等轉長表 parquet 發布到 Cloudflare R2（bucket `trading-homuchen-com`、前綴 `v1/`，含 `catalog.duckdb`），供其他專案唯讀；讀法見 `lake/README.md`。`lake/update.py` 每日增量更新 `data/v2`（`lake.py daily` 00:30）；另含分點（`data/broker`，月分區）與訂單簿（`data/orderbook`，一天一檔） |
 | `research/build_data_v2.py` | 重建 `data/v2/`（含下市股、還原權息、2010 起） |
 | `research/futures_cache*.py`、`research/tsmc_*`、`research/grid_*`、`research/txo_vix.py` | 期貨 / TSMC 網格研究與 30 分 K 快取（使用者主導的研究線） |
 | `strategies/` | 仍有效的研究筆記：TSMC 網格收租、外資棄守退場、外資大賣→長紅（統計）、美國數據公布前（迷思） |
@@ -82,15 +82,16 @@
 | 時間 | 指令 | 性質 | Log |
 |------|------|------|-----|
 | 08:01 | `macro_dashboard.py` | 參考儀表 | `data/macro_dashboard.log` |
+| 08:40 | `.venv/bin/python research/orderbook_recorder.py record`（錄到 13:50）→ `pack` | 資料：QFF/TXF/2330 五檔+逐筆 | `data/orderbook_recorder.log` |
 | 09:15~13:45 每 30 分 | `.venv/bin/python futures_live.py` | ★ QFF 真實下單 | `data/futures_live.log` |
 | 09:15~13:45 每 30 分 | `.venv/bin/python futures_grid_monitor.py --symbol SEF` | SEF 提醒 | `data/futures_monitor_sef.log` |
-| 18:00 | `stock_cache.py today` | 資料：全市場股價 | `data/stock_update.log` |
+| 18:00 | `stock_cache.py today` | 資料：股價（**broker_cache 靠 `data/stock_prices/2330.csv` 判斷交易日，不可刪**） | `data/stock_update.log` |
 | 18:30 / 18:35 | `research/futures_cache.py` / `research/futures_cache_sef.py` | 資料：QFF / SEF 30 分 K | `data/futures_cache*.log` |
-| 19:00 | `ChipCache().update_all(sleep=1.2)` | 資料收集（無策略使用） | `data/chip_update.log` |
 | 20:30 | `h2_monthly.py` | ★ H29 換股通知 | `data/h2_monthly.log` |
-| 22:00 | `broker_cache.py today`（先停、後重啟 backfill） | 資料收集（無策略使用） | `data/broker_daily.log` |
+| 22:00 | `broker_cache.py today`（約 50~80 分） | 資料：分點（進資料湖） | `data/broker_daily.log` |
+| 00:30（週二~六） | `lake/lake.py daily` | 資料湖：增量更新 `data/v2` → build → verify → 上傳 R2 | `data/lake_daily.log` |
 
-股票腳本用 `/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pandas）；期貨下單/提醒用 `.venv/bin/python`。2026-10-20 已移除 `scan.py` 08:00 與 `monitor.py` 盤中兩個 cron。
+股票腳本用 `/usr/local/bin/python3`（系統 `/usr/bin/python3` 沒有 pandas）；期貨下單/提醒用 `.venv/bin/python`。2026-10-20 已移除 `scan.py` 08:00 與 `monitor.py` 盤中兩個 cron；2026-10-31 移除 `chip_cache` 19:00（無人使用），分點回補完成後 22:00 只跑 `today`，`lake.py daily` 排在午夜後（`2-6`＝處理前一個平日）。
 
 ## 資料
 
