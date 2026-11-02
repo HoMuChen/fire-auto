@@ -34,11 +34,13 @@
 | `batch32_risk.py` | 第三十二批 H133~H135：H29 風控變體日線淨值（`sim` 可給權重與曝險，等權時與 `threshold.py` 一致並有 assert）、Jobson-Korkie z；`val` 會先重算 dev 關卡 |
 | `feature_combo.py` | 第三十三批 FS2：特徵百分位矩陣（`prep`）＋向量化 top20 回測（`bt`）、全部 2／3 個一組＋伯努利 2000 組、邊際貢獻 OLS（`marginal`）；輸出 `data/v2/results/fs2_dev.csv`、`fs2_marginal.csv` |
 | `holdout_h136.py` | 第三十四批 H136 holdout 一次性檢驗（需 `--unseal`）；用 FS2 引擎、對照同引擎 H29 |
+| `ml_walkforward.py` | 第三十五批 ML1：逐年重訓（空一個月、assert 防前視）的 Fama-MacBeth 與 HistGradientBoosting；`stage2` 需 `--unseal`。需要 scikit-learn（`uv pip install scikit-learn`，不要 `uv add`，見 shioaji 鎖版問題） |
+| `holdout_h137.py` | 第三十六批 H137：H136＋M2 各半 vs H136 同波動＋現金，同一次跑第一階段核對與 holdout（需 `--unseal`） |
 | （`research/qff_pullback.py`） | H106 QFF 30 分 K「快速推升第一個低點」回測進場（影片口訣量化版）；`--noslip` / `--sens` |
 
 holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使用者同意**。
 
-## 假設總表（H1~H136）
+## 假設總表（H1~H137）
 
 狀態：★ 三段皆過／✓ dev+val 過（holdout 未開）／✗ 不過。「事後」= 看過其他結果才提出，可信度打折。
 
@@ -118,6 +120,8 @@ holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使�
 | H133~H135 | H29 風控變體，看日線 Sharpe（`batch32_risk.py`）：H133 排除層（H13/H3/H11 最低 20%）、H134 反波動加權、H135 波動目標（曝險 ≤ 1） | ✗ | H135 dev 就沒過。H133、H134 dev Sharpe 1.38／1.36 > 1.21，但 val 1.52（z −2.19）／1.94 < 1.97。H134 在 val 等同固定留 20% 現金（事後對照 +48.2% / −23.1% / 1.98）→ H29 裡的高波動股是報酬來源，想降回撤直接留現金就好 |
 | FS2 | FS1 的 20 群代表隨機組合（3330 組；`feature_combo.py`）：分布、伯努利邊際貢獻，A、B 兩段都正的 10 個等權合成 C* 進 val | ✗ | dev 只有 1~4% 的組合兩段都贏 H29。拖累 top20 的有 H24 融資減肥、偏大型股、隔夜動能、彩券反向、低波動。C* val 比 H29 年化少 11.5%（t −1.10），10 個等權把營收驚喜、股價強勢稀釋了。描述：dev 第一名 H87+H97+H2 val +49.2%（H29 +34.0%），看了 val 才注意到，要測只能用 holdout |
 | **H136** | **H87 營收驚喜 + H97 營收公布窗報酬 + H2 52 週高，等權百分位 top20**（FS2 dev 第一名；`holdout_h136.py`，使用者同意開 holdout） | **✓ 單獨／取代 H29 不足** | holdout 超額 +52.4%（t 3.66）vs H29 +39.9%；月差年化 +12.5%（t 1.18），三年都贏，三段都領先但各自不顯著；與 H29 相關 0.85、共同持股 8.8/20 |
+| ML1 | 走時間前進 2015~2023：20 個特徵 → M1 Fama-MacBeth、M2 HistGradientBoosting，預測全池報酬百分位，取 top20（`ml_walkforward.py`） | ✗（第一階段） | IC 0.11~0.12、MDD 約 −12%，但年化超額只有 +7.9%／+14.6%，H136 是 +39.1%；對 H136 月差 t −3.76／−3.27。以全池排名為目標，模型會學成「避開爛股」（低波動、彩券反向權重最大），抓不到 top20 要的右尾。holdout 不開 |
+| H137 | H136 ＋ M2（ML1 HistGB）各半，對照 H136×0.69＋現金 1.5%（同波動）（`holdout_h137.py`，使用者同意開 holdout） | ✗ | 第一階段月差 +0.29%/月（t 1.92）；holdout −0.05%/月（t −0.12，1/3 年）。分散效果在（殘差相關 −0.18、共同持股 1.8/20），但 holdout 期間 H136 Sharpe 2.17 遠高於 M2 的 1.72，混合不比 H136 加現金好；組合 Sharpe 2.30 對 H136 2.17（JK z +0.56），雜訊內 |
 | H106 | QFF 30 分 K「快速推升第一個低點 / 快速下跌第一個高點」回測進場（1 口） | ✗ | 2021-26 138 筆、勝率 21%、每筆 −6 點（無滑價仍 −2 點）、六年全負；到目標的單 3~5R 但 72% 被停損掃 → 高 R × 低勝率 = 負期望。對照連續做多 +1,476 點 |
 
 （無 H37。）舊 14 技術策略、舊三策略：dev 扣成本無一顯著贏大盤（`run_legacy14.py`）。
