@@ -394,7 +394,7 @@ def update_market(lim, dry, today):
         sys.path.insert(0, str(ROOT / "research" / "v2"))
         import tx1m
         last = max(f.stem for f in tx1m.OUT.glob("*.parquet"))
-        d, got = date.fromisoformat(last) + timedelta(days=1), []
+        d, got = date.fromisoformat(last) - timedelta(days=14), []     # 往回 14 天：中間抓失敗的日子也會補（已有檔的直接跳過）
         while d < today:
             if d.weekday() < 5:
                 r = tx1m.fetch(lim, d.isoformat())
