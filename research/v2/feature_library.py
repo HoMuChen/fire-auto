@@ -1,0 +1,304 @@
+"""第四十一批 FL1：可重複使用的特徵庫。規則見 HYPOTHESES.md 第四十一批（事前登記）。
+
+44 個特徵（FS1 的 42 個候選 + FS4 的 IND_SUR、REL_SUR），依用途（排序、多空、挑贏家、避雷）評估：
+方向用 A 段 IC 決定 → dev（A 2010-14、B 2015-19）給標籤 → val（2020-23）確認。holdout 不碰。
+產出 research/v2/FEATURES.md（只放統計量）與 data/v2/results/feature_library.csv。
+
+用法：.venv/bin/python research/v2/feature_library.py
+"""
+import json
+import sys
+import time
+import warnings
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from scipy.stats import rankdata
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import feature_industry as FI  # noqa: E402
+import feature_screen as FS  # noqa: E402
+import feature_screen3 as F3  # noqa: E402
+import harness as H  # noqa: E402
+import hypotheses as Hy  # noqa: E402
+import xs  # noqa: E402
+
+PER = {"A": ("2010-01-01", "2014-12-31"), "B": ("2015-01-01", "2019-12-31"), "V": ("2020-01-01", "2023-12-31")}
+END = PER["V"][1]
+FEATS = FS.FEATS + ["IND_SUR", "REL_SUR"]
+NPL, MIN_N, MIN_M, RHO = 5, 100, 24, 0.6
+USES = {"ic": "排序", "ls": "多空", "good": "挑贏家", "bad": "避雷"}
+SIGN = {"ic": 1, "ls": 1, "good": 1, "bad": -1}            # 標籤要的方向（避雷＝壞端為負）
+COLS = ["ic", "ls", "good", "bad", "wl_good", "ll_bad", "wl_bad", "ll_good", "turn"]
+CAT = {**{f: "價格" for f in ("H1", "H2", "H3", "H4", "H9", "H13", "H35", "H36", "H38", "H39", "H76", "H77", "H78", "H84", "H92",
+                               "H95", "H96", "H97", "H98", "H99")},
+       **{f: "營收" for f in ("H7", "H10", "H12", "H87", "IND_SUR", "REL_SUR")},
+       **{f: "籌碼" for f in ("H22", "H23", "H24", "H25")}, **{f: "集保" for f in ("H85", "H86")},
+       **{f: "估值" for f in ("H5", "H6", "H11")},
+       **{f: "財報" for f in ("H26", "H27", "H28", "H80", "H81", "H83", "H88", "H89", "H90")}}
+FREQ = {"價格": "每日", "籌碼": "每日", "估值": "每日（分母季／年更新）", "營收": "每月（次月 11 日）", "集保": "每週", "財報": "每季"}
+NOTES = {"IND_SUR": "FS4 產業標籤打亂的安慰劑下 IC、增量都在雜訊範圍", "REL_SUR": "≈ H87 減雜訊，見高度相關欄"}
+DESC = {"IND_SUR": "同業營收驚喜（同產業其他股 SUR 平均）", "REL_SUR": "相對營收驚喜（自己 SUR − 同業）"}
+
+
+def forward(P, p0, p1):
+    """同 feature_screen.forward，期間可指定。"""
+    O, C = P["open"], P["close"]
+    Cf = C.ffill()
+    idx = O.index
+    rd = xs.rebalance_dates(idx, pd.Timestamp(p0), pd.Timestamp(p1))
+    elig = P["liq"].shift(1).fillna(False).astype(bool) & (P["nbars"].shift(1) >= 250) & O.notna()
+    R, E = {}, {}
+    for d, d2 in zip(rd[:-1], rd[1:]):
+        k2 = idx.get_loc(d2)
+        R[d] = (O.loc[d2].fillna(Cf.iloc[k2 - 1]) / O.loc[d] - 1).clip(-0.95, 10)
+        E[d] = elig.loc[d]
+    return pd.DatetimeIndex(rd[:-1]), pd.DataFrame(R).T, pd.DataFrame(E).T.astype(bool)
+
+
+def monthly(X, R, E, full=True):
+    """X 已定好方向（大＝好端）。每月：IC、多空、好端 10%、壞端 10%、命中倍數、好端 20% 換手。"""
+    T = X.shape[0]
+    out = np.full((T, len(COLS) if full else 4), np.nan)
+    prev = None
+    for t in range(T):
+        m = E[t] & np.isfinite(X[t]) & np.isfinite(R[t])
+        n = int(m.sum())
+        if n < MIN_N:
+            prev = None
+            continue
+        x, r = X[t, m], R[t, m]
+        rk = rankdata(x, method="ordinal")
+        g20, b20, g10, b10 = rk > 0.8 * n, rk <= 0.2 * n, rk > 0.9 * n, rk <= 0.1 * n
+        mu = r.mean()
+        v = [F3.spear(x, r), r[g20].mean() - r[b20].mean(), r[g10].mean() - mu, r[b10].mean() - mu]
+        if full:
+            rr = rankdata(r, method="ordinal")
+            win, lose = rr > 0.9 * n, rr <= 0.1 * n
+
+            def lift(a, b):
+                return (a & b).sum() / b.sum() / (a.sum() / n)
+
+            cur = set(np.flatnonzero(m)[g20])
+            turn = 1 - len(cur & prev) / len(cur) if prev else np.nan
+            prev = cur
+            v += [lift(g10, win), lift(b10, lose), lift(b10, win), lift(g10, lose), turn]
+        out[t] = v
+    return out
+
+
+def pstats(v, dates):
+    res = {}
+    for p, (a, b) in PER.items():
+        k = (dates >= pd.Timestamp(a)) & (dates <= pd.Timestamp(b)) & np.isfinite(v)
+        x = v[k]
+        n = len(x)
+        res[p] = dict(n=n, mean=x.mean() if n else np.nan, t=x.mean() / x.std(ddof=1) * np.sqrt(n) if n > 2 else np.nan)
+    return res
+
+
+def orient(X, R, E, dates):
+    ic = monthly(X, R, E, full=False)[:, 0]
+    st = pstats(ic, dates)
+    base = "A" if st["A"]["n"] >= MIN_M else "B"           # A 段不足的特徵（資料不足）只為描述借 B 段定方向
+    return (1.0 if st[base]["mean"] >= 0 else -1.0), base
+
+
+def tags(st):
+    """回傳 {用途: dict(dev, strong, val)}；dev＝A |t|≥1 且 B 同向；val＝確認 / 強確認 / 反向。"""
+    out = {}
+    for u, s in SIGN.items():
+        a, b, v = st[u]["A"], st[u]["B"], st[u]["V"]
+        if a["n"] < MIN_M or b["n"] < MIN_M:
+            out[u] = dict(dev=False, strong=False, val=None)
+            continue
+        dev = s * a["t"] >= 1 and s * b["mean"] > 0
+        strong = dev and s * a["t"] >= 2 and s * b["t"] >= 2
+        val = None
+        if dev and v["n"] >= MIN_M:
+            val = "強確認" if s * v["t"] >= 2 else ("確認" if s * v["mean"] > 0 else "反向")
+        out[u] = dict(dev=dev, strong=strong, val=val)
+    return out
+
+
+def status(st, tg):
+    if st["ic"]["A"]["n"] < MIN_M or st["ic"]["B"]["n"] < MIN_M:
+        return "資料不足"
+    if not any(t["dev"] for t in tg.values()):
+        return "未收"
+    return "收" if any(t["val"] in ("確認", "強確認") for t in tg.values()) else "待確認"
+
+
+def corr_pairs(Xo, E, dates):
+    """dev 每 3 個月抽一次，兩兩重新排名後的平均橫斷面 Spearman（已定方向）。"""
+    dev = np.flatnonzero(dates <= pd.Timestamp(PER["B"][1]))[::3]
+    names = list(Xo)
+    rho = pd.DataFrame(np.nan, index=names, columns=names)
+    for i, a in enumerate(names):
+        for b in names[i:]:
+            v = []
+            for t in dev:
+                m = E[t] & np.isfinite(Xo[a][t]) & np.isfinite(Xo[b][t])
+                if m.sum() >= MIN_N:
+                    v.append(F3.spear(Xo[a][t, m], Xo[b][t, m]))
+            rho.loc[a, b] = rho.loc[b, a] = np.mean(v) if v else np.nan
+    return rho
+
+
+def cell(t):
+    if not t["dev"]:
+        return "·"
+    d = "◎" if t["strong"] else "○"
+    return d + {"強確認": "✓✓", "確認": "✓", "反向": "✗", None: "？"}[t["val"]]
+
+
+def write_md(rows, fp, path):
+    L = ["# 特徵庫（FL1，程式產生，勿手改）", "",
+         "由 `research/v2/feature_library.py` 產生（第四十一批，規則見 `HYPOTHESES.md`）。只放統計量，不放 FinMind 原始數字。",
+         "原則：特徵只看自己夠不夠好，依用途貼標籤，留著以後重複使用；**不以能否改進 H136 或適不適合每月 20 檔為門檻**（H136 增量只是描述欄位）。", "",
+         "## 怎麼用", "",
+         "```python",
+         "P = xs.load_panel(end, fundamentals=True)",
+         "for add in (xs.add_chips, xs.add_fin, xs.add_v16, xs.add_v17):",
+         "    add(P)",
+         "S = hypotheses.FNS[\"H87\"][0](P)      # 日頻分數（日期 × 股票）；用前一交易日的值避免前視",
+         "# IND_SUR / REL_SUR：feature_industry.ind_feats(SUR 矩陣, 池, feature_industry.labels(欄位))",
+         "```", "",
+         "方向欄是「大＝好端」要乘的號（−1 代表原始值越小越好）。",
+         "**期間**：A 2010-14（實際從 2011 起）、B 2015-19（以上是 dev）、V 2020-23（val）。holdout 2024 年以後沒有用。", "",
+         "**用途標籤**（`·` 是 dev 沒有標籤）：",
+         "- dev：`○` 是 A |t| ≥ 1 且 B 同號，`◎` 是兩段 |t| 都 ≥ 2。",
+         "- val：`✓` 確認，`✓✓` 強確認（|t| ≥ 2），`✗` 方向相反，`？` val 不能評估。", "",
+         "**用途的定義**：",
+         "- 排序：全池 Spearman IC。",
+         "- 多空：好端 20% 減壞端 20%（毛，未扣成本）。",
+         "- 挑贏家：好端 10% 減池平均。",
+         "- 避雷：壞端 10% 減池平均，要顯著為負。",
+         "表中的報酬都是年化百分比。", "",
+         "**狀態**：收＝至少一個用途 val 確認；待確認＝有 dev 標籤但 val 沒確認；未收＝dev 沒有標籤；資料不足＝A 或 B 段少於 24 個月。", "",
+         "## 安慰劑（把股票代號打亂，每個特徵 5 次）", "",
+         "| 用途 | dev 標籤（○ 以上）假陽性率 | 有 dev 標籤時 val 也同號的比例 | `◎✓✓` 假陽性率 |", "|---|---|---|---|"]
+    for u, nm in USES.items():
+        L.append(f"| {nm} | {fp[u]['dev']*100:.0f}% | {fp[u]['val']*100:.0f}% | {fp[u]['top']*100:.1f}% |")
+    L += ["", "注意：打亂代號後，每檔股票拿到的是一整條固定序列。有些股票長期報酬本來就較高，所以假特徵在 dev 與 val 之間也會延續同一方向，"
+          "val 同號的比例會超過一半（排序最明顯）。換句話說，「val 確認」只能擋掉一部分假陽性。",
+          f"**`◎✓✓`（dev 兩段 |t| ≥ 2，且 val 強確認）的假陽性率低很多，是最可靠的標籤**。整體「收」的安慰劑比例是 {fp['status']*100:.0f}%，所以「收」裡面仍可能有假的。", ""]
+    order = {"收": 0, "待確認": 1, "未收": 2, "資料不足": 3}
+    rows = sorted(rows, key=lambda r: (order[r["status"]], -r["n_strong"], r["H"]))
+    L += ["## 總表", "", "| 特徵 | 名稱 | 類別／更新頻率 | 方向 | 排序 | 多空 | 挑贏家 | 避雷 | 狀態 | 註記 | 半衰期（月） | 好端換手 | 起始 | 高度相關（\\|ρ\\| ≥ 0.6） | H136 增量（描述） |",
+          "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for r in rows:
+        hl = "> 12" if not np.isfinite(r["half_life"]) else f"{r['half_life']:.1f}"
+        L.append(f"| {r['H']} | {r['name']} | {r['cat']}／{FREQ[r['cat']]} | {'+' if r['sign'] > 0 else '−'} | "
+                 + " | ".join(r[f"tag_{u}"] for u in USES) + f" | {r['status']} | {r['note']} | {hl} | {r['turn']*100:.0f}% | {r['start']} | {r['related']} | {r['h136']} |")
+    L += ["", "## 指標（A / B / V；括號為 t）", "",
+          "| 特徵 | 排序 IC | 多空（年化） | 好端 10%（年化） | 壞端 10%（年化） | 大贏家命中（好端） | 大輸家命中（壞端） | IC 同向年數（dev） |",
+          "|---|---|---|---|---|---|---|---|"]
+
+    def f3(r, u, sc, d):
+        return " / ".join(f"{r[f'{u}_{p}']*sc:+.{d}f}（{r[f'{u}_{p}_t']:+.1f}）" if np.isfinite(r[f"{u}_{p}"]) else "—" for p in PER)
+
+    for r in rows:
+        L.append(f"| {r['H']} | {f3(r, 'ic', 1, 3)} | {f3(r, 'ls', 1200, 1)} | {f3(r, 'good', 1200, 1)} | {f3(r, 'bad', 1200, 1)} | "
+                 + " / ".join(f"{r[f'wl_good_{p}']:.2f}" if np.isfinite(r[f'wl_good_{p}']) else "—" for p in PER) + " | "
+                 + " / ".join(f"{r[f'll_bad_{p}']:.2f}" if np.isfinite(r[f'll_bad_{p}']) else "—" for p in PER) + f" | {r['yrs_ic']} |")
+    path.write_text("\n".join(L) + "\n")
+
+
+def main():
+    t0 = time.time()
+    P = xs.load_panel(END, fundamentals=True)
+    for add in (xs.add_chips, xs.add_fin, xs.add_v16, xs.add_v17):
+        add(P)
+    dates, Rdf, Edf = forward(P, PER["A"][0], END)
+    cols = P["close"].columns
+    R = Rdf.reindex(index=dates, columns=cols).values
+    E = Edf.reindex(index=dates, columns=cols).fillna(False).values.astype(bool)
+    devm = dates <= pd.Timestamp(PER["B"][1])
+
+    def mat(f):
+        return Hy.FNS[f][0](P).replace([np.inf, -np.inf], np.nan).shift(1).reindex(index=dates, columns=cols).values
+
+    fs3 = pd.read_csv(H.D / "results" / "fs3_dev.csv").set_index("H")
+    rows, plc, Xo = [], [], {}
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        IND, REL = FI.ind_feats(mat("H87"), E, FI.labels(cols))
+        print(f"FL1：{len(FEATS)} 個特徵、{len(dates)} 個換股日（{dates[0].date()} ~ {dates[-1].date()}）；載入 {time.time()-t0:.0f}s", flush=True)
+        for f in FEATS:
+            X = {"IND_SUR": IND, "REL_SUR": REL}[f] if f in ("IND_SUR", "REL_SUR") else mat(f)
+            s, base = orient(X, R, E, dates)
+            Xs = s * X
+            Xo[f] = Xs
+            mo = monthly(Xs, R, E)
+            st = {c: pstats(mo[:, i], dates) for i, c in enumerate(COLS)}
+            tg = tags(st)
+            stt = status(st, tg)
+            dc, hl = F3.decay(Xs[devm], R[devm], E[devm])
+            valid = (E & np.isfinite(X)).sum(axis=1)
+            start = dates[np.argmax(valid >= MIN_N)].strftime("%Y-%m") if (valid >= MIN_N).any() else "—"
+            ic = mo[:, 0]
+            yrs = pd.Series(ic[devm], index=dates[devm]).dropna().groupby(lambda d: d.year).mean()
+            lot = [e for e, (w, lo) in (("好端", ("wl_good", "ll_good")), ("壞端", ("wl_bad", "ll_bad")))
+                   if all(st[w][p]["mean"] > 1.3 and st[lo][p]["mean"] > 1.3 for p in "AB")]
+            note = []
+            if lot:
+                note.append("彩券（" + "、".join(lot) + "）")
+            if f in NOTES:
+                note.append(NOTES[f])
+            if base == "B":
+                note.append("方向借 B 段")
+            if f in fs3.index:
+                h136 = f"{ {'—': '不收'}.get(fs3.cond20[f], fs3.cond20[f]) }（B {fs3.cond_top20_B[f]*1200:+.1f}%）"
+            else:
+                h136 = "FS4：無增量"
+            row = dict(H=f, name=DESC.get(f, Hy.FNS[f][1] if f in Hy.FNS else f), cat=CAT[f], sign=s, status=stt,
+                       n_strong=sum(t["strong"] and t["val"] == "強確認" for t in tg.values()),
+                       note="、".join(note), half_life=hl, turn=np.nanmean(mo[devm, COLS.index("turn")]), start=start,
+                       yrs_ic=f"{int((yrs > 0).sum())}/{len(yrs)}", h136=h136,
+                       **{f"tag_{u}": cell(tg[u]) for u in USES}, **{f"val_{u}": tg[u]["val"] for u in USES},
+                       **{f"dev_{u}": tg[u]["dev"] for u in USES})
+            for c in COLS[:-1]:
+                for p in PER:
+                    row[f"{c}_{p}"] = st[c][p]["mean"]
+                    row[f"{c}_{p}_t"] = st[c][p]["t"]
+                    row[f"{c}_{p}_n"] = st[c][p]["n"]
+            rows.append(row)
+            for k in range(NPL):
+                Xp = X[:, np.random.default_rng(1000 + k).permutation(X.shape[1])]
+                sp, _ = orient(Xp, R, E, dates)
+                pm = monthly(sp * Xp, R, E, full=False)
+                pst = {c: pstats(pm[:, i], dates) for i, c in enumerate(COLS[:4])}
+                ptg = tags(pst)
+                plc.append(dict(f=f, k=k, status=status(pst, ptg), **{f"dev_{u}": ptg[u]["dev"] for u in USES},
+                                **{f"top_{u}": ptg[u]["strong"] and ptg[u]["val"] == "強確認" for u in USES},
+                                **{f"val_{u}": ptg[u]["val"] for u in USES}))
+            print(f"  {f:<7} {row['name'][:12]:<12} {'+' if s > 0 else '−'}  " + " ".join(f"{USES[u]} {row['tag_' + u]:<3}" for u in USES)
+                  + f"  → {stt}  [{time.time()-t0:.0f}s]", flush=True)
+        rho = corr_pairs(Xo, E, dates)
+    for r in rows:
+        rel = rho.loc[r["H"]].drop(r["H"]).dropna()
+        rel = rel[rel.abs() >= RHO].sort_values(key=lambda x: -x.abs())
+        r["related"] = "、".join(f"{k} {v:+.2f}" for k, v in rel.items()) or "—"
+    PL = pd.DataFrame(plc)
+    ev = PL[PL.status != "資料不足"]
+    fp = {u: dict(dev=ev[f"dev_{u}"].mean(), val=ev[ev[f"dev_{u}"]][f"val_{u}"].isin(["確認", "強確認"]).mean(),
+                  top=ev[f"top_{u}"].mean()) for u in USES}
+    fp["status"] = (ev.status == "收").mean()
+    T = pd.DataFrame(rows)
+    T.to_csv(H.D / "results" / "feature_library.csv", index=False)
+    rho.to_csv(H.D / "results" / "feature_library_rho.csv")
+    write_md(rows, fp, Path(__file__).resolve().parent / "FEATURES.md")
+    cnt = T.status.value_counts().to_dict()
+    print(f"\n狀態：{cnt}；安慰劑 dev 標籤假陽性 " + "、".join(f"{USES[u]} {fp[u]['dev']*100:.0f}%（val 同號 {fp[u]['val']*100:.0f}%）" for u in USES)
+          + f"；安慰劑「收」比例 {fp['status']*100:.0f}%；◎✓✓ 假陽性 " + "、".join(f"{USES[u]} {fp[u]['top']*100:.1f}%" for u in USES))
+    with open(H.LOG, "a") as fh:
+        fh.write(json.dumps(dict(ts=time.strftime("%Y-%m-%d %H:%M:%S"), kind="feature_library", period="dev（A/B）＋ val（V）",
+                                 strategy="FL1 特徵庫", note="第四十一批 事前登記", status=cnt, placebo=fp,
+                                 features={r["H"]: dict(status=r["status"], sign=r["sign"], **{u: r[f"tag_{u}"] for u in USES}) for r in rows}),
+                            ensure_ascii=False, default=lambda v: round(float(v), 5) if isinstance(v, (float, np.floating)) else str(v)) + "\n")
+
+
+if __name__ == "__main__":
+    main()

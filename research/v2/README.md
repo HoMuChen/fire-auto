@@ -1,6 +1,6 @@
 # research/v2 — 防前視研究框架（2026-10-20 起）
 
-規範（期間、事前登記、成本、過關標準）見根目錄 `AGENTS.md`「研究規範」。每個假設的完整登記與數字在 `HYPOTHESES.md`，每次執行的紀錄在 `experiments.jsonl`。
+規範（期間、事前登記、成本、過關標準）見根目錄 `AGENTS.md`「研究規範」。**新研究先從特徵庫 `FEATURES.md` 取原料**：依用途（排序、多空、挑贏家、避雷）貼標籤，dev 給標籤、val 確認，`◎✓✓` 最可靠。每個假設的完整登記與數字在 `HYPOTHESES.md`，每次執行的紀錄在 `experiments.jsonl`。
 
 ## 檔案
 
@@ -34,6 +34,7 @@
 | `batch32_risk.py` | 第三十二批 H133~H135：H29 風控變體日線淨值（`sim` 可給權重與曝險，等權時與 `threshold.py` 一致並有 assert）、Jobson-Korkie z；`val` 會先重算 dev 關卡 |
 | `feature_screen3.py` | 第三十九批 FS3：條件 IC（H136 前 100 內）、候選池內前 20、右尾前 10% 超額與大贏家命中倍數、衰減半衰期，各含安慰劑；輸出 `data/v2/results/fs3_dev.csv` |
 | `feature_industry.py` | 第四十批 FS4：同業營收驚喜擴散（IND_SUR、REL_SUR），沿用 FS3 的評估並加增量 FM 與擴散描述；安慰劑是產業標籤打亂 |
+| `feature_library.py` | 第四十一批 FL1 特徵庫：44 個特徵依用途評估（A/B/V 三段、安慰劑），產生 `FEATURES.md`（勿手改）與 `data/v2/results/feature_library.csv`、`feature_library_rho.csv`；加新特徵時把它加進 `FEATS` 重跑 |
 | `feature_combo.py` | 第三十三批 FS2：特徵百分位矩陣（`prep`）＋向量化 top20 回測（`bt`）、全部 2／3 個一組＋伯努利 2000 組、邊際貢獻 OLS（`marginal`）；輸出 `data/v2/results/fs2_dev.csv`、`fs2_marginal.csv` |
 | `holdout_h136.py` | 第三十四批 H136 holdout 一次性檢驗（需 `--unseal`）；用 FS2 引擎、對照同引擎 H29 |
 | `ml_walkforward.py` | 第三十五批 ML1：逐年重訓（空一個月、assert 防前視）的 Fama-MacBeth 與 HistGradientBoosting；`stage2` 需 `--unseal`。需要 scikit-learn（`uv pip install scikit-learn`，不要 `uv add`，見 shioaji 鎖版問題） |
@@ -130,6 +131,7 @@ holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使�
 | **H140** / H141 | 事件型：月營收驚喜 SUR ≥ 2 的狀態下，收盤剛創 252 日新高（前 20 日沒創過）→ 次日開盤買，訊號觸發就買、不限檔數；H140 持有 20 日、H141 移動停損 8%（`batch38_breakout.py`） | **H140 ✓ dev＋val（交易層級）**／H141 ✗（val） | H140 每筆超額 dev +1.64%／val +2.67%，對隨機進場 edge t 4.09／3.52，正年 9/9、4/4；中位數為負、前 5% 貢獻 117~124%（彩券型），val 同時持倉平均 15、最多 116 檔。**突破時點沒有增量**：同樣 SUR ≥ 2 且 H2 ≥ 0.95、月曆進場（CH，事後描述）每筆超額 +1.91%／+2.64%，H140 − CH dev t 1.12、val t −1.28 → 和 H136 是同一個訊號。holdout 不開；可實盤的有限資金規則未定 |
 | FS3 | 特徵庫重篩（不是單一假設）：42 個 FS1 候選改用條件 IC（H136 前 100 內）、右尾（全池前 10% 超額、大贏家命中倍數）、衰減半衰期（`feature_screen3.py`） | 原料標籤 | 右尾收 21（假陽性 11.8%，約 17 個真）；條件 IC 收 25 但多是避雷型（H11、H6、H13、H3 在候選池挑前 20 反而負）；候選池內前 20（事後）收 10 ≈ 預期假的 8.4 → H136 之上沒有可靠加分。分三類：挑贏家（H2、H10、H87、H97、H99、H28、**H22 投信**）、避雷（H3、H13、H6、H11 命中倍數 < 1）、彩券（H96、H9、H84）。半衰期 H97 1.4 月、H87 4.0、H2 11.6 |
 | FS4 | 新原料：同業營收驚喜 IND_SUR（同產業其他股票的 SUR 平均）、相對驚喜 REL_SUR（`feature_industry.py`；安慰劑＝產業標籤打亂 20 次） | ✗ | 增量 FM t A 2.15 / B 1.25（安慰劑 90 分位 1.63）、全池 IC t 2.14 / 1.65（安慰劑 90 分位 2.01）→ 在雜訊範圍；右尾與「自己沒驚喜者」的擴散在 B 段變號（−5.8%、−5.4%）。REL_SUR ≈ 自己的 SUR。證交所產業分類太粗、非 pit |
+| FL1 | 可重複使用的特徵庫（44 個；`feature_library.py` → `FEATURES.md`）：A 段 IC 定方向，dev 給用途標籤，val 確認 | 收 28／待確認 3／未收 5／資料不足 8 | 安慰劑 dev 標籤假陽性 11~18%、「收」22%、`◎✓✓` 0%。四用途全 `◎✓✓`：H10、H87；單獨強但未使用：H86 股東人數減少。val 反向：H28 挑贏家、H1、H22 挑贏家 |
 | H106 | QFF 30 分 K「快速推升第一個低點 / 快速下跌第一個高點」回測進場（1 口） | ✗ | 2021-26 138 筆、勝率 21%、每筆 −6 點（無滑價仍 −2 點）、六年全負；到目標的單 3~5R 但 72% 被停損掃 → 高 R × 低勝率 = 負期望。對照連續做多 +1,476 點 |
 
 （無 H37。）舊 14 技術策略、舊三策略：dev 扣成本無一顯著贏大盤（`run_legacy14.py`）。
