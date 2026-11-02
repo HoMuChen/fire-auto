@@ -5,7 +5,7 @@
   catalog.duckdb                只有 view 定義（明確列檔，不用萬用字元 → 讀者不需 LIST、看到固定的檔案組合）
   universe.parquet、revenue.parquet、fin/bs/cf/dividend.parquet
   price|per|inst|margin|mv|holding/year=YYYY/data.parquet
-  market/*.parquet、futures_30min/*.parquet
+  market/*.parquet、futures_30min/*.parquet、futures_1min/tx/year=YYYY/data.parquet
   broker/year=YYYY/month=MM/data.parquet、orderbook/{tick_hist|tick|bidask}/day=YYYY-MM-DD/{合約}.parquet
 
 用法（/usr/local/bin/python3）：
@@ -235,6 +235,26 @@ def build_market(ds):
     print(f"  market / futures_30min：{len(MARKET)} + {len(FUT30)} 檔", flush=True)
 
 
+def build_fut1m(ds):
+    """research/v2/tx1m.py 的一天一檔 → futures_1min/tx/year=YYYY/data.parquet。"""
+    t0 = time.time()
+    src = ROOT / "data" / "v2" / "futures" / "tx1m"
+    df = pd.concat([pd.read_parquet(f).assign(date=f.stem) for f in sorted(src.glob("*.parquet")) if f.stat().st_size],
+                   ignore_index=True)
+    df = df[["date", "contract", "minute", "open", "high", "low", "close", "volume"]]
+    df["date"] = pd.to_datetime(df.date)
+    df = df.sort_values(["date", "contract", "minute"], kind="stable").reset_index(drop=True)
+    files = {}
+    years = df.date.dt.year
+    for y in sorted(years.unique()):
+        rel = f"futures_1min/tx/year={int(y)}/data.parquet"
+        files[rel] = write(to_table(df[years == y]), rel)
+    ds["futures_1min.tx"] = _entry(df, files, "台指期（TX）日盤 1 分 K：FinMind 逐筆合成，08:45~13:44 每天 300 根（13:45 收盤撮合併入 13:44）；"
+                                    "每天保留日盤成交量前 2 大合約（contract＝到期月），連續近月請每天取 volume 加總最大的合約；"
+                                    "不含價差單與夜盤；minute＝K 棒起始（台北時間）；2011-01 起", "year")
+    print(f"  futures_1min.tx {len(df):>10,} 筆  {len(files):>3} 檔  {time.time()-t0:.0f}s", flush=True)
+
+
 # ─────────── 第 3 階段：分點、訂單簿 ───────────
 BROKER = ROOT / "data" / "broker"
 OB = ROOT / "data" / "orderbook"
@@ -342,11 +362,13 @@ def build(names):
     STAGE.mkdir(parents=True, exist_ok=True)
     man = load_manifest()
     ds = man["datasets"]
-    want = names or list(SPEC) + ["market", "broker", "orderbook"]
+    want = names or list(SPEC) + ["market", "futures_1min", "broker", "orderbook"]
     print(f"build → {STAGE}")
     for n in want:
         if n == "market":
             build_market(ds)
+        elif n == "futures_1min":
+            build_fut1m(ds)
         elif n == "broker":
             build_broker(ds)
         elif n == "orderbook":

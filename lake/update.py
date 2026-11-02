@@ -389,6 +389,20 @@ def update_market(lim, dry, today):
         before = len(pd.read_parquet(FD / "TXO_final_settle.parquet"))
         after = len(options.fetch_fsp(years=[today.year]))
         stats["TXO_final_settle"] = f"{after - before:+d} 筆"
+    # 台指期日盤 1 分 K（research/v2/tx1m.py，一天一檔）：補到昨天；近 5 天抓到空的（FinMind 還沒更新或休市）不留檔，下次再試
+    if not dry:
+        sys.path.insert(0, str(ROOT / "research" / "v2"))
+        import tx1m
+        last = max(f.stem for f in tx1m.OUT.glob("*.parquet"))
+        d, got = date.fromisoformat(last) + timedelta(days=1), []
+        while d < today:
+            if d.weekday() < 5:
+                r = tx1m.fetch(lim, d.isoformat())
+                if r == "empty" and d >= today - timedelta(days=5):
+                    (tx1m.OUT / f"{d}.parquet").unlink()
+                got.append(r)
+            d += timedelta(days=1)
+        stats["tx1m"] = f"至 {max(f.stem for f in tx1m.OUT.glob('*.parquet'))[5:]}，新增 {got.count('ok')} 天"
     return stats
 
 

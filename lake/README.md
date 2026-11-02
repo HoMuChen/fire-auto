@@ -54,6 +54,7 @@ DuckDB 只會抓需要的欄位與年份分區（`WHERE date >= …` 會跳過�
 | `orderbook.tick_hist` | 歷史逐筆（Shioaji `api.ticks` 回補）：`ts`、`close`、`volume`、當下買一 / 賣一價量、`tick_type`（1 外盤 / 2 內盤）；`code` 為合約 | day | 2330：2019；期貨：回補時仍掛牌的合約 |
 | `orderbook.tick` / `orderbook.bidask` | 每日盤中錄製的逐筆成交 / 五檔（QFF 近兩月、TXF 近月、2330）；`simtrade=True` 為開盤前試撮、不是成交；現股沒有的欄位為 null | day | 2026-10-27 |
 | `futures_30min.qff` / `.sef` | 小型台積電 / 小型智邦期 30 分 K（日盤、連續近月；datetime 台北時間、K 棒起始） | — | 2021 / 2024 |
+| `futures_1min.tx` | 台指期（TX）日盤 1 分 K（FinMind 逐筆合成，每天 300 根）；每天保留成交量前 2 大合約，連續近月請每天取 `volume` 加總最大的 `contract`；不含夜盤 | year | 2011 |
 
 慣例：`date` 為 date 型別、`stock_id` 為字串；除 `price` 外欄位名沿用 FinMind 原名（可對照 FinMind 文件）。
 
@@ -91,6 +92,7 @@ python3 lake/lake.py status
 | dividend | 近 120 天 | 依（date, year）覆蓋 |
 | holding | 最後日 − 3 天起逐個平日（公布日不固定） | 依日期覆蓋 |
 | universe | TaiwanStockInfo + Delisting | 新股逐檔抓完整歷史；下市標 delist_date |
+| futures_1min.tx | 補到前一天（`research/v2/tx1m.py`，一天一次逐筆查詢） | 一天一檔不覆蓋；近 5 天抓到空的不留檔、下次再試 |
 | market.* | 從最後日期所在月 / 年重抓 | 依日期覆蓋；自建 txo_vix / ad / breadth / mkt_maint 整段重算 |
 
 建議 cron（由使用者加；放在 broker 22:00 跑完之後。過午夜所以星期欄是 `2-6`＝週二~六凌晨處理前一個平日）：
