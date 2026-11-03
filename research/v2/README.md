@@ -36,7 +36,8 @@
 | `batch32_risk.py` | 第三十二批 H133~H135：H29 風控變體日線淨值（`sim` 可給權重與曝險，等權時與 `threshold.py` 一致並有 assert）、Jobson-Korkie z；`val` 會先重算 dev 關卡 |
 | `feature_screen3.py` | 第三十九批 FS3：條件 IC（H136 前 100 內）、候選池內前 20、右尾前 10% 超額與大贏家命中倍數、衰減半衰期，各含安慰劑；輸出 `data/v2/results/fs3_dev.csv` |
 | `feature_industry.py` | 第四十批 FS4：同業營收驚喜擴散（IND_SUR、REL_SUR），沿用 FS3 的評估並加增量 FM 與擴散描述；安慰劑是產業標籤打亂 |
-| `feature_library.py` | 第四十一批 FL1 特徵庫：68 個特徵（FL1 44 ＋ 第四十二批 FS5 24）依用途評估（A/B/V 三段、安慰劑），產生 `FEATURES.md`（勿手改）與 `data/v2/results/feature_library.csv`、`feature_library_rho.csv`；加新特徵時把它加進 `FEATS` 重跑；`--no-sbl` 是不含借券、不寫 `FEATURES.md` 的預覽；第四十三批 FL2 另輸出 `feature_library_tracks.csv`（週／60 日／風險軌道與 B＋V） |
+| `feature_library.py` | 第四十一批 FL1 特徵庫：85 個特徵（FL1 44 ＋ 第四十二批 FS5 24 ＋ 第四十四批 FS6 17）依用途評估（A/B/V 三段、安慰劑），產生 `FEATURES.md`（勿手改）與 `data/v2/results/feature_library.csv`、`feature_library_rho.csv`；加新特徵時把它加進 `FEATS` 重跑；`--no-sbl` 是不含借券、不寫 `FEATURES.md` 的預覽；第四十三批 FL2 另輸出 `feature_library_tracks.csv`（週／60 日／風險軌道與 B＋V） |
+| `feature_fs6.py` | 第四十四批 FS6：現有資料可做的特徵（資本支出強度、資本支出÷折舊、應收−營收成長、利息保障倍數、淨發行股數、合約負債比與季增、F-score 全池、beta、特質波動、偏態、週轉率、券資比與偏離；H79、H91、H100 沿用原函數），由 `feature_library.py` 載入；`python research/v2/feature_fs6.py` 跑 leak check |
 | `feature_tracks.py` | 第四十三批 FL2：特徵庫的新評估軌道（B＋V 評估給 A 段不足的特徵、週與 60 日持有期、下期實現波動與最大回落的風險目標），由 `feature_library.py` 呼叫 |
 | `feature_tu.py` | 第四十二批 FS5：涂敏峰清單的特徵（缺口、大盤跌時抗跌、季線、多頭排列、預估 EPS 本益比、同業比價、投信連買、千張大戶、負債比、借券、上影線、KD 背離、量價、月 MACD、低價、融資、三低一高、四特徵），由 `feature_library.py` 載入；`python research/v2/feature_tu.py fib` 是費氏時間轉折事件檢定。需要 `data/v2/sbl` |
 | `feature_combo.py` | 第三十三批 FS2：特徵百分位矩陣（`prep`）＋向量化 top20 回測（`bt`）、全部 2／3 個一組＋伯努利 2000 組、邊際貢獻 OLS（`marginal`）；輸出 `data/v2/results/fs2_dev.csv`、`fs2_marginal.csv` |
@@ -138,6 +139,7 @@ holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使�
 | FL1 | 可重複使用的特徵庫（44 個；`feature_library.py` → `FEATURES.md`）：A 段 IC 定方向，dev 給用途標籤，val 確認 | 收 28／待確認 3／未收 5／資料不足 8 | 安慰劑 dev 標籤假陽性 11~18%、「收」22%、`◎✓✓` 0%。四用途全 `◎✓✓`：H10、H87；單獨強但未使用：H86 股東人數減少。val 反向：H28 挑贏家、H1、H22 挑贏家 |
 | FS5 | 涂敏峰清單裡還沒測的特徵＋借券，共 24 個，照 FL1 規則加進特徵庫（`feature_tu.py`）；FIB 費氏時間轉折另外檢定 | 收 17／待確認 1／未收 5／資料不足 1；FIB ✗ | 新 `◎✓✓`：MA_ALIGN 多頭排列（多空、挑贏家、避雷）、SBL_LVL 借券餘額比（多空，高的不好）、FWD_EY 預估盈餘殖利率與 UPPER_SHADOW 上影線（排序）。講趨勢的說法資料支持；講抄底的（KD 低檔背離、季線回測、四特徵、下跌缺口會補）方向相反；借券遠大於融資不會軋空。原本 44 個特徵結果不變 |
 | FL2 | 特徵庫引擎補強（`feature_tracks.py`）：A 段不足的特徵改用 B＋V 評估；新增週、60 日持有期與下期波動／回落的風險目標 | 月報酬結果逐位元組不變；B＋V 救回 H81（排序 `B◎✓✓`）、H83（多空／避雷 `B○✓✓`）、H26、H27；週 `◎✓✓` 排序翻倍但多是反轉、流動性，好端接近 0；60 日 H2 三用途 `◎✓✓`（月只有挑贏家） | 週挑贏家便宜又站得住：FWD_EY（換手 9%）；只預測風險不預測報酬：H78 異常成交量、GRANVILLE、GAP_UP_OPEN；60 日安慰劑「收」30%，要打折 |
+| FS6 | FEATURE_PLAN 階段 1：現有資料可做的 17 個特徵（`feature_fs6.py`），照 FL1＋FL2 評估 | 月：收 7、未收 1、資料不足 9（B＋V 收 5）；原本 68 個不變 | **NET_ISSUE 淨發行**（發越多越差）多空 B◎✓✓、四軌道全收、無高度相關；CL_CHG 合約負債季增排序 B◎✓✓（2017 起、同分重）；SM_RATIO 券資比高的較差（排序 ◎✓✓）；H79 排序 ◎✓✓；IVOL ≈ H3、TURN ≈ H91、H100 ≈ H6；CAPEX_INT、BETA 只預測風險 |
 | H106 | QFF 30 分 K「快速推升第一個低點 / 快速下跌第一個高點」回測進場（1 口） | ✗ | 2021-26 138 筆、勝率 21%、每筆 −6 點（無滑價仍 −2 點）、六年全負；到目標的單 3~5R 但 72% 被停損掃 → 高 R × 低勝率 = 負期望。對照連續做多 +1,476 點 |
 
 （無 H37。）舊 14 技術策略、舊三策略：dev 扣成本無一顯著贏大盤（`run_legacy14.py`）。
