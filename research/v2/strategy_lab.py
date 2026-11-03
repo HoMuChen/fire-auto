@@ -77,11 +77,12 @@ def combo(mats, E, need):
 
 
 # ───────── 投組 ─────────
-def portfolio(S, R, E, n, buffer=None, filt=None, weight=None, limits=None, cost=COST, min_valid=MIN_VALID, group=None, cap=None):
+def portfolio(S, R, E, n, buffer=None, filt=None, weight=None, limits=None, cost=COST, min_valid=MIN_VALID, group=None, cap=None, rebal=None):
     """S：分數（大＝好）；R、E 同 Lab.monthly；n：檔數。
     buffer＝k：上期持股還在前 k·n 名就留任，空位由排名遞補。filt：布林遮罩（False 的不能新買，持股也會被換掉）。
     weight(t, idx)→權重；預設等權。limits＝(up, dn)：一字漲停的新股買不到（由下一名遞補）、一字跌停的舊股賣不掉（續抱）。
     group（各欄的產業代碼，< 0＝無）＋ cap：每個產業最多 cap 檔（留任的也算，排名較後的換掉；賣不掉的例外）。
+    rebal：布林陣列，False 的月份不換股（持股照當月報酬計、不扣成本；還沒有持股就空手）。
     回傳 DataFrame：net（扣成本）、bench（池等權）、ex、turn（買進比例）、n。"""
     T, N = S.shape
     ok = E & np.isfinite(S) & (filt if filt is not None else True)
@@ -90,6 +91,16 @@ def portfolio(S, R, E, n, buffer=None, filt=None, weight=None, limits=None, cost
     bench = np.array([R[t][E[t]].mean() if E[t].any() else np.nan for t in range(T)])
     rows, prev, W = [], {}, [{} for _ in range(T)]
     for t in range(T):
+        if rebal is not None and not rebal[t]:
+            if prev:
+                idx = np.array(list(prev), int)
+                w = np.array(list(prev.values()))
+                net = float(w @ np.nan_to_num(R[t, idx], nan=0.0))
+                rows.append((net, bench[t], net - bench[t], 0.0, len(idx)))
+                W[t] = prev
+            else:
+                rows.append((np.nan, bench[t], np.nan, np.nan, 0))
+            continue
         cnt = int(ok[t].sum())
         if cnt < min_valid:
             rows.append((np.nan, bench[t], np.nan, np.nan, 0))
@@ -129,6 +140,29 @@ def portfolio(S, R, E, n, buffer=None, filt=None, weight=None, limits=None, cost
         prev = cur
         W[t] = cur
     out = pd.DataFrame(rows, columns=["net", "bench", "ex", "turn", "n"])
+    out.attrs["w"] = W
+    return out
+
+
+def staggered(S, R, E, n, k=3, **kw):
+    """分 k 批：資金分 k 份，第 j 份只在 t ≡ j (mod k) 的換股日換股、各選 n 檔；淨報酬＝已開始的各份平均。"""
+    t = np.arange(len(S))
+    parts = [portfolio(S, R, E, n, rebal=(t % k == j), **kw) for j in range(k)]
+    nets = np.vstack([p.net.values for p in parts])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        net = np.nanmean(nets, axis=0)
+    turn = np.nansum(np.vstack([p.turn.values for p in parts]), axis=0) / np.maximum(np.isfinite(nets).sum(axis=0), 1)
+    bench = parts[0].bench.values
+    W = []
+    for i in range(len(S)):
+        live = [p.attrs["w"][i] for p in parts if p.attrs["w"][i]]
+        u = {}
+        for w in live:
+            for c, v in w.items():
+                u[c] = u.get(c, 0.0) + v / len(live)
+        W.append(u)
+    out = pd.DataFrame(dict(net=net, bench=bench, ex=net - bench, turn=turn, n=[len(w) for w in W]))
     out.attrs["w"] = W
     return out
 
