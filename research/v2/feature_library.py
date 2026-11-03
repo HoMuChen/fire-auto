@@ -1,8 +1,9 @@
-"""第四十一批 FL1：可重複使用的特徵庫。規則見 HYPOTHESES.md 第四十一批（事前登記）；第四十二批 FS5 加入 16 個新特徵。
+"""第四十一批 FL1：可重複使用的特徵庫。規則見 HYPOTHESES.md 第四十一批（事前登記）；第四十二批 FS5 加入 16 個新特徵；
+第四十三批 FL2 加新評估軌道（B＋V、週、60 日、風險目標，見 feature_tracks.py），月報酬的結果不變。
 
 68 個特徵（FS1 的 42 個候選 + FS4 的 IND_SUR、REL_SUR + FS5 的 24 個，見 feature_tu.py），依用途（排序、多空、挑贏家、避雷）評估：
 方向用 A 段 IC 決定 → dev（A 2010-14、B 2015-19）給標籤 → val（2020-23）確認。holdout 不碰。
-產出 research/v2/FEATURES.md（只放統計量）與 data/v2/results/feature_library.csv。
+產出 research/v2/FEATURES.md（只放統計量）與 data/v2/results/feature_library.csv（月報酬）、feature_library_tracks.csv（新軌道）。
 
 用法：.venv/bin/python research/v2/feature_library.py
       .venv/bin/python research/v2/feature_library.py --no-sbl   # 預覽：不含借券特徵、不寫 FEATURES.md
@@ -11,6 +12,7 @@ import json
 import sys
 import time
 import warnings
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -21,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import feature_industry as FI  # noqa: E402
 import feature_screen as FS  # noqa: E402
 import feature_screen3 as F3  # noqa: E402
+import feature_tracks as FT  # noqa: E402
 import feature_tu as TU  # noqa: E402
 import harness as H  # noqa: E402
 import hypotheses as Hy  # noqa: E402
@@ -172,9 +175,9 @@ def cell(t):
     return d + {"強確認": "✓✓", "確認": "✓", "反向": "✗", None: "？"}[t["val"]]
 
 
-def write_md(rows, fp, path):
+def write_md(rows, fp, path, TR=None, PLR=None):
     L = ["# 特徵庫（FL1，程式產生，勿手改）", "",
-         "由 `research/v2/feature_library.py` 產生（第四十一批建立、第四十二批 FS5 加入涂敏峰清單的特徵與借券，規則見 `HYPOTHESES.md`）。"
+         "由 `research/v2/feature_library.py` 產生（第四十一批建立、第四十二批 FS5 加入涂敏峰清單的特徵與借券、第四十三批 FL2 加週／60 日／風險軌道與 B＋V 評估，規則見 `HYPOTHESES.md`）。"
          "只放統計量，不放 FinMind 原始數字。",
          "原則：特徵只看自己夠不夠好，依用途貼標籤，留著以後重複使用；**不以能否改進 H136 或適不適合每月 20 檔為門檻**（H136 增量只是描述欄位）。", "",
          "## 怎麼用", "",
@@ -199,7 +202,8 @@ def write_md(rows, fp, path):
          "- 挑贏家：好端 10% 減池平均。",
          "- 避雷：壞端 10% 減池平均，要顯著為負。",
          "表中的報酬都是年化百分比。", "",
-         "**狀態**：收＝至少一個用途 val 確認；待確認＝有 dev 標籤但 val 沒確認；未收＝dev 沒有標籤；資料不足＝A 或 B 段少於 24 個月。", "",
+         "**狀態**：收＝至少一個用途 val 確認；待確認＝有 dev 標籤但 val 沒確認；未收＝dev 沒有標籤；資料不足＝A 或 B 段少於 24 個月。"
+         "資料不足的特徵改用 B＋V 評估（見文末「新評估軌道」），狀態欄寫成「資料不足 → B＋V：…」。", "",
          "## 安慰劑（把股票代號打亂，每個特徵 5 次）", "",
          "| 用途 | dev 標籤（○ 以上）假陽性率 | 有 dev 標籤時 val 也同號的比例 | `◎✓✓` 假陽性率 |", "|---|---|---|---|"]
     for u, nm in USES.items():
@@ -209,12 +213,17 @@ def write_md(rows, fp, path):
           f"**`◎✓✓`（dev 兩段 |t| ≥ 2，且 val 強確認）的假陽性率低很多，是最可靠的標籤**。整體「收」的安慰劑比例是 {fp['status']*100:.0f}%，所以「收」裡面仍可能有假的。", ""]
     order = {"收": 0, "待確認": 1, "未收": 2, "資料不足": 3}
     rows = sorted(rows, key=lambda r: (order[r["status"]], -r["n_strong"], r["H"]))
+    bv = {} if TR is None else TR[TR.track == "M"].set_index("H").BV_status.to_dict()
+
+    def stt(r):
+        return r["status"] + (f" → B＋V：{bv[r['H']]}" if r["status"] == "資料不足" and r["H"] in bv else "")
+
     L += ["## 總表", "", "| 特徵 | 名稱 | 類別／更新頻率 | 方向 | 排序 | 多空 | 挑贏家 | 避雷 | 狀態 | 註記 | 半衰期（月） | 好端換手 | 起始 | 高度相關（\\|ρ\\| ≥ 0.6） | H136 增量（描述） |",
           "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         hl = "> 12" if not np.isfinite(r["half_life"]) else f"{r['half_life']:.1f}"
         L.append(f"| {r['H']} | {r['name']} | {r['cat']}／{FREQ[r['cat']]} | {'+' if r['sign'] > 0 else '−'} | "
-                 + " | ".join(r[f"tag_{u}"] for u in USES) + f" | {r['status']} | {r['note']} | {hl} | {r['turn']*100:.0f}% | {r['start']} | {r['related']} | {r['h136']} |")
+                 + " | ".join(r[f"tag_{u}"] for u in USES) + f" | {stt(r)} | {r['note']} | {hl} | {r['turn']*100:.0f}% | {r['start']} | {r['related']} | {r['h136']} |")
     L += ["", "## 指標（A / B / V；括號為 t）", "",
           "| 特徵 | 排序 IC | 多空（年化） | 好端 10%（年化） | 壞端 10%（年化） | 大贏家命中（好端） | 大輸家命中（壞端） | IC 同向年數（dev） |",
           "|---|---|---|---|---|---|---|---|"]
@@ -226,6 +235,8 @@ def write_md(rows, fp, path):
         L.append(f"| {r['H']} | {f3(r, 'ic', 1, 3)} | {f3(r, 'ls', 1200, 1)} | {f3(r, 'good', 1200, 1)} | {f3(r, 'bad', 1200, 1)} | "
                  + " / ".join(f"{r[f'wl_good_{p}']:.2f}" if np.isfinite(r[f'wl_good_{p}']) else "—" for p in PER) + " | "
                  + " / ".join(f"{r[f'll_bad_{p}']:.2f}" if np.isfinite(r[f'll_bad_{p}']) else "—" for p in PER) + f" | {r['yrs_ic']} |")
+    if TR is not None:
+        L += FT.md(TR, PLR, {r["H"]: r for r in rows})
     path.write_text("\n".join(L) + "\n")
 
 
@@ -239,18 +250,36 @@ def main():
     R = Rdf.reindex(index=dates, columns=cols).values
     E = Edf.reindex(index=dates, columns=cols).fillna(False).values.astype(bool)
     devm = dates <= pd.Timestamp(PER["B"][1])
+    wdates, Rw, Ew = FT.weekly(P, cols)
+    Rq, Eq = FT.q60(P, dates, cols)
+    TG = FT.risk_targets(P, dates, cols, E)
 
-    def mat(f):
+    @lru_cache(maxsize=8)
+    def daily(f):
         fn = TU.FNS[f][0] if f in TU.FNS else Hy.FNS[f][0]
-        return fn(P).replace([np.inf, -np.inf], np.nan).shift(1).reindex(index=dates, columns=cols).values
+        return fn(P).replace([np.inf, -np.inf], np.nan).shift(1)
+
+    def mat(f, d=dates):
+        return daily(f).reindex(index=d, columns=cols).values
+
+    def build(f, d, Eg, ind):
+        if f in ("IND_SUR", "REL_SUR"):
+            return ind[f]
+        if f in TU.PEER:
+            return TU.peer_rank(mat(TU.PEER[f][0], d), Eg, codes)
+        if f in TU.COMBO:
+            sp = TU.COMBO[f]
+            return TU.combo({g: mat(g, d) for g, _ in sp[0]} | ({sp[2]: mat(sp[2], d)} if sp[2] else {}), Eg, sp)
+        return mat(f, d)
 
     codes = FI.labels(cols)
 
     fs3 = pd.read_csv(H.D / "results" / "fs3_dev.csv").set_index("H")
-    rows, plc, Xo = [], [], {}
+    rows, plc, Xo, trk, ptrk = [], [], {}, [], []
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
         IND, REL = FI.ind_feats(mat("H87"), E, codes)
+        INDw = dict(zip(("IND_SUR", "REL_SUR"), FI.ind_feats(mat("H87", wdates), Ew, codes)))
         print(f"FL1：{len(FEATS)} 個特徵、{len(dates)} 個換股日（{dates[0].date()} ~ {dates[-1].date()}）；載入 {time.time()-t0:.0f}s", flush=True)
         for f in FEATS:
             if f in ("IND_SUR", "REL_SUR"):
@@ -306,17 +335,35 @@ def main():
                     row[f"{c}_{p}_t"] = st[c][p]["t"]
                     row[f"{c}_{p}_n"] = st[c][p]["n"]
             rows.append(row)
+            # 第四十三批 FL2 新軌道（月的 AB 沿用上面的結果；A 段不足的正式採 BV）
+            Xw = build(f, wdates, Ew, INDw)
+            a_ok = st["ic"]["A"]["n"] >= MIN_M
+            tr = {"M": FT.eval_ret(X, R, E, dates, pre=(s, mo[:, :4])), "W": FT.eval_ret(Xw, Rw, Ew, wdates, turn=True),
+                  "Q": FT.eval_ret(X, Rq, Eq, dates, lag=FT.Q_LAG, turn=True), "R": FT.eval_risk(X, TG, dates)}
+            w_ok = ((np.isfinite(Xw) & Ew).sum(axis=1) >= MIN_N).mean() >= 0.5
+            if not w_ok:
+                tr["W"] = FT.not_applicable(tr["W"])
+            assert [FT.cell(tr["M"]["AB"]["tg"][u], "AB") for u in USES] == [row[f"tag_{u}"] for u in USES]
+            for k_, v_ in tr.items():
+                trk.append(FT.flat(f, k_, v_, FT.RISK if k_ == "R" else FT.RET) | dict(a_ok=a_ok, mo_sign=s))
             for k in range(NPL):
-                Xp = X[:, np.random.default_rng(1000 + k).permutation(X.shape[1])]
+                perm = np.random.default_rng(1000 + k).permutation(X.shape[1])
+                Xp = X[:, perm]
                 sp, _ = orient(Xp, R, E, dates)
                 pm = monthly(sp * Xp, R, E, full=False)
+                ptr = {"M": FT.eval_ret(Xp, R, E, dates, pre=(sp, pm)), "W": FT.eval_ret(Xw[:, perm], Rw, Ew, wdates),
+                       "Q": FT.eval_ret(Xp, Rq, Eq, dates, lag=FT.Q_LAG), "R": FT.eval_risk(Xp, TG, dates)}
+                for k_, v_ in ptr.items():
+                    if k_ == "W" and not w_ok:
+                        continue
+                    ptrk.append(FT.placebo_row(f, k, k_, v_, FT.RISK if k_ == "R" else FT.RET))
                 pst = {c: pstats(pm[:, i], dates) for i, c in enumerate(COLS[:4])}
                 ptg = tags(pst)
                 plc.append(dict(f=f, k=k, status=status(pst, ptg), **{f"dev_{u}": ptg[u]["dev"] for u in USES},
                                 **{f"top_{u}": ptg[u]["strong"] and ptg[u]["val"] == "強確認" for u in USES},
                                 **{f"val_{u}": ptg[u]["val"] for u in USES}))
             print(f"  {f:<7} {row['name'][:12]:<12} {'+' if s > 0 else '−'}  " + " ".join(f"{USES[u]} {row['tag_' + u]:<3}" for u in USES)
-                  + f"  → {stt}  [{time.time()-t0:.0f}s]", flush=True)
+                  + f"  → {stt}" + "".join(f"｜{k_} " + FT.official(v_, a_ok)[0]["status"] for k_, v_ in tr.items()) + f"  [{time.time()-t0:.0f}s]", flush=True)
         rho = corr_pairs(Xo, E, dates)
     for r in rows:
         rel = rho.loc[r["H"]].drop(r["H"]).dropna()
@@ -328,17 +375,24 @@ def main():
                   top=ev[f"top_{u}"].mean()) for u in USES}
     fp["status"] = (ev.status == "收").mean()
     T = pd.DataFrame(rows)
+    TR = pd.DataFrame(trk)
+    PLR = FT.placebo_rates(pd.DataFrame(ptrk), {"M": FT.RET, "W": FT.RET, "Q": FT.RET, "R": FT.RISK})
     sfx = "_preview" if PREVIEW else ""
     T.to_csv(H.D / "results" / f"feature_library{sfx}.csv", index=False)
+    TR.to_csv(H.D / "results" / f"feature_library_tracks{sfx}.csv", index=False)
     rho.to_csv(H.D / "results" / f"feature_library_rho{sfx}.csv")
     if not PREVIEW:
-        write_md(rows, fp, Path(__file__).resolve().parent / "FEATURES.md")
+        write_md(rows, fp, Path(__file__).resolve().parent / "FEATURES.md", TR, PLR)
     cnt = T.status.value_counts().to_dict()
+    tcnt = {k_: g.apply(lambda r: r["AB_status"] if r["a_ok"] else r["BV_status"], axis=1).value_counts().to_dict() for k_, g in TR.groupby("track")}
+    print("新軌道正式狀態：" + "；".join(f"{FT.TRACKS[k_]} {v_}" for k_, v_ in tcnt.items()))
+    print("新軌道安慰劑（收）：" + "、".join(f"{k_[0]}-{k_[1]} {v_['status']*100:.0f}%" for k_, v_ in PLR.items()))
     print(f"\n狀態：{cnt}；安慰劑 dev 標籤假陽性 " + "、".join(f"{USES[u]} {fp[u]['dev']*100:.0f}%（val 同號 {fp[u]['val']*100:.0f}%）" for u in USES)
           + f"；安慰劑「收」比例 {fp['status']*100:.0f}%；◎✓✓ 假陽性 " + "、".join(f"{USES[u]} {fp[u]['top']*100:.1f}%" for u in USES))
     with open(H.LOG, "a") as fh:
         fh.write(json.dumps(dict(ts=time.strftime("%Y-%m-%d %H:%M:%S"), kind="feature_library", period="dev（A/B）＋ val（V）",
-                                 strategy="FL1 特徵庫（含 FS5）" + ("預覽（不含借券）" if PREVIEW else ""), note="第四十一批＋第四十二批 FS5 事前登記", status=cnt, placebo=fp,
+                                 strategy="FL1 特徵庫（含 FS5、FL2 新軌道）" + ("預覽（不含借券）" if PREVIEW else ""), note="第四十一～四十三批事前登記", status=cnt, placebo=fp,
+                                 tracks_status=tcnt, tracks_placebo={f"{k_[0]}-{k_[1]}": v_ for k_, v_ in PLR.items()},
                                  features={r["H"]: dict(status=r["status"], sign=r["sign"], **{u: r[f"tag_{u}"] for u in USES}) for r in rows}),
                             ensure_ascii=False, default=lambda v: round(float(v), 5) if isinstance(v, (float, np.floating)) else str(v)) + "\n")
 
