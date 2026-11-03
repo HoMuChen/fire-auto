@@ -1,6 +1,6 @@
 """第四十一批 FL1：可重複使用的特徵庫。規則見 HYPOTHESES.md 第四十一批（事前登記）；第四十二批 FS5 加入 16 個新特徵；
 第四十三批 FL2 加新評估軌道（B＋V、週、60 日、風險目標，見 feature_tracks.py），月報酬的結果不變；
-第四十四批 FS6 加入 17 個現有資料可做的特徵（feature_fs6.py）。
+第四十四批 FS6 加入 17 個現有資料可做的特徵（feature_fs6.py）；第四十五批 FS7 加入 7 個新資料特徵（feature_fs7.py：融資維持率、外資持股、當沖）。
 
 68 個特徵（FS1 的 42 個候選 + FS4 的 IND_SUR、REL_SUR + FS5 的 24 個，見 feature_tu.py），依用途（排序、多空、挑贏家、避雷）評估：
 方向用 A 段 IC 決定 → dev（A 2010-14、B 2015-19）給標籤 → val（2020-23）確認。holdout 不碰。
@@ -22,6 +22,7 @@ from scipy.stats import rankdata
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import feature_fs6 as F6  # noqa: E402
+import feature_fs7 as F7  # noqa: E402
 import feature_industry as FI  # noqa: E402
 import feature_screen as FS  # noqa: E402
 import feature_screen3 as F3  # noqa: E402
@@ -34,7 +35,7 @@ import xs  # noqa: E402
 PER = {"A": ("2010-01-01", "2014-12-31"), "B": ("2015-01-01", "2019-12-31"), "V": ("2020-01-01", "2023-12-31")}
 END = PER["V"][1]
 PREVIEW = "--no-sbl" in sys.argv
-FEATS = [f for f in FS.FEATS + ["IND_SUR", "REL_SUR"] + TU.NAMES + F6.NAMES if not (PREVIEW and f in TU.SBL)]
+FEATS = [f for f in FS.FEATS + ["IND_SUR", "REL_SUR"] + TU.NAMES + F6.NAMES + F7.NAMES if not (PREVIEW and f in TU.SBL)]
 NPL, MIN_N, MIN_M, RHO = 5, 100, 24, 0.6
 USES = {"ic": "排序", "ls": "多空", "good": "挑贏家", "bad": "避雷"}
 SIGN = {"ic": 1, "ls": 1, "good": 1, "bad": -1}            # 標籤要的方向（避雷＝壞端為負）
@@ -44,13 +45,13 @@ CAT = {**{f: "價格" for f in ("H1", "H2", "H3", "H4", "H9", "H13", "H35", "H36
        **{f: "營收" for f in ("H7", "H10", "H12", "H87", "IND_SUR", "REL_SUR")},
        **{f: "籌碼" for f in ("H22", "H23", "H24", "H25")}, **{f: "集保" for f in ("H85", "H86")},
        **{f: "估值" for f in ("H5", "H6", "H11")},
-       **{f: "財報" for f in ("H26", "H27", "H28", "H80", "H81", "H83", "H88", "H89", "H90")}, **TU.CAT, **F6.CAT}
+       **{f: "財報" for f in ("H26", "H27", "H28", "H80", "H81", "H83", "H88", "H89", "H90")}, **TU.CAT, **F6.CAT, **F7.CAT}
 FREQ = {"價格": "每日", "籌碼": "每日", "估值": "每日（分母季／年更新）", "營收": "每月（次月 11 日）", "集保": "每週", "財報": "每季",
         "借券": "每日（21:00 公布，隔日可用）", "組合": "依成分（最慢的成分決定）", "股利": "每年（除息日；月換股日更新）"}
 NOTES = {"IND_SUR": "FS4 產業標籤打亂的安慰劑下 IC、增量都在雜訊範圍", "REL_SUR": "≈ H87 減雜訊，見高度相關欄"}
 DESC = {"IND_SUR": "同業營收驚喜（同產業其他股 SUR 平均）", "REL_SUR": "相對營收驚喜（自己 SUR − 同業）",
         **{f: v[1] for f, v in TU.FNS.items()}, **{f: v[1] for f, v in TU.PEER.items()}, **{f: v[3] for f, v in TU.COMBO.items()},
-        **{f: v[1] for f, v in F6.FNS.items()}}
+        **{f: v[1] for f, v in F6.FNS.items()}, **{f: v[1] for f, v in F7.FNS.items()}}
 
 
 def forward(P, p0, p1):
@@ -180,7 +181,7 @@ def cell(t):
 
 def write_md(rows, fp, path, TR=None, PLR=None):
     L = ["# 特徵庫（FL1，程式產生，勿手改）", "",
-         "由 `research/v2/feature_library.py` 產生（第四十一批建立、第四十二批 FS5 加入涂敏峰清單的特徵與借券、第四十三批 FL2 加週／60 日／風險軌道與 B＋V 評估、第四十四批 FS6 加入現有資料可做的特徵，規則見 `HYPOTHESES.md`）。"
+         "由 `research/v2/feature_library.py` 產生（第四十一批建立、第四十二批 FS5 加入涂敏峰清單的特徵與借券、第四十三批 FL2 加週／60 日／風險軌道與 B＋V 評估、第四十四批 FS6 加入現有資料可做的特徵、第四十五批 FS7 加入融資維持率／外資持股／當沖，規則見 `HYPOTHESES.md`）。"
          "只放統計量，不放 FinMind 原始數字。",
          "原則：特徵只看自己夠不夠好，依用途貼標籤，留著以後重複使用；**不以能否改進 H136 或適不適合每月 20 檔為門檻**（H136 增量只是描述欄位）。", "",
          "## 怎麼用", "",
@@ -194,6 +195,7 @@ def write_md(rows, fp, path, TR=None, PLR=None):
          "S = feature_tu.FNS[\"SBL_MR\"][0](P)",
          "xs.add_v18(P); feature_fs6.add_fs6(P)  # FS6：資本支出、應收、利息保障、淨發行、合約負債、融券（H100 需 add_v18）",
          "S = feature_fs6.FNS[\"BETA\"][0](P)",
+         "feature_fs7.add_fs7(P)                  # FS7：融資維持率、外資持股、當沖（data/v2/maint、fhold、dt）",
          "# PEER_EY / PEER_BP：feature_tu.peer_rank(H11 或 H5 的換股日矩陣, 池, feature_industry.labels(欄位))",
          "```", "",
          "方向欄是「大＝好端」要乘的號（−1 代表原始值越小越好）。",
@@ -248,7 +250,7 @@ def write_md(rows, fp, path, TR=None, PLR=None):
 def main():
     t0 = time.time()
     P = xs.load_panel(END, fundamentals=True)
-    for add in (xs.add_chips, xs.add_fin, xs.add_v16, xs.add_v17, xs.add_v18, TU.add_tu, F6.add_fs6):
+    for add in (xs.add_chips, xs.add_fin, xs.add_v16, xs.add_v17, xs.add_v18, TU.add_tu, F6.add_fs6, F7.add_fs7):
         add(P)
     dates, Rdf, Edf = forward(P, PER["A"][0], END)
     cols = P["close"].columns
@@ -261,7 +263,7 @@ def main():
 
     @lru_cache(maxsize=8)
     def daily(f):
-        fn = TU.FNS[f][0] if f in TU.FNS else F6.FNS[f][0] if f in F6.FNS else Hy.FNS[f][0]
+        fn = TU.FNS[f][0] if f in TU.FNS else F6.FNS[f][0] if f in F6.FNS else F7.FNS[f][0] if f in F7.FNS else Hy.FNS[f][0]
         return fn(P).replace([np.inf, -np.inf], np.nan).shift(1)
 
     def mat(f, d=dates):
@@ -397,7 +399,7 @@ def main():
           + f"；安慰劑「收」比例 {fp['status']*100:.0f}%；◎✓✓ 假陽性 " + "、".join(f"{USES[u]} {fp[u]['top']*100:.1f}%" for u in USES))
     with open(H.LOG, "a") as fh:
         fh.write(json.dumps(dict(ts=time.strftime("%Y-%m-%d %H:%M:%S"), kind="feature_library", period="dev（A/B）＋ val（V）",
-                                 strategy="FL1 特徵庫（含 FS5、FL2 新軌道、FS6）" + ("預覽（不含借券）" if PREVIEW else ""), note="第四十一～四十四批事前登記", status=cnt, placebo=fp,
+                                 strategy="FL1 特徵庫（含 FS5、FL2 新軌道、FS6、FS7）" + ("預覽（不含借券）" if PREVIEW else ""), note="第四十一～四十五批事前登記", status=cnt, placebo=fp,
                                  tracks_status=tcnt, tracks_placebo={f"{k_[0]}-{k_[1]}": v_ for k_, v_ in PLR.items()},
                                  features={r["H"]: dict(status=r["status"], sign=r["sign"], **{u: r[f"tag_{u}"] for u in USES}) for r in rows}),
                             ensure_ascii=False, default=lambda v: round(float(v), 5) if isinstance(v, (float, np.floating)) else str(v)) + "\n")

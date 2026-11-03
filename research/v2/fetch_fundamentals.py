@@ -1,6 +1,7 @@
 """抓 v2 基本面/籌碼：月營收、日本益比/淨值比/殖利率（預設），或 --kinds inst,margin（三大法人 2012-05 起、融資券 2009 起）、
 fin,bs（季報）、hold,mv,cf（集保股權分散表 2010 起：2010-14 月頻、2015 起週頻／日市值 2010 起／現金流量表 2012Q1 起）、
-div（股利政策與除權息日）、sbl（信用額度總量管制餘額表：融券＋借券賣出餘額，2005-07 起，每日 21:00 更新 → 隔日開盤才可用）。
+div（股利政策與除權息日）、sbl（信用額度總量管制餘額表：融券＋借券賣出餘額，2005-07 起，每日 21:00 更新 → 隔日開盤才可用）、
+maint（個股融資維持率 2009 起）、fhold（外資持股比率與投資上限 2009 起）、dt（當沖成交 2014 起），三者皆日頻、當日收盤後公布 → 隔日開盤才可用。
 --quiet：遇到 ai-dev 排程抓 FinMind 的時段（18:00、20:30、22:00、00:30 前後）先暫停，額度留給實盤。
 
 輸出 data/v2/revenue/{id}.parquet、data/v2/per/{id}.parquet（空表也存；已存在跳過＝斷點續抓）。
@@ -20,7 +21,8 @@ ALL_JOBS = {"revenue": "TaiwanStockMonthRevenue", "per": "TaiwanStockPER",
             "inst": "TaiwanStockInstitutionalInvestorsBuySell", "margin": "TaiwanStockMarginPurchaseShortSale",
             "fin": "TaiwanStockFinancialStatements", "bs": "TaiwanStockBalanceSheet",
             "hold": "TaiwanStockHoldingSharesPer", "mv": "TaiwanStockMarketValue", "cf": "TaiwanStockCashFlowsStatement",
-            "div": "TaiwanStockDividend", "sbl": "TaiwanDailyShortSaleBalances"}
+            "div": "TaiwanStockDividend", "sbl": "TaiwanDailyShortSaleBalances",
+            "maint": "TaiwanStockMarginMaintenance", "fhold": "TaiwanStockShareholding", "dt": "TaiwanStockDayTrading"}
 JOBS = {k: ALL_JOBS[k] for k in (sys.argv[sys.argv.index("--kinds") + 1].split(",") if "--kinds" in sys.argv else ["revenue", "per"])}
 
 # ai-dev cron（stock_cache 18:00、futures 18:30、h2_monthly 20:30、broker_cache 22:00 約 1 小時、lake 00:30）
