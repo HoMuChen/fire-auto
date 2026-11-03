@@ -230,15 +230,52 @@ def _ev_work(sid):
     return [(sid,) + t for t in H.simulate(df, sig, _G["stop"], _G["max_hold"], False, _G["period"], _G["end"])]
 
 
+def mkt_index(P):
+    """pit 流動池等權的開盤到開盤指數（同第三十八批、harness.market_and_groups）。"""
+    liq = P["volume"].rolling(H.LIQ_WIN, min_periods=H.LIQ_WIN).mean() >= H.LIQ_SHARES
+    O = P["open"]
+    return (1 + (O / O.shift() - 1).where(liq.shift().fillna(False).astype(bool)).clip(-0.5, 0.5).mean(axis=1).fillna(0)).cumprod()
+
+
+def slot_book(T, K, C, O, days, key=None):
+    """有限資金：K 格、各格各自複利。T 依 buy 排序（同日依 key 由小到大）後逐筆：有空格（該格上一筆的賣出日 ≤ 本筆買進日）就收。
+    持有中用收盤價 ÷ 進場開盤價計值，賣出日換成實際報酬。回傳（每日淨值、每日持股比例、收下的交易）。
+    C、O：日期 × 股票的還原收盤／開盤（DataFrame，C 已 ffill）；days：交易日。"""
+    T = T.assign(_k=key if key is not None else 0.0).sort_values(["buy", "_k", "sid"], kind="stable")
+    D = len(days)
+    pos = {d: i for i, d in enumerate(days)}
+    col = {c: i for i, c in enumerate(C.columns)}
+    Cv, Ov = C.values, O.values
+    V, inv = np.zeros((K, D)), np.zeros((K, D))
+    cash, last, free = np.full(K, 1.0 / K), np.zeros(K, int), np.full(K, -1)
+    took = []
+    for r in T.itertuples():
+        b, s, j = pos.get(r.buy), pos.get(r.sell), col.get(r.sid)
+        if b is None or s is None or j is None:
+            continue
+        k = next((k for k in range(K) if free[k] <= b), None)
+        if k is None:
+            continue
+        V[k, last[k]:b] = cash[k]
+        o = Ov[b, j]
+        V[k, b:s] = cash[k] * Cv[b:s, j] / o
+        inv[k, b:s] = V[k, b:s]
+        cash[k] *= 1 + r.ret
+        last[k], free[k] = s, s
+        took.append(r.Index)
+    for k in range(K):
+        V[k, last[k]:] = cash[k]
+    nav = V.sum(axis=0)
+    return pd.Series(nav, index=days), pd.Series(inv.sum(axis=0) / nav, index=days), T.loc[took]
+
+
 def event_trades(P, sig, p0, p1, end, stop=None, max_hold=None, procs=8):
     """sig：訊號日（收盤判斷）的布林面板。回傳每筆交易（含 ex＝相對 pit 等權開盤指數的超額）。"""
     _G.update(sig=sig, end=end, period=(p0, p1), stop=stop, max_hold=max_hold)
     with mp.get_context("fork").Pool(procs) as pool:
         res = pool.map(_ev_work, list(sig.columns), chunksize=16)
     T = pd.DataFrame([t for r in res for t in r], columns=["sid", "buy", "sell", "ret", "reason", "bars"])
-    liq = P["volume"].rolling(H.LIQ_WIN, min_periods=H.LIQ_WIN).mean() >= H.LIQ_SHARES
-    O = P["open"]
-    mkt = (1 + (O / O.shift() - 1).where(liq.shift().fillna(False).astype(bool)).clip(-0.5, 0.5).mean(axis=1).fillna(0)).cumprod()
+    mkt = mkt_index(P)
     T["mret"] = mkt.reindex(T.sell).values / mkt.reindex(T.buy).values - 1
     T["ex"] = T.ret - T.mret
     return T
