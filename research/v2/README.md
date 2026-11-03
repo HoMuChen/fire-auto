@@ -45,6 +45,7 @@
 | `feature_fs9.py` | 第四十七批 FS9：學術因子第二輪（營業利潤÷資產、營業現金流÷資產、資產週轉率、毛利−營收成長、連續盈餘成長季數、負債／淨負債／資產÷市值、資產有形性、KZ 指數、盈餘波動、現金流波動、成交金額變異係數；組合 QMJ、MISP_MGMT、MISP_PERF；產業內 PEER_EBITDA_EV、PEER_FCF_ME），由 `feature_library.py` 載入；`python research/v2/feature_fs9.py` 跑 leak check |
 | `strategy_lab.py` | STRATEGY_PLAN S0 策略引擎：`Lab`（面板＋`feature_library.Source`）、`portfolio`（月換股 N 檔、篩選、留任緩衝、一字漲跌停）、`weights_portfolio`（寬投組權重矩陣）、`event_trades`（`harness.simulate`）、`placebo`、`deflated_sharpe`、`capacity`；`python research/v2/strategy_lab.py verify` 跑驗收 |
 | `batch48_s1s2.py` | 第四十八批 H142 集中投組（篩選 → 排序）、H143 寬投組（市場減垃圾＋傾斜）：條件檢查、8＋8 變體、安慰劑 100 次、deflated Sharpe；`dev`／`val` |
+| `batch49_concentration.py` | 第四十九批 H144／H145：H142、H136 規則凍結改 10／5 檔（H144 另有同產業 ≤ 2 檔），安慰劑、DSR；`dev`／`val` |
 | `FACTOR_MAP.md` | 階段 3：JKP 153 個學術因子和本專案的對照表（已測／近似／現有資料可做／需新資料／做不到） |
 | `feature_tracks.py` | 第四十三批 FL2：特徵庫的新評估軌道（B＋V 評估給 A 段不足的特徵、週與 60 日持有期、下期實現波動與最大回落的風險目標），由 `feature_library.py` 呼叫 |
 | `feature_tu.py` | 第四十二批 FS5：涂敏峰清單的特徵（缺口、大盤跌時抗跌、季線、多頭排列、預估 EPS 本益比、同業比價、投信連買、千張大戶、負債比、借券、上影線、KD 背離、量價、月 MACD、低價、融資、三低一高、四特徵），由 `feature_library.py` 載入；`python research/v2/feature_tu.py fib` 是費氏時間轉折事件檢定。需要 `data/v2/sbl` |
@@ -58,7 +59,7 @@
 
 holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使用者同意**。
 
-## 假設總表（H1~H143）
+## 假設總表（H1~H145）
 
 狀態：★ 三段皆過／✓ dev+val 過（holdout 未開）／✗ 不過。「事後」= 看過其他結果才提出，可信度打折。
 
@@ -153,6 +154,7 @@ holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使�
 | FS9 | `FACTOR_MAP.md` 第二輪 16 個＋產業內估值 2 個（事後）（`feature_fs9.py`），照 FL1＋FL2 評估 | 月：A＋B 收 3；B＋V 收 11／未收 2／待確認 2；原本 112 個不變 | **NI_VOL 盈餘波動**（穩的好，無高度相關）排序三持有期 `B◎✓✓`；CF_VOL 現金流波動排序 `B◎✓✓`；MISP_MGMT 錯價管理面多空／避雷 `B○✓✓`、兩端在 V 站得住；產業內估值兩端在 V 仍反向（猜測不成立）；OP_AT ≈ OPE、AT_ME ≈ H5；QMJ、OCF_AT 在 V 幾乎沒有 |
 | H142 | 集中投組「篩選 → 排序」（STRATEGY_PLAN S1）：H2＋H10＋H87＋H86 池內百分位平均，剔除 NOA_GR／PPEINV／NET_ISSUE／SBL_LVL 合成最差 20%，50 檔月換股、留任 2N、一字漲跌停開啟（`batch48_s1s2.py`） | **✓ dev＋val（半個證據）** | 對 pit 池等權年化超額 dev +19.5%（t 6.38，9/9）／val +22.9%（t 4.32，4/4），MDD −21.7%／−9.6%；安慰劑菜單最佳 95 分位 t 0.42；DSR 0.999。和 H136 同類訊號，holdout 不算新證據；容量約 NT$590 萬（5% 規則） |
 | H143 | 寬投組「市場減垃圾」（STRATEGY_PLAN S2）：全池扣掉避雷合成（H10、H87、MA_ALIGN、NOA_GR、PPEINV、SBL_LVL、NET_ISSUE）最差 20%，其餘等權月換股 | **✓ dev＋val（半個證據）** | 年化超額 dev B +2.0%（t 4.15，5/5）／val +2.7%（t 3.57，4/4），月換手 12～13%、約 800 檔；傾斜版超額較高但 t 較低；市值前 150 的大型股版 4 個都不過；容量約 NT$1,550 萬 |
+| H144 / H145 | 降低檔數（事後）：H142 改 10／5 檔（± 同產業 ≤ 2）、H136 改 10／5 檔（`batch49_concentration.py`） | H144 10 檔 ✓、5 檔 ✗（val 2023 −10%）；H145 10／5 檔 ✓（val） | **檔數越少 Sharpe 越低**：H142 dev 1.61（50 檔）→ 1.07（10 檔）、H136 val 1.87（20 檔）→ 1.64（10）→ 1.48（5）；追蹤誤差、MDD 大幅上升（H136 10 檔 val MDD −30% 對 −11.8%），超額沒有穩定變高；同產業上限幾乎沒影響 |
 | H106 | QFF 30 分 K「快速推升第一個低點 / 快速下跌第一個高點」回測進場（1 口） | ✗ | 2021-26 138 筆、勝率 21%、每筆 −6 點（無滑價仍 −2 點）、六年全負；到目標的單 3~5R 但 72% 被停損掃 → 高 R × 低勝率 = 負期望。對照連續做多 +1,476 點 |
 
 （無 H37。）舊 14 技術策略、舊三策略：dev 扣成本無一顯著贏大盤（`run_legacy14.py`）。

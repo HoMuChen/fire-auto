@@ -77,10 +77,11 @@ def combo(mats, E, need):
 
 
 # ───────── 投組 ─────────
-def portfolio(S, R, E, n, buffer=None, filt=None, weight=None, limits=None, cost=COST, min_valid=MIN_VALID):
+def portfolio(S, R, E, n, buffer=None, filt=None, weight=None, limits=None, cost=COST, min_valid=MIN_VALID, group=None, cap=None):
     """S：分數（大＝好）；R、E 同 Lab.monthly；n：檔數。
     buffer＝k：上期持股還在前 k·n 名就留任，空位由排名遞補。filt：布林遮罩（False 的不能新買，持股也會被換掉）。
     weight(t, idx)→權重；預設等權。limits＝(up, dn)：一字漲停的新股買不到（由下一名遞補）、一字跌停的舊股賣不掉（續抱）。
+    group（各欄的產業代碼，< 0＝無）＋ cap：每個產業最多 cap 檔（留任的也算，排名較後的換掉；賣不掉的例外）。
     回傳 DataFrame：net（扣成本）、bench（池等權）、ex、turn（買進比例）、n。"""
     T, N = S.shape
     ok = E & np.isfinite(S) & (filt if filt is not None else True)
@@ -96,18 +97,28 @@ def portfolio(S, R, E, n, buffer=None, filt=None, weight=None, limits=None, cost
         ranked = order[t, :cnt]
         rank = np.full(N, np.inf)
         rank[ranked] = np.arange(cnt)
-        keep = []
-        if limits is not None:
-            keep = [c for c in prev if limits[1][t, c] and E[t, c]]   # 一字跌停賣不掉
-        if buffer:
-            keep += [c for c in prev if c not in keep and rank[c] < buffer * n]
-        hold = list(dict.fromkeys(keep))[:max(n, len(keep))]
+        forced = [c for c in prev if limits is not None and limits[1][t, c] and E[t, c]]   # 一字跌停賣不掉
+        keep = forced + (sorted((c for c in prev if c not in forced and rank[c] < buffer * n), key=lambda c: rank[c]) if buffer else [])
+        hold, ng = [], {}
+
+        def room(c):
+            return cap is None or group is None or group[c] < 0 or ng.get(group[c], 0) < cap
+
+        def add(c):
+            hold.append(c)
+            if group is not None:
+                ng[group[c]] = ng.get(group[c], 0) + 1
+        for c in keep:
+            if c in forced or room(c):
+                add(c)
+        held = set(hold)
         for c in ranked:
             if len(hold) >= n:
                 break
-            if c in hold or (limits is not None and limits[0][t, c] and c not in prev):
+            if c in held or (limits is not None and limits[0][t, c] and c not in prev) or not room(c):
                 continue
-            hold.append(c)
+            add(c)
+            held.add(c)
         idx = np.array(hold, int)
         w = weight(t, idx) if weight is not None else np.full(len(idx), 1 / len(idx))
         cur = dict(zip(idx.tolist(), w))
