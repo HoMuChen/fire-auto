@@ -105,15 +105,14 @@
 - 大盤層級擇時：結算日、匯率、長假、全市場借券總量。
 - 等 `◎✓✓` 名單夠多，一次性用 holdout 驗整份名單（需要使用者同意）。
 
-## 資料同步：借券還沒進資料湖（要不要做，由使用者決定）
+## 資料湖：借券已接上（2026-11-03）
 
-- 第四十二批的借券資料 `TaiwanDailyShortSaleBalances` **只抓在使用者筆電的 `data/v2/sbl`**，共 2,045 檔，2009 起。
-  - ai-dev 上沒有這份資料，R2 資料湖也沒有。
-  - `lake/update.py` 的 `DAILY` 和 `lake/lake.py` 的 `SPEC` 都沒有借券，所以每天的增量更新不會動到它。
-- **在沒有 `data/v2/sbl` 的機器上**，`feature_library.py` 的完整版會失敗。只能用 `--no-sbl` 跑預覽，而預覽不會寫 `FEATURES.md`。
-- 如果要同步，步驟大概是：
-  1. 把筆電的 `data/v2/sbl/` 用 rsync 複製到 ai-dev 的 `data/v2/sbl/`（不用打 API）。
-  2. 在 `lake/update.py` 的 `DAILY` 加 `"sbl": ("TaiwanDailyShortSaleBalances", None)`。先確認這個資料集能不能「依日期一次抓全市場」。不行的話，每天逐檔要約 2,000 次，太貴，就要改成每週更新。
-  3. 在 `lake/lake.py` 的 `SPEC` 加 `"sbl": (lambda: _per_stock("sbl"), "year", "...")`，並在 `lake/README.md` 的資料集表補一列。
-  4. 在 ai-dev 跑 `lake.py build`／`verify`／`upload`。
-- 這會動到 ai-dev 的每日排程和 R2 的寫入，一定要先問使用者。
+- 借券賣出餘額 `TaiwanDailyShortSaleBalances` 已經進 R2 資料湖，表名 `sbl`（年分區，單位是**股**；`margin` 是張）。
+  - 2,079 檔，2009-01-05 起，共 6,529,167 筆。ai-dev 的 `data/v2/sbl` 有 2,603 個檔，含空檔。
+  - 每天 00:30 的 `lake.py daily` 依日期一次抓全市場來增量更新（`lake/update.py` 的 `DAILY`），每天只多約 1 次請求。
+- 在沒有 `data/v2/sbl` 的機器上，`feature_library.py` 的完整版會失敗。要先從 ai-dev 用 rsync 複製過來，或從 R2 讀。
+- 階段 2 的新資料如果是每天更新的，也照同樣的方式接進資料湖：
+  1. 先比對「依日期 bulk」和「逐檔」抓到的資料是否一致。
+  2. 在 `update.py` 的 `DAILY`、`lake.py` 的 `SPEC` 各加一行，`lake/README.md` 的資料集表補一列。
+  3. 在 ai-dev 上建表、驗證、上傳。
+  - 這些都要先問使用者。
