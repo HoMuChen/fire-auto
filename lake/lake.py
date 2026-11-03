@@ -4,7 +4,7 @@
   _manifest.json                每個資料集的欄位、筆數、日期範圍、各檔 sha256（最後才上傳＝發布完成的訊號）
   catalog.duckdb                只有 view 定義（明確列檔，不用萬用字元 → 讀者不需 LIST、看到固定的檔案組合）
   universe.parquet、revenue.parquet、fin/bs/cf/dividend.parquet
-  price|per|inst|margin|mv|holding/year=YYYY/data.parquet
+  price|per|inst|margin|sbl|mv|holding/year=YYYY/data.parquet
   market/*.parquet、futures_30min/*.parquet、futures_1min/tx/year=YYYY/data.parquet
   broker/year=YYYY/month=MM/data.parquet、orderbook/{tick_hist|tick|bidask}/day=YYYY-MM-DD/{合約}.parquet
 
@@ -22,6 +22,7 @@ import argparse
 import hashlib
 import json
 import os
+import resource
 import sys
 import time
 from datetime import datetime
@@ -105,6 +106,8 @@ SPEC = {   # 名稱 → (建表函數, 分區, 說明)
     "revenue": (b_revenue, None, "月營收（元）；avail_date＝次月 11 日（保守可得日）"),
     "inst": (lambda: _per_stock("inst"), "year", "三大法人買賣（股），name＝Foreign_Investor / Investment_Trust / Dealer_* 等；2012-05 起完整"),
     "margin": (lambda: _per_stock("margin"), "year", "融資融券（張），欄位沿用 FinMind TaiwanStockMarginPurchaseShortSale"),
+    "sbl": (lambda: _per_stock("sbl"), "year", "借券賣出餘額表（**股**，margin 是張）：SBLShortSales* 借券賣出、MarginShortSales* 融券；"
+            "欄位沿用 FinMind TaiwanDailyShortSaleBalances；每天 21:00 公布"),
     "fin": (lambda: _fin("fin"), None, "綜合損益表（長表 type/value，單季值，元）；avail_date＝法定截止 +1 天"),
     "bs": (lambda: _fin("bs"), None, "資產負債表（長表，季底，元；*_per 為占總資產 %）；2012Q4 起；avail_date 同上"),
     "cf": (lambda: _fin("cf"), None, "現金流量表（長表，**年初累計值**，元）；2012Q1 起；avail_date 同上"),
@@ -445,6 +448,14 @@ def verify():
             and (src.date.astype(str).values == got.date.values).all()
         bad += not ok
         print(f"  {'✓' if ok else '✗'} broker 2330 與 data/broker 逐列一致（{len(got):,} 列）")
+    if "sbl" in man["datasets"]:                          # 借券：抽 2330 與 data/v2/sbl 逐列比對
+        src = pd.read_parquet(V2 / "sbl" / "2330.parquet").sort_values("date").reset_index(drop=True)
+        got = con.execute("""SELECT CAST(date AS VARCHAR) AS date, SBLShortSalesCurrentDayBalance AS bal
+                             FROM tw.sbl WHERE stock_id = '2330' ORDER BY date""").df()
+        ok = len(src) == len(got) and (src.SBLShortSalesCurrentDayBalance.values == got.bal.values).all() \
+            and (src.date.astype(str).values == got.date.values).all()
+        bad += not ok
+        print(f"  {'✓' if ok else '✗'} sbl 2330 與 data/v2/sbl 逐列一致（{len(got):,} 列）")
     if "orderbook.tick_hist" in man["datasets"]:
         n = con.execute("SELECT count(DISTINCT day) FROM tw.orderbook.tick_hist WHERE code = '2330'").fetchone()[0]
         print(f"    orderbook.tick_hist 2330 {n} 天")
@@ -562,7 +573,16 @@ def daily():
         sys.exit(1)
 
 
+def raise_nofile(want=10240):
+    """cron 的開檔上限預設 256；build_broker 用 DuckDB 一次讀 1,439 個分點檔會超過（2026-11-03 daily 失敗）→ 調高軟上限。"""
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    want = want if hard == resource.RLIM_INFINITY else min(want, hard)
+    if soft < want:
+        resource.setrlimit(resource.RLIMIT_NOFILE, (want, hard))
+
+
 if __name__ == "__main__":
+    raise_nofile()
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["build", "verify", "upload", "status", "daily"])
     ap.add_argument("names", nargs="*")

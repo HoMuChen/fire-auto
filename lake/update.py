@@ -1,7 +1,7 @@
 """data/v2 研究資料每日增量更新（FinMind 依日期一次抓全市場，取代逐檔重抓）。
 
 規則（2026-10-31 以 10/20 bulk vs 逐檔比對定下）：
-  日資料 raw/adj/per/inst/margin/mv：從各資料集「全市場最後日期 − OVERLAP_DAYS」起逐個平日抓 bulk；
+  日資料 raw/adj/per/inst/margin/mv/sbl：從各資料集「全市場最後日期 − OVERLAP_DAYS」起逐個平日抓 bulk；
     該資料集當天有資料就以新值覆蓋同日舊值（FinMind 會事後修正，例如成交量）；股價當天 0 筆＝休市或尚未公布 → 跳過該日。
   adj：重疊日的新舊收盤不一致（除權息後整段重新還原）→ 該檔整段重抓 TaiwanStockPriceAdj。
   停牌後復牌：已存檔最後日早於視窗 → 逐檔補抓缺口。
@@ -37,6 +37,7 @@ DAILY = {  # kind → (dataset, 同日多列時的鍵)
     "inst": ("TaiwanStockInstitutionalInvestorsBuySell", "name"),
     "margin": ("TaiwanStockMarginPurchaseShortSale", None),
     "mv": ("TaiwanStockMarketValue", None),
+    "sbl": ("TaiwanDailyShortSaleBalances", None),   # 借券賣出餘額（股），21:00 公布；依日期 bulk 與逐檔一致（2026-11-03 比對 1,756 檔）
 }
 PERIODIC = {"revenue": "TaiwanStockMonthRevenue", "fin": "TaiwanStockFinancialStatements", "bs": "TaiwanStockBalanceSheet",
             "cf": "TaiwanStockCashFlowsStatement", "div": "TaiwanStockDividend", "hold": "TaiwanStockHoldingSharesPer"}

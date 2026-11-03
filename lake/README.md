@@ -45,6 +45,7 @@ DuckDB 只會抓需要的欄位與年份分區（`WHERE date >= …` 會跳過�
 | `revenue` | 月營收（元）＋ `avail_date`（次月 11 日） | — | 2009 |
 | `inst` | 三大法人買賣（股），`name` 區分法人別 | year | 2009（2012-05 起完整） |
 | `margin` | 融資融券（張），FinMind 原欄位 | year | 2009 |
+| `sbl` | 借券賣出餘額表（**股**，`margin` 是張）：`SBLShortSales*` 借券賣出、`MarginShortSales*` 融券；FinMind `TaiwanDailyShortSaleBalances` 原欄位；每天 21:00 公布 | year | 2009 |
 | `fin` / `bs` / `cf` | 損益（單季）/ 資產負債（季底）/ 現金流量（**年初累計**），長表 `type`/`value`，元；`avail_date`＝法定截止 +1 天 | — | 2009 / 2012Q4 / 2012Q1 |
 | `mv` | 日市值（元）⚠ FinMind int32 溢位錯值未修 | year | 2009 |
 | `holding` | 集保股權分散（級距、人數、%、股） | year | 2010 |
