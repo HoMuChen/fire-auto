@@ -254,11 +254,55 @@ def write_md(rows, fp, path, TR=None, PLR=None):
     path.write_text("\n".join(L) + "\n")
 
 
+ADDS = (xs.add_chips, xs.add_fin, xs.add_v16, xs.add_v17, xs.add_v18, TU.add_tu, F6.add_fs6, F7.add_fs7, F8.add_fs8, F9.add_fs9)
+
+
+def load(end=END):
+    """載入面板與全部特徵所需的衍生值（特徵庫與 strategy_lab.py 共用）。"""
+    P = xs.load_panel(end, fundamentals=True)
+    for add in ADDS:
+        add(P)
+    return P
+
+
+def feature_fn(f):
+    for m in (TU.FNS, F6.FNS, F7.FNS, F8.FNS, F9.FNS, F9.AUX):
+        if f in m:
+            return m[f][0]
+    return Hy.FNS[f][0]
+
+
+class Source:
+    """特徵來源：日頻分數（已 shift 1＝換股日用前一交易日的值）、換股日矩陣，以及 PEER／COMBO／IND 這些要在池內算的特徵。"""
+
+    def __init__(self, P):
+        self.P, self.cols = P, P["close"].columns
+        self.codes = FI.labels(self.cols)
+        self.daily = lru_cache(maxsize=32)(self._daily)
+
+    def _daily(self, f):
+        return feature_fn(f)(self.P).replace([np.inf, -np.inf], np.nan).shift(1)
+
+    def mat(self, f, d):
+        return self.daily(f).reindex(index=d, columns=self.cols).values
+
+    def build(self, f, d, Eg, ind=None):
+        """換股日 d、池 Eg 下的特徵矩陣（日期 × 股）。ind 可傳入已算好的 IND_SUR／REL_SUR。"""
+        if f in ("IND_SUR", "REL_SUR"):
+            if ind is None:
+                ind = dict(zip(("IND_SUR", "REL_SUR"), FI.ind_feats(self.mat("H87", d), Eg, self.codes)))
+            return ind[f]
+        if f in PEER:
+            return TU.peer_rank(self.mat(PEER[f][0], d), Eg, self.codes)
+        if f in COMBO:
+            sp = COMBO[f]
+            return TU.combo({g: self.mat(g, d) for g, _ in sp[0]} | ({sp[2]: self.mat(sp[2], d)} if sp[2] else {}), Eg, sp)
+        return self.mat(f, d)
+
+
 def main():
     t0 = time.time()
-    P = xs.load_panel(END, fundamentals=True)
-    for add in (xs.add_chips, xs.add_fin, xs.add_v16, xs.add_v17, xs.add_v18, TU.add_tu, F6.add_fs6, F7.add_fs7, F8.add_fs8, F9.add_fs9):
-        add(P)
+    P = load()
     dates, Rdf, Edf = forward(P, PER["A"][0], END)
     cols = P["close"].columns
     R = Rdf.reindex(index=dates, columns=cols).values
@@ -268,25 +312,11 @@ def main():
     Rq, Eq = FT.q60(P, dates, cols)
     TG = FT.risk_targets(P, dates, cols, E)
 
-    @lru_cache(maxsize=32)
-    def daily(f):
-        fn = TU.FNS[f][0] if f in TU.FNS else F6.FNS[f][0] if f in F6.FNS else F7.FNS[f][0] if f in F7.FNS else F8.FNS[f][0] if f in F8.FNS else F9.FNS[f][0] if f in F9.FNS else F9.AUX[f][0] if f in F9.AUX else Hy.FNS[f][0]
-        return fn(P).replace([np.inf, -np.inf], np.nan).shift(1)
+    src = Source(P)
+    build, codes = src.build, src.codes
 
     def mat(f, d=dates):
-        return daily(f).reindex(index=d, columns=cols).values
-
-    def build(f, d, Eg, ind):
-        if f in ("IND_SUR", "REL_SUR"):
-            return ind[f]
-        if f in PEER:
-            return TU.peer_rank(mat(PEER[f][0], d), Eg, codes)
-        if f in COMBO:
-            sp = COMBO[f]
-            return TU.combo({g: mat(g, d) for g, _ in sp[0]} | ({sp[2]: mat(sp[2], d)} if sp[2] else {}), Eg, sp)
-        return mat(f, d)
-
-    codes = FI.labels(cols)
+        return src.mat(f, d)
 
     fs3 = pd.read_csv(H.D / "results" / "fs3_dev.csv").set_index("H")
     rows, plc, Xo, trk, ptrk = [], [], {}, [], []
