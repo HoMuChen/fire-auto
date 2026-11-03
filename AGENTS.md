@@ -73,6 +73,7 @@
 - `data/live_ledger_QFF.json` 是網格**運作狀態**（逐口建倉價 → 驅動停利/下一買點），**非歷史流水，也不可用券商均價取代**（券商轉倉會壓平成單一均價，算不出各格獨立停利）。
 
 **QFF live 網格參數（`futures_live.py` / 帳本 config）**：本金 30萬／格距 1.2%／停利 +1.2%／槓桿上限 **5x**（2026-10-15 由 3x 調高，使用者明確要求；對真實 `margin.equity_amount` 卡，非 config 資金）／`intraday_once`（一天最多買 2 次，當天買過後只剩 13:15 收盤根能再買）／硬上限 12 口。⚠ 5x 滿載再跌 ~11% 即踩追繳線，使用者配套＝跌勢延續時補保證金。改動要同步帳本 `config.max_leverage` 與 `default_ledger()` 預設。
+- **選用功能（2026-11-03 加，預設關閉）**：帳本 config `trail_tp`（移動停利，0＝關）、`lev_gate`（`{"lo": 2.0, "full_drop": 0.30}`＝槓桿上限隨距近一年高跌幅從 lo 放大到 max_leverage，null＝關）。缺這兩個 key＝舊行為。回測（`research/tsmc_futures_grid_30min.py --trail-tp/--lev-gate-lo/--lev-gate-drop`）與風險檢查見 `strategies/tsmc_grid_income.md` 最後一節；**是否開啟由使用者決定，不要代開**。
 
 ### 其他
 - SEF 小型智邦網格：`futures_grid_monitor.py --symbol SEF` 純提醒，狀態 `data/futures_grid_state_SEF.json`，使用者手動 `buy/sell` 回報。SEF 期貨 2024-02 才上市、無空頭樣本，只用 1x。

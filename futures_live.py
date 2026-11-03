@@ -21,6 +21,14 @@ QFF 小型台積電 網格 —— 真實下單執行器（Phase 1，預設關閉
   9. 出任何例外 → 停機並通知，不盲目重試。
 
 帳本：data/live_ledger_QFF.json（逐口 entry 價，驅動 +take 賣出；與提醒版 state 分開）。
+
+★ 選用功能（帳本 config 設定，預設關閉＝行為與舊版完全相同；回測依據見 strategies/tsmc_grid_income.md）：
+  - trail_tp（移動停利，0＝關）：漲到 entry×(1+take) 後不賣、改追蹤最高價（lot["peak"]），
+    從高點回落 trail_tp 才賣。例 "trail_tp": 0.012。
+  - lev_gate（槓桿隨跌幅放大，null＝關）：買進用的槓桿上限＝lo +（max_leverage − lo）× 跌幅 ÷ full_drop，
+    跌幅＝1 − 現價 ÷ 近一年最高價（2500 根 30 分 K + 今日高），最多到 max_leverage。
+    例 "lev_gate": {"lo": 2.0, "full_drop": 0.30}＝平常 2x，距一年高點跌 30% 才放到 5x。
+    只擋新買單，不會因為上限變低而賣出既有部位。
 Cron（上線後才加；記得把 QFF 的『提醒』cron 停掉避免雙頭）：
   15,45 9-13 * * 1-5  /Users/mu/fire-auto/.venv/bin/python /Users/mu/fire-auto/futures_live.py >> data/futures_live.log 2>&1
 
@@ -52,6 +60,7 @@ LMT_TIMEOUT_S = 180              # 限價未成交 → 撤單（3分鐘）
 POLL_EVERY_S = 10
 INIT_MARGIN_RATE = 0.135         # 原始保證金估（買單前的粗略門檻，實際以 api.margin 可用數為準）
 MARGIN_BUFFER = 1.10             # 下單後可用保證金要留 10% 緩衝
+HIGH_1Y_BARS = 2500              # lev_gate 的「近一年高」：250 交易日 × 10 根 30 分 K
 
 
 def log(msg):
@@ -67,7 +76,8 @@ def tg(msg):
 def default_ledger():
     # config 沿用提醒版 QFF 的設定（30萬/2%/3x/固定停利）
     cfg = {"capital": 300000, "step": 0.012, "take": 0.012,
-           "max_leverage": 5.0, "intraday_once": True}
+           "max_leverage": 5.0, "intraday_once": True,
+           "trail_tp": 0.0, "lev_gate": None}          # 選用功能預設關閉（見檔頭）
     return {"config": cfg, "lots": [], "realized": 0.0,
             "alerts": {"date": "", "today_high": 0.0, "last_buy_level": None}}
 
@@ -84,6 +94,52 @@ def save_ledger(l):
 
 def net_lots(l):
     return sum(x["contracts"] for x in l["lots"])
+
+
+# ─────────── 選用：移動停利 / 槓桿隨跌幅放大 ───────────
+
+def trail_on(c):
+    return float(c.get("trail_tp") or 0) > 0
+
+
+def update_trail(l, price):
+    """移動停利開啟時：漲到 entry×(1+take) 的口標 sell_armed，之後記錄最高價 peak（會寫進帳本）。"""
+    c = l["config"]
+    if not trail_on(c):
+        return
+    for x in l["lots"]:
+        if price >= x["entry"] * (1 + c["take"]):
+            x["sell_armed"] = True
+        if x.get("sell_armed"):
+            x["peak"] = max(float(x.get("peak") or price), price)
+
+
+def tp_lots(l, price):
+    """達出場條件的口。固定停利：price ≥ entry×(1+take)；移動停利：已啟動且 price ≤ peak×(1−trail_tp)。
+    移動停利要先呼叫 update_trail(l, price)。"""
+    c = l["config"]
+    if trail_on(c):
+        t = float(c["trail_tp"])
+        return [x for x in l["lots"]
+                if x.get("sell_armed") and price <= float(x.get("peak") or price) * (1 - t)]
+    return [x for x in l["lots"] if price >= x["entry"] * (1 + c["take"])]
+
+
+def trail_tag(lot):
+    """賣出訊息用：移動停利出場時標註高點；固定停利回傳空字串（訊息與舊版相同）。"""
+    return f"｜移動停利：高點{lot['peak']:.0f}回落" if lot.get("sell_armed") and lot.get("peak") else ""
+
+
+def lev_cap(c, price, hi_1y):
+    """買進用的槓桿上限 → (上限, 距一年高跌幅或 None)。lev_gate 關閉＝max_leverage。"""
+    hi = float(c["max_leverage"])
+    g = c.get("lev_gate")
+    if not g:
+        return hi, None
+    lo = min(float(g["lo"]), hi)
+    fd = float(g["full_drop"])
+    drop = max(0.0, 1 - price / hi_1y) if hi_1y else 0.0   # 沒有一年高資料 → 當作沒跌（保守用 lo）
+    return min(hi, lo + (hi - lo) * drop / fd), drop
 
 
 # ─────────── 參考價 ───────────
@@ -249,6 +305,8 @@ def roll_position(api, ledger, near_c, next_c, dry=False):
     ledger["lots"] = ledger["lots"][:filled]
     for lot in ledger["lots"]:
         lot["entry"] = lot["entry"] + spread
+        if lot.get("peak"):                         # 移動停利追蹤中的高點也要一起移到次月尺度
+            lot["peak"] = lot["peak"] + spread
     ledger["active_month"] = next_c.delivery_month
     tg(f"✅ 轉倉完成 → {next_c.delivery_month}，持倉 {filled} 口，entry 已 {spread:+.0f} 調整"
        f"（停利點同步移動）")
@@ -286,12 +344,14 @@ def cmd_roll(dry=False):
 
 # ─────────── 決策（與提醒版同邏輯，但用真實保證金/口數）───────────
 
-def decide(l, price, ref, avail_margin, equity, timing_ok=True, dedup=True):
+def decide(l, price, ref, avail_margin, equity, timing_ok=True, dedup=True, lev_max=None, gate_drop=None):
     """回傳單一動作 dict 或 None。優先賣（停利），其次買。timing_ok=False 時不買（一天限次用）。
-    dedup=False（提醒模式用）：關閉『每格只提醒一次』，只要在買點之下每輪都回報。"""
+    dedup=False（提醒模式用）：關閉『每格只提醒一次』，只要在買點之下每輪都回報。
+    lev_max：買進用槓桿上限（lev_gate 算好傳入；None＝config max_leverage）。gate_drop 只用於訊息。
+    移動停利開啟時，呼叫前要先 update_trail(l, price)。"""
     c = l["config"]
-    # 賣：任一口漲到 entry×(1+take) → 平該口（成本最高的先平，貼近停利）
-    tp = [x for x in l["lots"] if price >= x["entry"] * (1 + c["take"])]
+    # 賣：固定停利＝任一口漲到 entry×(1+take)；移動停利＝已啟動且自高點回落 trail_tp → 平該口（成本最高的先平）
+    tp = tp_lots(l, price)
     if tp:
         return {"action": "SELL", "lot": max(tp, key=lambda x: x["entry"]), "price": price}
     # 買：跌破近10日高×(1-step)、±step內無持倉、口數上限、防重複、當日時機
@@ -308,10 +368,12 @@ def decide(l, price, ref, avail_margin, equity, timing_ok=True, dedup=True):
     if avail_margin < need_margin:
         return {"action": "BLOCK", "reason": "保證金不足",
                 "detail": f"需~{need_margin:,.0f}、可用{avail_margin:,.0f}"}
-    if equity <= 0 or notional_after > equity * c["max_leverage"]:
+    cap = float(c["max_leverage"]) if lev_max is None else lev_max
+    if equity <= 0 or notional_after > equity * cap:
         lev = notional_after / max(equity, 1)
+        gate = "" if gate_drop is None else f"；槓桿閘：距一年高 −{gate_drop:.1%} → 上限 {cap:.1f}x"
         return {"action": "BLOCK", "reason": "槓桿上限",
-                "detail": f"再買一口→{lev:.1f}x 超過 {c['max_leverage']}x（權益{equity:,.0f}）"}
+                "detail": f"再買一口→{lev:.1f}x 超過 {cap:.1f}x（權益{equity:,.0f}{gate}）"}
     return {"action": "BUY", "price": price}
 
 
@@ -353,16 +415,19 @@ def run():
                        f" → 請跑 `futures_live.py roll` 轉倉（提醒模式不自動轉）")
                     save_ledger(l); return
                 # ① 先讓「已達停利」的口正常停利出場（別花轉倉成本 carry 正要平的倉）
+                #    移動停利開啟時：照移動停利規則（已啟動且自高點回落才賣），未回落的 runner 照常轉倉
                 if live and net_lots(l) > 0:
                     near_px = snapshot_price(api, contract)
-                    tp = [x for x in l["lots"]
-                          if near_px and near_px >= x["entry"] * (1 + l["config"]["take"])]
+                    tp = []
+                    if near_px:
+                        update_trail(l, near_px)
+                        tp = tp_lots(l, near_px)
                     for lot in tp:
                         if place_and_confirm(api, contract, "Sell", near_px, "Cover") == "filled":
                             pnl = (near_px - lot["entry"]) * MULT * lot["contracts"]
                             l["lots"].remove(lot); l["realized"] = l.get("realized", 0.0) + pnl
                             tg(f"✅ 轉倉日先停利 賣@{near_px:.0f}（平 {lot['entry']:.0f}那口 "
-                               f"{pnl:+,.0f}元）｜剩 {net_lots(l)}口")
+                               f"{pnl:+,.0f}元{trail_tag(lot)}）｜剩 {net_lots(l)}口")
                 # ② 停利後若空手 → 直接切次月、本輪結束（次月買點下一根再判）
                 if net_lots(l) == 0:
                     l["active_month"] = nxt.delivery_month
@@ -394,6 +459,10 @@ def run():
         l["alerts"]["today_high"] = max(l["alerts"].get("today_high", 0.0), price)
         closes = local_recent_closes(H)
         ref = max(closes + [l["alerts"]["today_high"]]) if closes else l["alerts"]["today_high"]
+        # 選用功能：移動停利更新各口高點；槓桿閘依「距近一年高」算這輪的買進槓桿上限
+        update_trail(l, price)
+        cap, gate_drop = lev_cap(l["config"], price,
+                                 max(local_recent_closes(HIGH_1Y_BARS) + [l["alerts"]["today_high"]]))
         mg = api.margin(api.futopt_account)
         avail = float(getattr(mg, "available_margin", 0.0))
         equity = float(getattr(mg, "equity_amount", avail))
@@ -405,10 +474,11 @@ def run():
         # 提醒模式：不限時機、不去重 → 只要在買點之下每輪都叫；下單模式維持一天2次+每格去重
         timing_ok = True if not live else (
             (not l["config"].get("intraday_once")) or (not bought_today) or is_close_run)
-        act = decide(l, price, ref, avail, equity, timing_ok, dedup=live)
+        act = decide(l, price, ref, avail, equity, timing_ok, dedup=live, lev_max=cap, gate_drop=gate_drop)
         if act is None:
+            gate = "" if gate_drop is None else f" 槓桿閘−{gate_drop:.1%}→上限{cap:.1f}x"
             log(f"[{mode}] 現價{price:.0f} 近高{ref:.0f} 持倉{book}口 "
-                f"權益{equity:,.0f} 可用{avail:,.0f} — 無動作")
+                f"權益{equity:,.0f} 可用{avail:,.0f}{gate} — 無動作")
             save_ledger(l); return
         if act["action"] == "BLOCK":
             tg(f"⚠️ 想買但{act['reason']}：{act['detail']}。（{mode}模式，此輪跳過）")
@@ -425,7 +495,7 @@ def run():
             elif act["action"] == "SELL":
                 lot = act["lot"]
                 tg(f"🔴 建議賣出 1口 @~{price:.0f}（平進場@{lot['entry']:.0f}那口，"
-                   f"+{price-lot['entry']:.0f}點）\n成交後回報：futures_live.py sell {price:.0f}")
+                   f"{price-lot['entry']:+.0f}點{trail_tag(lot)}）\n成交後回報：futures_live.py sell {price:.0f}")
             log(f"[提醒] 發送建議 {act['action']}")
             save_ledger(l); return
 
@@ -447,7 +517,7 @@ def run():
                 pnl = (price - lot["entry"]) * MULT * lot["contracts"]
                 l["lots"].remove(lot)
                 l["realized"] = l.get("realized", 0.0) + pnl
-                tg(f"✅ 賣出成交 1口 @{price:.0f}（平 {lot['entry']:.0f}那口 {pnl:+,.0f}元）"
+                tg(f"✅ 賣出成交 1口 @{price:.0f}（平 {lot['entry']:.0f}那口 {pnl:+,.0f}元{trail_tag(lot)}）"
                    f"｜持倉 {net_lots(l)}口｜累計已實現 {l['realized']:+,.0f}")
             else:
                 tg(f"↩️ 賣單未成交已撤（@{price:.0f}）")
@@ -479,7 +549,9 @@ def cmd_sell(sell_price):
     if not l["lots"]:
         print("目前無持倉"); return
     sp = float(sell_price); c = l["config"]
-    tp = [x for x in l["lots"] if sp >= x["entry"] * (1 + c["take"])]
+    tp = tp_lots(l, sp)                         # 與提醒時同一套規則（固定停利 / 移動停利）
+    if not tp and trail_on(c):                  # 移動停利：成交價跟提醒價略有出入時，退而找已啟動的口
+        tp = [x for x in l["lots"] if x.get("sell_armed")]
     lot = max(tp, key=lambda x: x["entry"]) if tp else min(l["lots"], key=lambda x: abs(x["entry"] - sp))
     l["lots"].remove(lot)
     pnl = (sp - lot["entry"]) * MULT * lot["contracts"]
@@ -495,9 +567,25 @@ def cmd_status():
     kill = "｜AUTO_OFF 全停中 ⛔" if KILL_FLAG.exists() else ""
     print(f"[QFF 下單器] 模式：{mode}{kill}")
     print(f"  設定：本金{c['capital']:,}/格{c['step']:.1%}/停利+{c['take']:.1%}/上限{c['max_leverage']}x")
+    t = float(c.get("trail_tp") or 0)
+    print(f"  移動停利：{'開，自高點回落 %.1f%% 賣' % (t * 100) if t > 0 else '關（固定停利）'}")
+    g = c.get("lev_gate")
+    if g:
+        closes = local_recent_closes(HIGH_1Y_BARS)
+        cap, drop = lev_cap(c, closes[-1], max(closes)) if closes else (float(g["lo"]), None)
+        now = f"｜以最後一根收盤算：距一年高 −{drop:.1%} → 上限 {cap:.1f}x" if drop is not None else ""
+        print(f"  槓桿閘：開，平常 {g['lo']}x，距一年高跌 {float(g['full_drop']):.0%} 放大到 {c['max_leverage']}x{now}")
+    else:
+        print("  槓桿閘：關（固定上限）")
     print(f"  持倉 {net_lots(l)}口｜已實現 {l.get('realized', 0):+,.0f}")
     for x in sorted(l["lots"], key=lambda z: z["entry"]):
-        print(f"    進場@{x['entry']:.0f} ×{x['contracts']}  →停利賣點 {x['entry']*(1+c['take']):.0f}")
+        if t > 0 and x.get("sell_armed") and x.get("peak"):
+            exit_ = f"移動停利中：高點 {x['peak']:.0f} → 跌破 {x['peak']*(1-t):.0f} 賣"
+        elif t > 0:
+            exit_ = f"漲到 {x['entry']*(1+c['take']):.0f} 啟動移動停利"
+        else:
+            exit_ = f"停利賣點 {x['entry']*(1+c['take']):.0f}"
+        print(f"    進場@{x['entry']:.0f} ×{x['contracts']}  →{exit_}")
 
 
 def main():

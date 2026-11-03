@@ -157,6 +157,28 @@ def run(p):
             s = s * (1 + p.widen * drop)     # 跌 drop 深→格距放大
         return min(s, 0.05)
 
+    # 槓桿閘（--lev-gate-lo > 0 才開；與 futures_live.py 的 lev_gate 同公式）：
+    # 買進上限 = lo + (max_leverage − lo) × 距近一年高跌幅 ÷ lev_gate_drop，最多 max_leverage
+    GATE_LO = getattr(p, "lev_gate_lo", 0.0) or 0.0
+    hi_1y = []
+    if GATE_LO:
+        from collections import deque
+        q, W = deque(), 2500                  # 250 交易日 × 10 根
+        for j, x in enumerate(adj):
+            while q and adj[q[-1]] <= x:
+                q.pop()
+            q.append(j)
+            if q[0] <= j - W:
+                q.popleft()
+            hi_1y.append(adj[q[0]])
+
+    def lev_max(i):
+        if not GATE_LO:
+            return p.max_leverage
+        lo = min(GATE_LO, p.max_leverage)
+        drop = max(0.0, 1 - adj[i] / hi_1y[i])
+        return min(p.max_leverage, lo + (p.max_leverage - lo) * drop / p.lev_gate_drop)
+
     bought_today = False
     for i in range(n):
         c = adj[i]
@@ -219,7 +241,7 @@ def run(p):
         ref = max(adj[max(0, i - H):i + 1])
         equity = capital_base + realized + unreal(lots, c)
         notional_after = notional(lots, c) + adj_notional(c, p.contracts_per_lot)
-        lev_ok = notional_after <= equity * p.max_leverage
+        lev_ok = notional_after <= equity * lev_max(i)
         regime_ok = (not RM) or (ma_series[i] is not None and c > ma_series[i])
         # 當天已買過 → 只在收盤那根再檢查（放慢單日填倉）
         timing_ok = (not p.intraday_once) or (not bought_today) or is_close_bar
@@ -244,7 +266,7 @@ def run(p):
                 cpl = min(3 * base, int(round(base * factor)))
                 cpl = max(cpl, base)
         notional_after = notional(lots, c) + adj_notional(c, cpl)
-        lev_ok = notional_after <= equity * p.max_leverage
+        lev_ok = notional_after <= equity * lev_max(i)
         if (c <= ref * (1 - step_i) and len(lots) < p.max_lots and lev_ok and regime_ok
                 and timing_ok and rsi_ok
                 and not any(abs(l["price"] / c - 1) < step_i for l in lots)):
@@ -437,6 +459,10 @@ def main():
                     help="gap_target 門檻：上一批買價高出本批超過此比例才套用（如 0.024=跳過一格）")
     ap.add_argument("--derisk-lev", type=float, default=0.0, dest="derisk_lev",
                     help="反彈減碼：槓桿>此值且當根上漲時,賣最接近獲利的批降回此槓桿(0=關)")
+    ap.add_argument("--lev-gate-lo", type=float, default=0.0, dest="lev_gate_lo",
+                    help="槓桿閘：平常的買進槓桿上限（0=關）；距近一年高跌 --lev-gate-drop 時放大到 --max-leverage")
+    ap.add_argument("--lev-gate-drop", type=float, default=0.30, dest="lev_gate_drop",
+                    help="槓桿閘：跌多少（距近一年高）時放大到 --max-leverage（預設 0.30）")
     p = ap.parse_args()
     (monthly if p.mode == "monthly" else summary)(p)
 
