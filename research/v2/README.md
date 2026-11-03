@@ -9,7 +9,7 @@
 | `harness.py` | 核心：`PERIODS`、`universe()`、`load_stock()`、逐檔 `simulate()`（次日開盤、一字漲跌停、下市出場）、`leak_check()`、`run()`（含隨機進場基準） |
 | `xs.py` | 橫斷面（排名換股）：`load_panel(end, fundamentals)`、`add_chips` / `add_fin`、`rebalance_dates`（每月第一個 ≥12 日交易日）、`backtest`（分位 + topN）、`leak_check_xs`、`run` |
 | `hypotheses.py` | 橫斷面假設的分數函數 `FNS`（H1~H39、H76~H100）；`python3 research/v2/hypotheses.py dev H2 H10 --topn=20`（第十六~十八批：`add_v16` / `add_v17` / `add_v18` 載入集保、市值、現金流量表、除息日等） |
-| `fetch_fundamentals.py` | 抓 `data/v2/` 基本面：`--kinds revenue,per` / `inst,margin` / `fin,bs` / `hold,mv,cf`（集保股權分散、日市值、現金流量表）/ `div`（股利、除息日）。⚠ FinMind 股數有 int32 溢位（2010 初大型股），`xs.add_v16` 已修正市值 |
+| `fetch_fundamentals.py` | 抓 `data/v2/` 基本面：`--kinds revenue,per` / `inst,margin` / `fin,bs` / `hold,mv,cf`（集保股權分散、日市值、現金流量表）/ `div`（股利、除息日）/ `sbl`（借券賣出餘額，2009 起；加 `--quiet` 會避開 ai-dev 排程時段）。⚠ FinMind 股數有 int32 溢位（2010 初大型股），`xs.add_v16` 已修正市值 |
 | `run_legacy14.py` | 舊 14 技術策略在 dev 的真樣本外重驗 |
 | `seasonal.py` | H18 春節、H19 金融股 11 月 |
 | `timing.py` | H20/H21 大盤 200 日線擇時 |
@@ -34,7 +34,8 @@
 | `batch32_risk.py` | 第三十二批 H133~H135：H29 風控變體日線淨值（`sim` 可給權重與曝險，等權時與 `threshold.py` 一致並有 assert）、Jobson-Korkie z；`val` 會先重算 dev 關卡 |
 | `feature_screen3.py` | 第三十九批 FS3：條件 IC（H136 前 100 內）、候選池內前 20、右尾前 10% 超額與大贏家命中倍數、衰減半衰期，各含安慰劑；輸出 `data/v2/results/fs3_dev.csv` |
 | `feature_industry.py` | 第四十批 FS4：同業營收驚喜擴散（IND_SUR、REL_SUR），沿用 FS3 的評估並加增量 FM 與擴散描述；安慰劑是產業標籤打亂 |
-| `feature_library.py` | 第四十一批 FL1 特徵庫：44 個特徵依用途評估（A/B/V 三段、安慰劑），產生 `FEATURES.md`（勿手改）與 `data/v2/results/feature_library.csv`、`feature_library_rho.csv`；加新特徵時把它加進 `FEATS` 重跑 |
+| `feature_library.py` | 第四十一批 FL1 特徵庫：68 個特徵（FL1 44 ＋ 第四十二批 FS5 24）依用途評估（A/B/V 三段、安慰劑），產生 `FEATURES.md`（勿手改）與 `data/v2/results/feature_library.csv`、`feature_library_rho.csv`；加新特徵時把它加進 `FEATS` 重跑；`--no-sbl` 是不含借券、不寫 `FEATURES.md` 的預覽 |
+| `feature_tu.py` | 第四十二批 FS5：涂敏峰清單的特徵（缺口、大盤跌時抗跌、季線、多頭排列、預估 EPS 本益比、同業比價、投信連買、千張大戶、負債比、借券、上影線、KD 背離、量價、月 MACD、低價、融資、三低一高、四特徵），由 `feature_library.py` 載入；`python research/v2/feature_tu.py fib` 是費氏時間轉折事件檢定。需要 `data/v2/sbl` |
 | `feature_combo.py` | 第三十三批 FS2：特徵百分位矩陣（`prep`）＋向量化 top20 回測（`bt`）、全部 2／3 個一組＋伯努利 2000 組、邊際貢獻 OLS（`marginal`）；輸出 `data/v2/results/fs2_dev.csv`、`fs2_marginal.csv` |
 | `holdout_h136.py` | 第三十四批 H136 holdout 一次性檢驗（需 `--unseal`）；用 FS2 引擎、對照同引擎 H29 |
 | `ml_walkforward.py` | 第三十五批 ML1：逐年重訓（空一個月、assert 防前視）的 Fama-MacBeth 與 HistGradientBoosting；`stage2` 需 `--unseal`。需要 scikit-learn（`uv pip install scikit-learn`，不要 `uv add`，見 shioaji 鎖版問題） |
@@ -132,6 +133,7 @@ holdout 一律需 `unseal=True`（或腳本內明確擋掉），**開封要使�
 | FS3 | 特徵庫重篩（不是單一假設）：42 個 FS1 候選改用條件 IC（H136 前 100 內）、右尾（全池前 10% 超額、大贏家命中倍數）、衰減半衰期（`feature_screen3.py`） | 原料標籤 | 右尾收 21（假陽性 11.8%，約 17 個真）；條件 IC 收 25 但多是避雷型（H11、H6、H13、H3 在候選池挑前 20 反而負）；候選池內前 20（事後）收 10 ≈ 預期假的 8.4 → H136 之上沒有可靠加分。分三類：挑贏家（H2、H10、H87、H97、H99、H28、**H22 投信**）、避雷（H3、H13、H6、H11 命中倍數 < 1）、彩券（H96、H9、H84）。半衰期 H97 1.4 月、H87 4.0、H2 11.6 |
 | FS4 | 新原料：同業營收驚喜 IND_SUR（同產業其他股票的 SUR 平均）、相對驚喜 REL_SUR（`feature_industry.py`；安慰劑＝產業標籤打亂 20 次） | ✗ | 增量 FM t A 2.15 / B 1.25（安慰劑 90 分位 1.63）、全池 IC t 2.14 / 1.65（安慰劑 90 分位 2.01）→ 在雜訊範圍；右尾與「自己沒驚喜者」的擴散在 B 段變號（−5.8%、−5.4%）。REL_SUR ≈ 自己的 SUR。證交所產業分類太粗、非 pit |
 | FL1 | 可重複使用的特徵庫（44 個；`feature_library.py` → `FEATURES.md`）：A 段 IC 定方向，dev 給用途標籤，val 確認 | 收 28／待確認 3／未收 5／資料不足 8 | 安慰劑 dev 標籤假陽性 11~18%、「收」22%、`◎✓✓` 0%。四用途全 `◎✓✓`：H10、H87；單獨強但未使用：H86 股東人數減少。val 反向：H28 挑贏家、H1、H22 挑贏家 |
+| FS5 | 涂敏峰清單裡還沒測的特徵＋借券，共 24 個，照 FL1 規則加進特徵庫（`feature_tu.py`）；FIB 費氏時間轉折另外檢定 | 收 17／待確認 1／未收 5／資料不足 1；FIB ✗ | 新 `◎✓✓`：MA_ALIGN 多頭排列（多空、挑贏家、避雷）、SBL_LVL 借券餘額比（多空，高的不好）、FWD_EY 預估盈餘殖利率與 UPPER_SHADOW 上影線（排序）。講趨勢的說法資料支持；講抄底的（KD 低檔背離、季線回測、四特徵、下跌缺口會補）方向相反；借券遠大於融資不會軋空。原本 44 個特徵結果不變 |
 | H106 | QFF 30 分 K「快速推升第一個低點 / 快速下跌第一個高點」回測進場（1 口） | ✗ | 2021-26 138 筆、勝率 21%、每筆 −6 點（無滑價仍 −2 點）、六年全負；到目標的單 3~5R 但 72% 被停損掃 → 高 R × 低勝率 = 負期望。對照連續做多 +1,476 點 |
 
 （無 H37。）舊 14 技術策略、舊三策略：dev 扣成本無一顯著贏大盤（`run_legacy14.py`）。
