@@ -1,6 +1,6 @@
 # 學術因子對照表（FEATURE_PLAN 階段 3）
 
-把 Jensen、Kelly、Pedersen（2023，*Is There a Replication Crisis in Finance?*）的 153 個因子，逐條和本專案已測的假設（`HYPOTHESES.md`）、特徵庫（`FEATURES.md`）對照。這份表本身只是對照；第四十六批 FS8、第四十七批 FS9、第五十六批 FS10 已從表裡挑 20 ＋ 16 ＋ 20 個跑完（結果見 `HYPOTHESES.md`），狀態已更新成「已測」。下一批從剩下的「現有資料可做」裡挑。
+把 Jensen、Kelly、Pedersen（2023，*Is There a Replication Crisis in Finance?*）的 153 個因子，逐條和本專案已測的假設（`HYPOTHESES.md`）、特徵庫（`FEATURES.md`）對照。這份表本身只是對照；第四十六批 FS8、第四十七批 FS9、第五十六批 FS10、第五十七批 FS11 已從表裡挑 20 ＋ 16 ＋ 20 ＋ 13 個跑完（結果見 `HYPOTHESES.md`），狀態已更新成「已測」。第五十七批登記時把剩下的 29 個逐一歸類（多半是已測特徵的變體），「現有資料可做」已經沒有了，這份表不再挑。
 
 - 清單來源：作者公開的 `bkelly-lab/ReplicationCrisis` GitHub 專案裡的 `GlobalFactors/Cluster Labels.csv`（153 個因子、13 群）與 `Factor Details.xlsx`（名稱、方向）。分群照 JKP 原文，所以「季節性」群裡有不少不是季節性的因子。
 - 方向：JKP 的預期方向（+＝值越大報酬越高）。台股已測的結論見對應的假設或特徵；方向不一定和美股相同（例如台股是延續、不是反轉）。
@@ -15,24 +15,24 @@
 
 | 群 | 因子數 | 已測 | 已測（近似） | 現有資料可做 | 需要新資料 | 台股做不到 |
 |---|---|---|---|---|---|---|
-| 投資（Investment） | 22 | 12 | 4 | 5 | 1 | 0 |
-| 低風險（Low Risk） | 18 | 7 | 6 | 4 | 0 | 1 |
-| 價值（Value） | 18 | 11 | 2 | 5 | 0 | 0 |
-| 品質（Quality） | 17 | 9 | 1 | 7 | 0 | 0 |
-| 獲利成長（Profit Growth） | 12 | 9 | 1 | 1 | 1 | 0 |
-| 季節性（Seasonality） | 12 | 4 | 1 | 3 | 0 | 4 |
-| 低槓桿（Low Leverage） | 11 | 7 | 0 | 1 | 1 | 2 |
-| 獲利能力（Profitability） | 11 | 7 | 1 | 3 | 0 | 0 |
-| 動能（Momentum） | 8 | 3 | 1 | 4 | 0 | 0 |
-| 舉債（Debt Issuance） | 7 | 4 | 0 | 3 | 0 | 0 |
-| 應計（Accruals） | 6 | 3 | 0 | 2 | 0 | 1 |
-| 短期反轉（Short-Term Reversal） | 6 | 2 | 1 | 3 | 0 | 0 |
-| 規模（Size） | 5 | 3 | 0 | 1 | 0 | 1 |
-| **合計** | **153** | **81** | **18** | **42** | **3** | **9** |
+| 投資（Investment） | 22 | 13 | 8 | 0 | 1 | 0 |
+| 低風險（Low Risk） | 18 | 7 | 6 | 0 | 0 | 5 |
+| 價值（Value） | 18 | 14 | 3 | 0 | 1 | 0 |
+| 品質（Quality） | 17 | 12 | 4 | 0 | 0 | 1 |
+| 獲利成長（Profit Growth） | 12 | 9 | 2 | 0 | 1 | 0 |
+| 季節性（Seasonality） | 12 | 6 | 1 | 0 | 1 | 4 |
+| 低槓桿（Low Leverage） | 11 | 7 | 1 | 0 | 1 | 2 |
+| 獲利能力（Profitability） | 11 | 8 | 3 | 0 | 0 | 0 |
+| 動能（Momentum） | 8 | 3 | 5 | 0 | 0 | 0 |
+| 舉債（Debt Issuance） | 7 | 6 | 0 | 0 | 0 | 1 |
+| 應計（Accruals） | 6 | 4 | 1 | 0 | 0 | 1 |
+| 短期反轉（Short-Term Reversal） | 6 | 2 | 4 | 0 | 0 | 0 |
+| 規模（Size） | 5 | 3 | 1 | 0 | 0 | 1 |
+| **合計** | **153** | **94** | **39** | **0** | **5** | **15** |
 
 - 已測（含近似）的因子集中在動能、規模、低風險、價值；這些群台股的結論已經很清楚（見 `AGENTS.md`「已知規律」）。
-- 第四十六批之前，還沒測、資料又已經有的共 98 個（現在剩 42 個），大多在**投資**、**品質**、**價值**、**獲利能力**、**舉債**這幾群，也就是資產負債表的各種成長與比率，以及用市值當分母的估值比。台股過去的財報類特徵（H26、H27、H80～H83、F-score）大多不過，所以預期多數不會有東西；但 FS6 的 NET_ISSUE、CL_CHG 說明資產負債表裡仍有沒測到的資訊。
-- 需要新資料的只有員工人數（emp_gr1、sale_emp_gr1）和上市日期（age）；做不到的是研發類（3 個）和超長期季節性（6 個）。
+- 第四十六批之前，還沒測、資料又已經有的共 98 個（第五十七批後剩 0 個），大多在**投資**、**品質**、**價值**、**獲利能力**、**舉債**這幾群，也就是資產負債表的各種成長與比率，以及用市值當分母的估值比。台股過去的財報類特徵（H26、H27、H80～H83、F-score）大多不過，所以預期多數不會有東西；但 FS6 的 NET_ISSUE、CL_CHG 說明資產負債表裡仍有沒測到的資訊。
+- 需要新資料的是員工人數（emp_gr1、sale_emp_gr1）、上市日期（age）與兩個淨發行（netis_at、dbnetis_at，現金流量表科目不全）；做不到的是研發類（3 個）、超長期季節性（6 個）、池內沒變異的零成交（3 個）和要多年滾動的 3 個（ni_ar1、earnings_variability、qmj_growth）。
 
 ## 第四十六批（FS8）挑的 20 個
 
@@ -70,6 +70,11 @@
 
 資產負債表逐項拆解（Richardson 等 2005 的流動／非流動、營運／金融各項變化）、獲利結構（營業利益率、營運槓桿、稅、應計比例）與兩個 21 日風險特徵（Dimson beta、CAPM 特質偏態）。2026-11-04 跑完：**FNL_GR 金融負債變化**（借款增加的差）多空、避雷三個持有期 `B○✓✓` 以上、60 日多空 `B◎✓✓`，和既有特徵無高度相關；DSALE_DSGA 避雷月、60 日 `◎✓✓` 但方向和 JKP 相反；ISKEW_CAPM 週排序 `◎✓✓`；OACC_NI ≈ H83、OPEX_AT ≈ AT_TURN；其餘多半只預測風險或沒有東西。
 
+
+## 第五十七批（FS11）挑的 13 個
+
+估值模型（權益存續期間、剩餘所得內含價值、企業帳面市值比）、以淨營運資產當分母的獲利與週轉、第五十六批的延伸（長期投資、淨流動營運資金、淨非流動營運資產、負債 3 年成長、異常資本支出）、QMJ 拆半與 5 年市場相關。2026-11-04 跑完：**CORR_1260D 和大盤相關**（相關高的好，和 JKP 相反）月排序 `○✓✓`、週排序 `◎✓✓`，換手 5%、無高度相關；EQ_DUR 存續期間短的好，排序三個持有期 `B◎✓✓`（≈ 價值，H5 0.68）；IVAL_ME ≈ H11、EBIT_BEV ≈ OP_AT、NNCOA_GR ≈ NCOA_GR、BEV_MEV ≈ H5；DEBT_GR3 沒有 FNL_GR 的效果；剩下的 29 個登記時已逐一歸類，這份表不再挑。
+
 ## 投資（Investment，22 個）
 
 | JKP 代號 | 英文名 | 中文 | JKP 方向 | 狀態 | 對應／所需資料 | 備註 |
@@ -83,18 +88,18 @@
 | inv_gr1a | Inventory change | 存貨變化 ÷ 資產 | − | 已測 | H90 |  |
 | mispricing_mgmt | Mispricing factor: Management | 錯價因子：管理面（Stambaugh-Yuan） | + | 已測 | MISP_MGMT（第四十七批） | 成分大多已測（NET_ISSUE、H83、H80） |
 | ncoa_gr1a | Change in noncurrent operating assets | 非流動營運資產變化 | − | 已測 | NCOA_GR（第五十六批） |  |
+| nncoa_gr1a | Change in net noncurrent operating assets | 淨非流動營運資產變化 | − | 已測 | NNCOA_GR（第五十七批） |  |
 | noa_gr1a | Change in net operating assets | 淨營運資產變化 | − | 已測 | NOA_GR（第四十六批） |  |
 | ppeinv_gr1a | Change PPE and Inventory | 固定資產＋存貨變化 | − | 已測 | PPEINV（第四十六批） | Lyandres 等 2008 |
 | sale_gr3 | Sales Growth (3 years) | 營收 3 年成長 | − | 已測 | SALE_GR3（第五十六批） |  |
+| capx_gr1 | CAPEX growth (1 year) | 資本支出 1 年成長 | − | 已測（近似） | CAPX_GR2 | 窗長不同 |
+| capx_gr3 | CAPEX growth (3 years) | 資本支出 3 年成長 | − | 已測（近似） | CAPX_GR2 | 窗長不同 |
 | inv_gr1 | Inventory growth | 存貨成長率 | − | 已測（近似） | H90 | H90 是存貨變化 ÷ 平均總資產 |
+| lnoa_gr1a | Change in long-term net operating assets | 長期淨營運資產變化 | − | 已測（近似） | NNCOA_GR（第五十七批） |  |
 | ret_60_12 | Long-term reversal | 長期反轉（前 60～13 月） | − | 已測（近似） | H98 | H98 是前 36～13 月 |
 | sale_gr1 | Sales Growth (1 year) | 營收 1 年成長 | − | 已測（近似） | H7 | H7 是月營收 YoY |
 | saleq_gr1 | Sales growth (1 quarter) | 單季營收 YoY | − | 已測（近似） | H7 | 月營收比季營收更早、更細 |
-| capx_gr1 | CAPEX growth (1 year) | 資本支出 1 年成長 | − | 現有資料可做 | cf 取得不動產廠房設備 | cf 2012Q1 起 |
-| capx_gr3 | CAPEX growth (3 years) | 資本支出 3 年成長 | − | 現有資料可做 | 同上 |  |
-| lnoa_gr1a | Change in long-term net operating assets | 長期淨營運資產變化 | − | 現有資料可做 | bs |  |
-| nncoa_gr1a | Change in net noncurrent operating assets | 淨非流動營運資產變化 | − | 現有資料可做 | bs |  |
-| seas_2_5na | Years 2-5 lagged returns, nonannual | 2–5 年前非同月報酬 | − | 現有資料可做 | 價格 | H38 是同月版本 |
+| seas_2_5na | Years 2-5 lagged returns, nonannual | 2–5 年前非同月報酬 | − | 已測（近似） | H38 | H38 是同月版本 |
 | emp_gr1 | Hiring rate | 員工人數成長 | − | 需要新資料 | 員工人數（FinMind 沒有；年報或公開資訊觀測站） |  |
 
 ## 低風險（Low Risk，18 個）
@@ -114,11 +119,11 @@
 | ivol_ff3_21d | Idiosyncratic volatility from the Fama-French 3-factor model | FF3 特質波動 | − | 已測（近似） | IVOL | 要自建台股 SMB、HML；預期 ≈ IVOL |
 | ivol_hxz4_21d | Idiosyncratic volatility from the q-factor model | q 因子特質波動 | − | 已測（近似） | IVOL | 同上 |
 | rmax5_21d | Highest 5 days of return | 近 21 日最高 5 日報酬平均 | − | 已測（近似） | H13 |  |
-| earnings_variability | Earnings variability | 盈餘變異 | − | 現有資料可做 | fin、cf（季） |  |
-| zero_trades_126d | Number of zero trades with turnover as tiebreaker (6 months) | 零成交日數（6 月） | + | 現有資料可做 | 原始成交量 | 股票池要求 60 日均量 ≥ 200 張，池內幾乎沒有零成交，預期沒有變異 |
-| zero_trades_21d | Number of zero trades with turnover as tiebreaker (1 month) | 零成交日數（1 月） | + | 現有資料可做 | 同上 | 同上 |
-| zero_trades_252d | Number of zero trades with turnover as tiebreaker (12 months) | 零成交日數（12 月） | + | 現有資料可做 | 同上 | 同上 |
+| earnings_variability | Earnings variability | 盈餘變異 | − | 台股做不到 |  | 要 20 季，2018 年後才有值，B 段太短 |
 | seas_6_10na | Years 6-10 lagged returns, nonannual | 6–10 年前非同月報酬 | − | 台股做不到 |  | 資料從 2010 年起，dev 期間大多沒有值 |
+| zero_trades_126d | Number of zero trades with turnover as tiebreaker (6 months) | 零成交日數（6 月） | + | 台股做不到 |  | 股票池要求 60 日均量 ≥ 200 張，池內幾乎沒有零成交 |
+| zero_trades_21d | Number of zero trades with turnover as tiebreaker (1 month) | 零成交日數（1 月） | + | 台股做不到 |  | 股票池要求 60 日均量 ≥ 200 張，池內幾乎沒有零成交 |
+| zero_trades_252d | Number of zero trades with turnover as tiebreaker (12 months) | 零成交日數（12 月） | + | 台股做不到 |  | 股票池要求 60 日均量 ≥ 200 張，池內幾乎沒有零成交 |
 
 ## 價值（Value，18 個）
 
@@ -126,22 +131,22 @@
 |---|---|---|---|---|---|---|
 | at_me | Assets-to-market | 資產 ÷ 市值 | + | 已測 | AT_ME（第四十七批） |  |
 | be_me | Book-to-market equity | 淨值股價比 | + | 已測 | H5 |  |
+| bev_mev | Book-to-market enterprise value | 企業帳面價值 ÷ 企業市值 | + | 已測 | BEV_MEV（第五十七批） |  |
 | chcsho_12m | Net stock issues | 淨發行股數（12 月） | − | 已測 | NET_ISSUE |  |
 | debt_me | Debt-to-market | 負債 ÷ 市值 | + | 已測 | DEBT_ME（第四十七批） |  |
 | div12m_me | Dividend yield | 殖利率 | + | 已測 | H6 |  |
 | ebitda_mev | Ebitda-to-market enterprise value | EBITDA ÷ 企業價值 | + | 已測 | EBITDA_EV（第四十六批） | 只在 H121 QMV 裡當成分測過 |
+| eq_dur | Equity duration | 權益存續期間 | − | 已測 | EQ_DUR（第五十七批） | Dechow 等 2004；計算較繁 |
 | eqnpo_me | Net payout yield | 淨發放殖利率 | + | 已測 | EQNPO（第四十六批） |  |
 | fcf_me | Free cash flow-to-price | 自由現金流 ÷ 市值 | + | 已測 | FCF_ME（第四十六批） | H81 是營業現金流，沒扣資本支出 |
+| ival_me | Intrinsic value-to-market | 內含價值 ÷ 市值 | + | 已測 | IVAL_ME（第五十七批） | Frankel-Lee 1998 剩餘所得模型 |
 | ni_me | Earnings-to-price | 盈餘殖利率 | + | 已測 | H11 |  |
 | ocf_me | Operating cash flow-to-market | 營業現金流 ÷ 市值 | + | 已測 | H81 |  |
 | sale_me | Sales-to-market | 營收股價比 | + | 已測 | SALE_ME（第四十六批） | 可用月營收近 12 月合計，比季報更即時 |
 | eqnetis_at | Net equity issuance | 淨權益發行 ÷ 資產 | − | 已測（近似） | NET_ISSUE | NET_ISSUE 用股數；金額版要現金增資資料（div 有 TotalNumberOfCashCapitalIncrease） |
+| eqnpo_12m | Equity net payout | 權益淨發放（12 月） | + | 已測（近似） | EQNPO |  |
 | eqpo_me | Payout yield | 發放殖利率（股利＋庫藏股） | + | 已測（近似） | H6 | H6 只有現金股利 |
-| bev_mev | Book-to-market enterprise value | 企業帳面價值 ÷ 企業市值 | + | 現有資料可做 | bs、市值 |  |
-| eq_dur | Equity duration | 權益存續期間 | − | 現有資料可做 | fin、bs、市值 | Dechow 等 2004；計算較繁 |
-| eqnpo_12m | Equity net payout | 權益淨發放（12 月） | + | 現有資料可做 | 股利、股數 | ≈ 殖利率 − 淨發行 |
-| ival_me | Intrinsic value-to-market | 內含價值 ÷ 市值 | + | 現有資料可做 | fin、bs、市值 | Frankel-Lee 1998 剩餘所得模型 |
-| netis_at | Net total issuance | 淨總發行 ÷ 資產 | − | 現有資料可做 | cf 籌資活動、bs |  |
+| netis_at | Net total issuance | 淨總發行 ÷ 資產 | − | 需要新資料 | cf 現金增資、發放股利、發行公司債 | FinMind 現金流量表沒有這些科目 |
 
 ## 品質（Quality，17 個）
 
@@ -156,14 +161,14 @@
 | op_at | Operating profits-to-book assets | 營業利潤 ÷ 資產 | + | 已測 | OP_AT（第四十七批） |  |
 | opex_at | Operating leverage | 營業費用 ÷ 資產 | + | 已測 | OPEX_AT（第五十六批） | Novy-Marx 2011；H123「營運槓桿」定義不同 |
 | qmj | Quality minus Junk: Composite | 品質減垃圾（QMJ） | + | 已測 | QMJ（第四十七批） | H121 QMV 是另一種品質＋動能＋價值組合 |
+| qmj_prof | Quality minus Junk: Profitability | QMJ：獲利 | + | 已測 | QMJ_PROF（第五十七批） |  |
+| qmj_safety | Quality minus Junk: Safety | QMJ：安全 | + | 已測 | QMJ_SAFETY（第五十七批） |  |
+| sale_bev | Asset turnover | 資產週轉率 | + | 已測 | SALE_BEV（第五十七批） |  |
+| cop_atl1 | Cash-based operating profits-to-lagged book assets | 現金基礎營業利潤 ÷ 前期資產 | + | 已測（近似） | COP | 分母用前期資產 |
 | gp_atl1 | Gross profits-to-lagged assets | 毛利 ÷ 前期資產 | + | 已測（近似） | H27 |  |
-| cop_atl1 | Cash-based operating profits-to-lagged book assets | 現金基礎營業利潤 ÷ 前期資產 | + | 現有資料可做 | 同上 |  |
-| niq_at | Quarterly return on assets | 季 ROA | + | 現有資料可做 | fin、bs |  |
-| op_atl1 | Operating profits-to-lagged book assets | 營業利潤 ÷ 前期資產 | + | 現有資料可做 | fin、bs |  |
-| qmj_growth | Quality minus Junk: Growth | QMJ：成長 | + | 現有資料可做 | 組合 |  |
-| qmj_prof | Quality minus Junk: Profitability | QMJ：獲利 | + | 現有資料可做 | 組合 |  |
-| qmj_safety | Quality minus Junk: Safety | QMJ：安全 | + | 現有資料可做 | 組合 |  |
-| sale_bev | Asset turnover | 資產週轉率 | + | 現有資料可做 | fin、bs |  |
+| niq_at | Quarterly return on assets | 季 ROA | + | 已測（近似） | H26 | 季 vs TTM、分母不同 |
+| op_atl1 | Operating profits-to-lagged book assets | 營業利潤 ÷ 前期資產 | + | 已測（近似） | OP_AT | 分母用前期資產 |
+| qmj_growth | Quality minus Junk: Growth | QMJ：成長 | + | 台股做不到 |  | 要 5 年變化，B 段太短 |
 
 ## 獲利成長（Profit Growth，12 個）
 
@@ -178,22 +183,22 @@
 | ret_12_7 | Price momentum t-12 to t-7 | 中期動能（前 12～7 月） | + | 已測 | RET_12_7（第四十六批） | Novy-Marx 2012 |
 | saleq_su | Standardized Revenue surprise | 營收驚喜 | + | 已測 | H87 | H87 是月營收版 SUR |
 | tax_gr1a | Tax expense surprise | 所得稅費用驚喜 | + | 已測 | TAX_GR（第五十六批） |  |
+| niq_at_chg1 | Change in quarterly return on assets | 季 ROA 變化 | + | 已測（近似） | ROE_CHG | 分母不同 |
 | seas_1_1an | Year 1-lagged return, annual | 去年同月報酬 | + | 已測（近似） | H38 | H38 是過去 5 年同月平均 |
-| niq_at_chg1 | Change in quarterly return on assets | 季 ROA 變化 | + | 現有資料可做 | fin、bs |  |
 | sale_emp_gr1 | Labor force efficiency | 每員工營收成長 | + | 需要新資料 | 員工人數 |  |
 
 ## 季節性（Seasonality，12 個）
 
 | JKP 代號 | 英文名 | 中文 | JKP 方向 | 狀態 | 對應／所需資料 | 備註 |
 |---|---|---|---|---|---|---|
+| corr_1260d | Market correlation | 與市場相關（5 年） | − | 已測 | CORR_1260D（第五十七批） | 2015 年起才有值 |
 | coskew_21d | Coskewness | 共偏態 | − | 已測 | COSKEW（第四十六批） |  |
 | kz_index | Kaplan-Zingales index | Kaplan-Zingales 財務限制指數 | + | 已測 | KZ（第四十七批） |  |
+| lti_gr1a | Change in long-term investments | 長期投資變化 | − | 已測 | LTI_GR（第五十七批） |  |
 | pi_nix | Taxable income-to-book income | 稅前淨利 ÷ 淨利 | + | 已測 | PI_NIX（第五十六批） |  |
 | sti_gr1a | Change in short-term investments | 短期投資變化 | + | 已測 | STI_GR（第五十六批） |  |
 | seas_2_5an | Years 2-5 lagged returns, annual | 2–5 年前同月報酬 | + | 已測（近似） | H38 | H38 是 1–5 年 |
-| corr_1260d | Market correlation | 與市場相關（5 年） | − | 現有資料可做 | 價格 | 2015 年起才有值 |
-| dbnetis_at | Net debt issuance | 淨舉債 ÷ 資產 | − | 現有資料可做 | cf 舉借、償還長期借款 |  |
-| lti_gr1a | Change in long-term investments | 長期投資變化 | − | 現有資料可做 | bs 權益法投資、非流動金融資產 |  |
+| dbnetis_at | Net debt issuance | 淨舉債 ÷ 資產 | − | 需要新資料 | cf 短期借款增加、發行公司債 | FinMind 現金流量表只有長借舉借／償還、短借減少 |
 | seas_11_15an | Years 11-15 lagged returns, annual | 11–15 年前同月報酬 | + | 台股做不到 |  | 歷史太短 |
 | seas_11_15na | Years 11-15 lagged returns, nonannual | 11–15 年前非同月報酬 | − | 台股做不到 |  | 歷史太短 |
 | seas_16_20an | Years 16-20 lagged returns, annual | 16–20 年前同月報酬 | + | 台股做不到 |  | 歷史太短 |
@@ -210,7 +215,7 @@
 | ni_ivol | Earnings volatility | 盈餘波動 | + | 已測 | NI_VOL（第四十七批） | 要 8 季以上 |
 | tangibility | Asset tangibility | 資產有形性 | + | 已測 | TANGIB（第四十七批） |  |
 | z_score | Altman Z-score | Altman Z 分數 | + | 已測 | Z_SCORE（第四十六批） | 五個成分都有 |
-| aliq_mat | Liquidity of market assets | 市值資產流動性 | − | 現有資料可做 | bs、市值 |  |
+| aliq_mat | Liquidity of market assets | 市值資產流動性 | − | 已測（近似） | ALIQ_AT | 分母換成市值資產 |
 | age | Firm age | 上市年數 | − | 需要新資料 | 上市櫃日期（data/v2 只有 2010 年後的價格，不能拿第一根 K 當上市日） |  |
 | rd5_at | R&D capital-to-book assets | 研發資本 ÷ 資產 | + | 台股做不到 |  | FinMind 損益表沒有研發費用科目 |
 | rd_sale | R&D-to-sales | 研發 ÷ 營收 | + | 台股做不到 |  | 同上 |
@@ -220,6 +225,7 @@
 | JKP 代號 | 英文名 | 中文 | JKP 方向 | 狀態 | 對應／所需資料 | 備註 |
 |---|---|---|---|---|---|---|
 | dolvol_var_126d | Coefficient of variation for dollar trading volume | 成交金額變異係數 | − | 已測 | DOLVOL_CV（第四十七批） |  |
+| ebit_bev | Return on net operating assets | 淨營運資產報酬 | + | 已測 | EBIT_BEV（第五十七批） |  |
 | ebit_sale | Profit margin | 營業利益率 | + | 已測 | EBIT_SALE（第五十六批） | H88 三率三升看的是變化 |
 | f_score | Pitroski F-score | Piotroski F-score | + | 已測 | F_SCORE、H82 |  |
 | ni_be | Return on equity | ROE | + | 已測 | H26 |  |
@@ -227,9 +233,8 @@
 | ocf_at | Operating cash flow to assets | 營業現金流 ÷ 資產 | + | 已測 | OCF_AT（第四十七批） | H81 是 ÷ 市值 |
 | ope_be | Operating profits-to-book equity | 營業利潤 ÷ 權益 | + | 已測 | OPE（第四十六批） | Fama-French RMW |
 | niq_be | Quarterly return on equity | 季 ROE | + | 已測（近似） | H26 | H26 是 TTM |
-| ebit_bev | Return on net operating assets | 淨營運資產報酬 | + | 現有資料可做 | fin、bs |  |
-| ope_bel1 | Operating profits-to-lagged book equity | 營業利潤 ÷ 前期權益 | + | 現有資料可做 | fin、bs |  |
-| turnover_var_126d | Coefficient of variation for share turnover | 週轉率變異係數 | − | 現有資料可做 | 原始成交量 |  |
+| ope_bel1 | Operating profits-to-lagged book equity | 營業利潤 ÷ 前期權益 | + | 已測（近似） | OPE | 分母用前期權益 |
+| turnover_var_126d | Coefficient of variation for share turnover | 週轉率變異係數 | − | 已測（近似） | DOLVOL_CV | 週轉率 vs 成交金額 |
 
 ## 動能（Momentum，8 個）
 
@@ -239,32 +244,32 @@
 | resff3_12_1 | Residual momentum t-12 to t-1 | 殘差動能 12-1 | + | 已測 | H77 | H77 用市場模型殘差 |
 | ret_12_1 | Price momentum t-12 to t-1 | 12-1 動能 | + | 已測 | H1 |  |
 | resff3_6_1 | Residual momentum t-6 to t-1 | 殘差動能 6-1 | + | 已測（近似） | H77 |  |
-| ret_3_1 | Price momentum t-3 to t-1 | 3-1 動能 | + | 現有資料可做 | 價格 | H1 的不同窗；不做參數搜尋，優先度低 |
-| ret_6_1 | Price momentum t-6 to t-1 | 6-1 動能 | + | 現有資料可做 | 價格 | 同上 |
-| ret_9_1 | Price momentum t-9 to t-1 | 9-1 動能 | + | 現有資料可做 | 價格 | 同上 |
-| seas_1_1na | Year 1-lagged return, nonannual | 去年非同月報酬 | + | 現有資料可做 | 價格 |  |
+| ret_3_1 | Price momentum t-3 to t-1 | 3-1 動能 | + | 已測（近似） | H1、RET_12_7 | 窗長不同 |
+| ret_6_1 | Price momentum t-6 to t-1 | 6-1 動能 | + | 已測（近似） | H1、RET_12_7 | 窗長不同 |
+| ret_9_1 | Price momentum t-9 to t-1 | 9-1 動能 | + | 已測（近似） | H1、RET_12_7 | 窗長不同 |
+| seas_1_1na | Year 1-lagged return, nonannual | 去年非同月報酬 | + | 已測（近似） | H38 | H38 是同月版本 |
 
 ## 舉債（Debt Issuance，7 個）
 
 | JKP 代號 | 英文名 | 中文 | JKP 方向 | 狀態 | 對應／所需資料 | 備註 |
 |---|---|---|---|---|---|---|
+| capex_abn | Abnormal corporate investment | 異常資本支出 | − | 已測 | CAPEX_ABN（第五十七批） | 資本支出 ÷ 營收相對前 3 年平均；FS6 的 CAPEX_INT 只預測風險 |
+| debt_gr3 | Growth in book debt (3 years) | 帳面負債 3 年成長 | − | 已測 | DEBT_GR3（第五十七批） | DEBT_CHG 是負債比的 4 季變化；bs 2012Q4 起，3 年成長要 2016 才有 |
 | fnl_gr1a | Change in financial liabilities | 金融負債變化 | − | 已測 | FNL_GR（第五十六批） |  |
 | ncol_gr1a | Change in noncurrent operating liabilities | 非流動營運負債變化 | − | 已測 | NCOL_GR（第五十六批） |  |
 | nfna_gr1a | Change in net financial assets | 淨金融資產變化 | + | 已測 | NFNA_GR（第五十六批） |  |
 | noa_at | Net operating assets | 淨營運資產 ÷ 資產 | − | 已測 | NOA（第四十六批） | Hirshleifer 等 2004；台股未測 |
-| capex_abn | Abnormal corporate investment | 異常資本支出 | − | 現有資料可做 | cf 取得不動產廠房設備、fin 營收 | 資本支出 ÷ 營收相對前 3 年平均；FS6 的 CAPEX_INT 只預測風險 |
-| debt_gr3 | Growth in book debt (3 years) | 帳面負債 3 年成長 | − | 現有資料可做 | bs 負債 | DEBT_CHG 是負債比的 4 季變化；bs 2012Q4 起，3 年成長要 2016 才有 |
-| ni_ar1 | Earnings persistence | 盈餘持續性 | + | 現有資料可做 | fin 淨利（季） | 要滾動多年的 AR(1) 係數，季財報 2013 起，要 2018 年後才有值，B 段太短 |
+| ni_ar1 | Earnings persistence | 盈餘持續性 | + | 台股做不到 |  | 要滾動多年的 AR(1)，2018 年後才有值，B 段太短 |
 
 ## 應計（Accruals，6 個）
 
 | JKP 代號 | 英文名 | 中文 | JKP 方向 | 狀態 | 對應／所需資料 | 備註 |
 |---|---|---|---|---|---|---|
+| cowc_gr1a | Change in current operating working capital | 流動營運資金變化 | − | 已測 | COWC_GR（第五十七批） | H83 低應計是現金流法的總應計，概念相近 |
 | oaccruals_at | Operating accruals | 營運應計 ÷ 資產 | − | 已測 | H83 | H83＝（淨利 − 營業現金流）÷ 平均總資產 |
 | oaccruals_ni | Percent operating accruals | 營運應計 ÷ \|淨利\| | − | 已測 | OACC_NI（第五十六批） | H83 的分母換成淨利絕對值（Hafzalla 等 2011） |
 | taccruals_at | Total accruals | 總應計 ÷ 資產 | − | 已測 | TACC（第四十六批） | H83 只有營運應計 |
-| cowc_gr1a | Change in current operating working capital | 流動營運資金變化 | − | 現有資料可做 | bs 流動資產、現金、流動負債、短借 | H83 低應計是現金流法的總應計，概念相近 |
-| taccruals_ni | Percent total accruals | 總應計 ÷ \|淨利\| | − | 現有資料可做 | bs、cf、fin |  |
+| taccruals_ni | Percent total accruals | 總應計 ÷ \|淨利\| | − | 已測（近似） | TACC | 分母換成 \|淨利\| |
 | seas_16_20na | Years 16-20 lagged returns, nonannual | 16–20 年前非同月報酬 | − | 台股做不到 |  | 需要 16 年以上的價格歷史，資料從 2010 年起 |
 
 ## 短期反轉（Short-Term Reversal，6 個）
@@ -273,10 +278,10 @@
 |---|---|---|---|---|---|---|
 | iskew_capm_21d | Idiosyncratic skewness from the CAPM | CAPM 特質偏態 | − | 已測 | ISKEW_CAPM（第五十六批） | SKEW 是 250 日總偏態 |
 | ret_1_0 | Short-term reversal | 短期反轉（上月報酬） | − | 已測 | H4 |  |
+| iskew_ff3_21d | Idiosyncratic skewness from the Fama-French 3-factor model | FF3 特質偏態 | − | 已測（近似） | ISKEW_CAPM | 要自建多因子模型 |
+| iskew_hxz4_21d | Idiosyncratic skewness from the q-factor model | q 因子特質偏態 | − | 已測（近似） | ISKEW_CAPM | 要自建多因子模型 |
+| rmax5_rvol_21d | Highest 5 days of return scaled by volatility | 最高 5 日報酬 ÷ 波動 | − | 已測（近似） | H13 |  |
 | rskew_21d | Total skewness | 報酬偏態（21 日） | − | 已測（近似） | SKEW | SKEW 是 250 日 |
-| iskew_ff3_21d | Idiosyncratic skewness from the Fama-French 3-factor model | FF3 特質偏態 | − | 現有資料可做 | 價格（要自建因子） |  |
-| iskew_hxz4_21d | Idiosyncratic skewness from the q-factor model | q 因子特質偏態 | − | 現有資料可做 | 價格（要自建因子） |  |
-| rmax5_rvol_21d | Highest 5 days of return scaled by volatility | 最高 5 日報酬 ÷ 波動 | − | 現有資料可做 | 價格 | H13 相近 |
 
 ## 規模（Size，5 個）
 
@@ -285,5 +290,5 @@
 | ami_126d | Amihud Measure | Amihud 非流動性 | + | 已測 | H9 |  |
 | market_equity | Market Equity | 市值 | − | 已測 | H84 |  |
 | prc | Price per share | 股價 | − | 已測 | LOW_PRICE |  |
-| dolvol_126d | Dollar trading volume | 成交金額 | − | 現有資料可做 | 原始成交金額 | 預期 ≈ H84 小型股、H9 |
+| dolvol_126d | Dollar trading volume | 成交金額 | − | 已測（近似） | H84、H9 |  |
 | rd_me | R&D-to-market | 研發 ÷ 市值 | + | 台股做不到 |  | 沒有研發科目 |
