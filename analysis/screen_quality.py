@@ -3,7 +3,7 @@
 這不是交易訊號（專案研究顯示價值面在台股不是有效訊號），只是幫質化追蹤找候選。
 篩出來的每一檔都要再做綜合分析，回答「股價為什麼跌、是暫時還是永久」。
 
-用法：.venv/bin/python analysis/screen_quality.py [YYYY-MM-DD]
+用法：.venv/bin/python analysis/screen_quality.py [YYYY-MM-DD] [--dd -0.25]
 讀本地 data/v2（日期以本地資料為準；最新資料在 ai-dev）。
 
 條件：
@@ -58,7 +58,7 @@ def tracked():
            {line.split("|")[1].strip() for line in w.read_text().splitlines() if line.startswith("| ") and line.split("|")[1].strip().isdigit()}
 
 
-def main(asof):
+def main(asof, dd_max=-0.25):
     P = xs.load_panel(asof, fundamentals=True)
     d = P["close"].index[-1]
     vol60 = P["volume"].iloc[-60:].mean() / 1000
@@ -116,7 +116,7 @@ def main(asof):
     Q = R[(R.eps5min > 0) & (R.roe_min >= 0.08) & (R.roe_avg >= 0.13) & (R.nonop < 0.3) & (R.opm >= 0.06)
           & (R.ttm_vs >= 0.8) & (R.roe_ttm >= 0.10) & (R.debt <= 0.60) & (R.debt_chg.fillna(0) <= 0.15) & (R.intang.fillna(0) <= 0.5)
           & (R.nonop4 < 0.25) & (R.core_pe > 0) & (R.core_pe <= R.pe_med)]
-    W = Q[(Q.dd <= -0.25) & (Q.pe_pct <= 0.5)].copy()
+    W = Q[(Q.dd <= dd_max) & (Q.pe_pct <= 0.5)].copy()
     W["core_vs_med"] = W.core_pe / W.pe_med
     W = W.sort_values("core_vs_med")
     W.insert(0, "清單", ["✓" if s in tracked() else "" for s in W.index])
@@ -133,4 +133,9 @@ def main(asof):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else pd.Timestamp.today().strftime("%Y-%m-%d"))
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("asof", nargs="?", default=pd.Timestamp.today().strftime("%Y-%m-%d"))
+    ap.add_argument("--dd", type=float, default=-0.25, help="距一年高點的跌幅上限（預設 -0.25）")
+    a = ap.parse_args()
+    main(a.asof, a.dd)
