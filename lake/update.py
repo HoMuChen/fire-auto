@@ -8,7 +8,7 @@
   revenue 近 3 個月（逐月）、fin/bs/cf 最近 3 個季底、div 近 120 天、hold 近 21 天逐個平日（公布日不固定）。
   universe：新上市普通股加入並逐檔抓完整歷史；下市股標 delist_date / type=delisted（資料保留）。
   大盤 / 期權（futures/、taiex_tr）：從最後日期所在月 / 年重抓到今天、以日期覆蓋；TXO 月資料一次拆出全序列、週選、未平倉；
-    期交所最後結算價抓今年；margin_x / raw_x（融資維持率的 ETF 等）跟著日資料 bulk 更新；
+    期交所最後結算價抓今年；上櫃整體法人 / 融資（櫃買官網，research/v2/tpex_mkt.py）最後日期往回 14 天重抓；margin_x / raw_x（融資維持率的 ETF 等）跟著日資料 bulk 更新；
     自建 txo_vix / ad / breadth / mkt_maint 整段重算。
 寫檔一律 tmp → rename（研究程式同時讀也不會讀到半個檔）；內容沒變不改寫。
 
@@ -390,6 +390,13 @@ def update_market(lim, dry, today):
         before = len(pd.read_parquet(FD / "TXO_final_settle.parquet"))
         after = len(options.fetch_fsp(years=[today.year]))
         stats["TXO_final_settle"] = f"{after - before:+d} 筆"
+    # 上櫃整體三大法人 / 融資融券（櫃買官網；FinMind TaiwanStockTotal* 只有上市）
+    sys.path.insert(0, str(ROOT / "research" / "v2"))
+    import tpex_mkt
+    try:
+        stats["otc_mkt"] = tpex_mkt.update(today, dry=dry)
+    except Exception as e:                                             # 官網掛掉不擋其他更新，下次往回 14 天會補到
+        stats["otc_mkt"] = f"失敗：{e}"
     # 台指期日盤 1 分 K（research/v2/tx1m.py，一天一檔）：補到昨天；近 5 天抓到空的（FinMind 還沒更新或休市）不留檔，下次再試
     if not dry:
         sys.path.insert(0, str(ROOT / "research" / "v2"))

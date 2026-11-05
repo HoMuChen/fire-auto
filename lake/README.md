@@ -50,7 +50,7 @@ DuckDB 只會抓需要的欄位與年份分區（`WHERE date >= …` 會跳過�
 | `mv` | 日市值（元）⚠ FinMind int32 溢位錯值未修 | year | 2009 |
 | `holding` | 集保股權分散（級距、人數、%、股） | year | 2010 |
 | `dividend` | 股利政策與除權息日（FinMind 原欄位） | — | 2009 |
-| `market.*` | `taiex`、`taiex_tr`（報酬指數）、`mtx_daily`、`txo_chain`、`txo_weekly`、`txo_final_settle`、`tx_large_traders`、`mkt_inst`、`mkt_margin`、`gspc`；自建：`txo_vix`、`txo_oi`、`ad`、`breadth`、`mkt_maint` | — | 2005~2012 |
+| `market.*` | `taiex`、`taiex_tr`（報酬指數）、`mtx_daily`、`txo_chain`、`txo_weekly`、`txo_final_settle`、`tx_large_traders`、`mkt_inst`、`mkt_margin`（這兩張**只有上市**）、`mkt_inst_otc`、`mkt_margin_otc`（上櫃，櫃買官網，欄位與 `name` 同上市版，可直接相加）、`gspc`；自建：`txo_vix`、`txo_oi`、`ad`、`breadth`、`mkt_maint` | — | 2005~2012 |
 | `broker` | 券商分點：每檔每日依券商加總的買賣**股數**（`securities_trader_id`、`securities_trader`、`buy`、`sell`）；⚠ **只有舊個股清單 1,439 檔**，非全市場 | year / month | 2021-06-30 |
 | `orderbook.tick_hist` | 歷史逐筆（Shioaji `api.ticks` 回補）：`ts`、`close`、`volume`、當下買一 / 賣一價量、`tick_type`（1 外盤 / 2 內盤）；`code` 為合約 | day | 2330：2019；期貨：回補時仍掛牌的合約 |
 | `orderbook.tick` / `orderbook.bidask` | 每日盤中錄製的逐筆成交 / 五檔（QFF 近兩月、TXF 近月、2330）；`simtrade=True` 為開盤前試撮、不是成交；現股沒有的欄位為 null | day | 2026-10-27 |
