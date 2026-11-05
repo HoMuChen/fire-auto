@@ -21,6 +21,7 @@
   已知限制：子公司是上市櫃公司時（例如振曜持有沛亨），本業 EPS 會混進子公司；
     「少數股權%」高（> 20%）的要在綜合分析裡拆開
 """
+import json
 import sys
 import warnings
 from pathlib import Path
@@ -51,6 +52,15 @@ def ratio(q, num, den):
 
 
 def tracked():
+    wj = ROOT / "analysis" / "watchlist.json"
+    if wj.exists():
+        d = json.loads(wj.read_text(encoding="utf-8"))
+        return {
+            item["stock_id"]
+            for sec in ("tracking", "passed", "removed")
+            for item in d.get(sec, [])
+            if isinstance(item, dict) and "stock_id" in item
+        }
     w = ROOT / "analysis" / "WATCHLIST.md"
     if not w.exists():
         return set()
