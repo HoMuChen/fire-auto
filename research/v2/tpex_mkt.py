@@ -8,7 +8,7 @@
   data/v2/futures/mkt_margin_otc.parquet  date, name, YesBalance, buy, sell, Return, TodayBalance
       name：MarginPurchase（融資，張）、MarginPurchaseMoney（融資金額，元）、ShortSale（融券，張；buy＝券買回補、sell＝券賣）
       口徑：櫃買「上櫃股票融資融券餘額」表的合計列（含可信用交易的 ETF）。
-休市日兩張表都回傳空 → 不寫該日。2017 年部分日子官網沒有合計列 → 以各法人加總補（同官網：不含外資自營商）。
+休市日法人表回傳空 → 該日兩張表都不寫（颱風停市日融資表會沿用前一天的數字，以法人表為準）；週六補班日照抓。2017 年部分日子官網沒有合計列 → 以各法人加總補（同官網：不含外資自營商）。
 
 用法：/usr/local/bin/python3 research/v2/tpex_mkt.py backfill [起日 2008-01-01] [迄日 今天]   （斷點續抓：已有的日期跳過）
       每日更新由 lake/update.py 呼叫 update(today)。
@@ -94,11 +94,11 @@ def _read(f):
     return pd.read_parquet(f) if f.exists() else pd.DataFrame()
 
 
-def _write(f, old, new):
-    """以日期覆蓋：舊檔去掉 new 有的日期 → 接上 → 依日期、原順序排序；內容沒變不寫。回傳覆蓋天數。"""
-    if not len(new):
+def _write(f, old, new, closed=()):
+    """以日期覆蓋：舊檔去掉 new 有的日期與 closed（休市日）→ 接上 → 依日期、原順序排序；內容沒變不寫。回傳覆蓋天數。"""
+    if not len(new) and not (len(old) and old.date.isin(set(closed)).any()):
         return 0
-    out = pd.concat([old[~old.date.isin(set(new.date))], new], ignore_index=True) if len(old) else new
+    out = pd.concat([old[~old.date.isin(set(new.date) | set(closed))], new], ignore_index=True) if len(old) else new
     out = out.sort_values("date", kind="stable").reset_index(drop=True)
     for c in out.columns:
         if c not in ("date", "name"):
@@ -112,24 +112,29 @@ def _write(f, old, new):
 
 
 def run(a, b, skip_existing, dry=False, log=print):
-    """抓 a~b 的平日；skip_existing＝兩張表都已有的日期跳過（回補用）。回傳 (inst 天數, margin 天數)。"""
+    """抓 a~b 的週一～週六（週六只有補班日有資料）；skip_existing＝兩張表都已有的日期跳過（回補用）。回傳 (inst 天數, margin 天數)。"""
     oi, om = _read(INST_F), _read(MARGIN_F)
     have = set(oi.date) & set(om.date) if skip_existing and len(oi) and len(om) else set()
     days = [a + timedelta(n) for n in range((b - a).days + 1)]
-    days = [d for d in days if d.weekday() < 5 and d.isoformat() not in have]
-    bi, bm, ni, nm = [], [], 0, 0
+    days = [d for d in days if d.weekday() < 6 and d.isoformat() not in have]
+    bi, bm, closed, ni, nm = [], [], [], 0, 0
     for k, d in enumerate(days, 1):
-        bi.append(fetch_inst(d))
+        i = fetch_inst(d)
         time.sleep(SLEEP)
-        bm.append(fetch_margin(d))
-        time.sleep(SLEEP)
+        if len(i):
+            bi.append(i)
+            bm.append(fetch_margin(d))
+            time.sleep(SLEEP)
+        else:
+            closed.append(d.isoformat())
         if k % 250 == 0 or k == len(days):           # 每 250 天落地一次，中斷也不白抓
-            new_i, new_m = pd.concat(bi, ignore_index=True), pd.concat(bm, ignore_index=True)
+            new_i = pd.concat(bi, ignore_index=True) if bi else pd.DataFrame(columns=["date", "name", "buy", "sell"])
+            new_m = pd.concat(bm, ignore_index=True) if bm else pd.DataFrame(columns=MARGIN_COLS)
             if not dry:
-                ni += _write(INST_F, oi, new_i)
-                nm += _write(MARGIN_F, om, new_m)
+                ni += _write(INST_F, oi, new_i, closed)
+                nm += _write(MARGIN_F, om, new_m, closed)
                 oi, om = _read(INST_F), _read(MARGIN_F)
-            bi, bm = [], []
+            bi, bm, closed = [], [], []
             log(f"  tpex {d}：{k}/{len(days)} 天")
     return ni, nm
 
