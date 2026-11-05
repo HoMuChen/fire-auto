@@ -25,7 +25,7 @@
 | `research/build_data_v2.py` | 重建 `data/v2/`（含下市股、還原權息、2010 起） |
 | `research/futures_cache*.py`、`research/tsmc_*`、`research/grid_*`、`research/txo_vix.py` | 期貨 / TSMC 網格研究與 30 分 K 快取（使用者主導的研究線） |
 | `strategies/` | 仍有效的研究筆記：TSMC 網格收租、外資棄守退場、外資大賣→長紅（統計）、美國數據公布前（迷思） |
-| `analysis/` | 個股分析快照 |
+| `analysis/` | 個股分析快照；`analysis/WATCHLIST.md`＝持續追蹤的個股清單（使用者說「更新追蹤清單」時逐檔檢查到期的檢查點） |
 | `legacy/` | ⛔ 已停用的舊系統與舊研究（只供查閱） |
 | `data/` | 快取與狀態（大多 gitignore，見下） |
 
