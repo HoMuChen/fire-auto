@@ -32,10 +32,11 @@ POOLS = ("A", "B", "C")
 T_ENTRY, T_EXIT, T_MAX = ("T1", "T2", "T3", "T4"), ("X1", "X2", "X3", "X4"), 120
 R_ENTRY, R_EXIT, R_MAX = ("R1", "R2", "R3"), ("Y1", "Y2", "Y3", "Y4"), 20
 FILTS = ("F0", "F1", "F2")
-HOLD = {"X1": 20, "X2": 60, "Y3": 10}
+HOLD = {"X1": 20, "X2": 60, "Y3": 10, "X5": 120}
 LABEL = {"T1": "250日新高", "T2": "20日突破", "T3": "20/60均線黃金交叉", "T4": "20日突破＋量增2倍", "R1": "RSI(2)<10", "R2": "布林下軌",
          "R3": "RSI(14)<30", "X1": "持有20日", "X2": "持有60日", "X3": "跌破20日線", "X4": "吊燈3ATR", "Y1": "站上5日線", "Y2": "RSI(2)>70",
-         "Y3": "持有10日", "Y4": "站上20日線", "F0": "無濾網", "F1": "大盤>200日線", "F2": "個股>200日線"}
+         "Y3": "持有10日", "Y4": "站上20日線", "F0": "無濾網", "F1": "大盤>200日線", "F2": "個股>200日線",
+         "X5": "持有120日", "X6": "吊燈3ATR(最長250日)", "X7": "跌破60日線", "P1": "20日報酬排序", "P2": "營收年增排序"}
 NAME = "第六十八批 H179 池×事件模型"
 TRIALS = 1701529
 
@@ -159,18 +160,19 @@ def simulate(D, m, seg):
     t1 = int(np.searchsorted(days.values, np.datetime64(SEG[seg][1]), side="right")) - 1
     O, Hh, C, trade, LU, LD, lastv = D["O"], D["H"], D["C"], D["trade"], D["LU"], D["LD"], D["lastv"]
     sig = D["ent"][m["entry"]] & D["pool"][m["pool"]]
-    if m["filt"] == "F1":
+    if m.get("filt") == "F1":
         sig = sig & D["f1"][:, None]
-    elif m["filt"] == "F2":
+    elif m.get("filt") == "F2":
         sig = sig & D["f2"]
-    prio = -D["ret20"] if m["fam"] == "T" else D["rsi2"]
+    prio = D["prio"][m["prio"]] if "prio" in m else (-D["ret20"] if m["fam"] == "T" else D["rsi2"])
     exs = D["ex"].get(m["exit"])
     hold_n = HOLD.get(m["exit"])
-    chand = m["exit"] == "X4"
-    cash = np.full(K, 1.0 / K)
-    held = np.full(K, -1)
-    bpx, bday, hh = np.zeros(K), np.zeros(K, int), np.zeros(K)
-    pend = np.zeros(K, bool)
+    chand = m["exit"] in ("X4", "X6")
+    nk = m.get("K", K)
+    cash = np.full(nk, 1.0 / nk)
+    held = np.full(nk, -1)
+    bpx, bday, hh = np.zeros(nk), np.zeros(nk, int), np.zeros(nk)
+    pend = np.zeros(nk, bool)
     cand = np.array([], int)
     nav, inv, trades = np.zeros(t1 - t0 + 1), np.zeros(t1 - t0 + 1), []
     for i, t in enumerate(range(t0, t1 + 1)):
@@ -238,7 +240,7 @@ def evaluate(D, m, seg):
     tr = np.array([x[3] for x in trades]) if trades else np.array([])
     hd = np.array([x[2] - x[1] for x in trades]) if trades else np.array([])
     eq = nav / nav.cummax() - 1
-    return dict(name=mname(m), **m, alpha_t=at, alpha_ann=a0 * 252, beta=b1, sharpe=sh, cagr=float(nav.iloc[-1] ** (252 / len(nav)) - 1),
+    return dict(name=m.get("label") or mname(m), **m, alpha_t=at, alpha_ann=a0 * 252, beta=b1, sharpe=sh, cagr=float(nav.iloc[-1] ** (252 / len(nav)) - 1),
                 mdd=float(eq.min()), yrs_win=float((ys > yh).mean()), yrs=f"{int((ys > yh).sum())}/{len(ys)}",
                 by_year={int(y): round(float(ys[y] - yh[y]) * 100, 1) for y in ys.index}, exposure=float(inv.mean()),
                 n_trades=len(tr), tr_mean=float(tr.mean()) if len(tr) else np.nan, tr_med=float(np.median(tr)) if len(tr) else np.nan,
