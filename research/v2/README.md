@@ -65,6 +65,7 @@
 | `feature_tu.py` | 第四十二批 FS5：涂敏峰清單的特徵（缺口、大盤跌時抗跌、季線、多頭排列、預估 EPS 本益比、同業比價、投信連買、千張大戶、負債比、借券、上影線、KD 背離、量價、月 MACD、低價、融資、三低一高、四特徵），由 `feature_library.py` 載入；`python research/v2/feature_tu.py fib` 是費氏時間轉折事件檢定。需要 `data/v2/sbl` |
 | `feature_combo.py` | 第三十三批 FS2：特徵百分位矩陣（`prep`）＋向量化 top20 回測（`bt`）、全部 2／3 個一組＋伯努利 2000 組、邊際貢獻 OLS（`marginal`）；輸出 `data/v2/results/fs2_dev.csv`、`fs2_marginal.csv` |
 | `holdout_h136.py` | 第三十四批 H136 holdout 一次性檢驗（需 `--unseal`）；用 FS2 引擎、對照同引擎 H29 |
+| `h136_monitor.py` | 實盤監控 M1：H136 失效判準。`bands`（上線前算一次，區塊抽樣 → `data/v2/results/h136_bands.json`）、`check`（每月換股後對照實盤月份；門檻見 HYPOTHESES.md「實盤監控 M1」） |
 | `ml_walkforward.py` | 第三十五批 ML1：逐年重訓（空一個月、assert 防前視）的 Fama-MacBeth 與 HistGradientBoosting；`stage2` 需 `--unseal`。需要 scikit-learn（`uv pip install scikit-learn`，不要 `uv add`，見 shioaji 鎖版問題） |
 | `holdout_h137.py` | 第三十六批 H137：H136＋M2 各半 vs H136 同波動＋現金，同一次跑第一階段核對與 holdout（需 `--unseal`） |
 | `cot.py` | 第三十七批 H138/H139 外匯課程「COT 大戶指標 + 波動指標停利」：`fetch` 抓 CFTC legacy 期貨報告（Socrata）與 Yahoo 日 K → `data/v2/cot/`；14 個標的、週一開盤進場、日 K 路徑判斷停利停損、聯邦假日／政府關門週不交易；含 `leak_check` |
