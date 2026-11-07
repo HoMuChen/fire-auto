@@ -22,26 +22,28 @@ VALID_QUESTION_STATUS = {"open", "partial", "answered"}
 VALID_CADENCE = {"once", "monthly", "quarterly", "ongoing"}
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
-STATIC_INTRO_MD = """# 個股追蹤清單
+STATIC_INTRO_MD = """# 個股研究清單
 
-**目的**：長期追蹤幾檔公司，補上量化模型看不到的質化判斷（生意怎麼賺、能賺多久、哪裡會出錯）；股價跌到「合理」以下、而且論點沒破時，可以出手。
+**目的**：做過綜合分析的公司都在這裡，補上量化模型看不到的質化判斷（生意怎麼賺、能賺多久、哪裡會出錯）。清單**不分追蹤／不追蹤**，只分「做過研究」和「還沒做過」；每檔都寫出**持續關注的點**（質化問題、檢查點）和價位帶。股價跌到「合理」以下、而且論點沒破時，可以出手。
 
 完整分析在同目錄的 `{代號}_{名稱}_綜合分析_{日期}.md`（單一真實來源為 `watchlist.json`，改完執行 `analysis/publish.py` 自動驗證並重繪本檔）。這份清單和實盤 H136（`h2_monthly.py`，機械式月換股）無關，H136 排名只當參考。
 
-**用法**：
-- 「更新追蹤清單」：
-  - 逐檔檢查到期的檢查點；
+**用法**（使用者說「更新研究」才跑，不排程）：
+- **每月增量更新**（月營收公布後，約每月 10 日）：
+  - 逐檔看月營收，檢查到期的檢查點；
   - 逐條更新「質化問題」的目前判斷；
   - 對照現價落在哪個價位帶，結果寫進該檔的「紀錄」。
-- **每季財報後重算價位帶**：獲利能力的假設變了，價位帶就跟著改，並在紀錄中寫明改了什麼。
+- **每季增量更新**（財報截止日後：5/16、8/15、11/15、隔年 4/1）：
+  - 寫一份新日期的綜合分析報告（舊報告保留）；
+  - 重算價位帶，論點逐條重新檢查，在紀錄中寫明改了什麼。
 - **出手條件**（三項都要成立）：
   1. 現價在「合理」以下；
   2. 最近一次檢查論點沒破；
   3. 沒有未解的紅旗。
 
   進「合理」可以開始分批，進「便宜」再加。
-- **移出看論點，不看股價**：股價下跌正是等待的機會，不是移出的理由。論點破了才移出，移到「已移出」並寫原因。
-- 加入新股票時，先做綜合分析，再寫論點、質化問題、價位帶和移出條件。
+- **結論可以是負面的**：例如「便宜是景氣高峰的假象」「衰退是結構性的」。這類股票一樣留在清單，「結論要改的條件」寫明什麼情況下才值得重新考慮。
+- 新研究的股票：先做綜合分析，再寫論點、質化問題、價位帶、檢查點和結論要改的條件。
 
 **價位帶怎麼算**：
 - 用「正常化 EPS × 本益比區間」，再用淨值比交叉核對；每檔的假設都寫在下面。
@@ -308,7 +310,7 @@ def _render_tracking_detail(item: dict, is_first: bool = False) -> str:
 
     rep_links = "、".join(f"[{r['filename']}]({r['filename']})" for r in item["reports"])
     lines.append(
-        f"- **加入**：{item['added_date']}，收盤 {_fmt_num(item['added_price'])}（{_short_md(item['snapshot_date'])}）。"
+        f"- **首次研究**：{item['added_date']}，收盤 {_fmt_num(item['added_price'])}（{_short_md(item['snapshot_date'])}）。"
         f"報告：{rep_links}"
     )
 
@@ -346,7 +348,7 @@ def _render_tracking_detail(item: dict, is_first: bool = False) -> str:
         )
     lines.append("")
 
-    lines.append("- **移出條件**（論點破了）：")
+    lines.append("- **結論要改的條件**：")
     exs = item["exit_conditions"]
     for i, ex in enumerate(exs):
         lines.append(_fmt_or_item(ex, i, i == len(exs) - 1))
@@ -371,7 +373,7 @@ def _render_tracking_detail(item: dict, is_first: bool = False) -> str:
 
 
 def render_watchlist_md(data: dict) -> str:
-    out: list[str] = [STATIC_INTRO_MD, "", "## 追蹤中", ""]
+    out: list[str] = [STATIC_INTRO_MD, "", "## 已研究", ""]
 
     tracking = data["tracking"]
     snap_dates = {t["snapshot_date"] for t in tracking}
@@ -402,25 +404,24 @@ def render_watchlist_md(data: dict) -> str:
         out.append("")
         out.append("---")
 
-    out.append("")
-    out.append("## 已分析、不追蹤")
-    out.append("")
-    out.append("| 代號 | 名稱 | 分析日 | 不追的原因 | 什麼情況下重新看 | 報告 |")
-    out.append("|---|---|---|---|---|---|")
-    for p in data["passed"]:
-        rep_links = "、".join(f"[{r['filename']}]({r['filename']})" for r in p["reports"])
-        out.append(
-            f"| {p['stock_id']} | {p['name']} | {p['analyzed_date']} "
-            f"| {p['reason_md']} | {p['revisit_md']} | {rep_links} |"
-        )
+    if data["passed"]:
+        out.append("")
+        out.append("## 已分析、不追蹤（舊格式）")
+        out.append("")
+        out.append("| 代號 | 名稱 | 分析日 | 不追的原因 | 什麼情況下重新看 | 報告 |")
+        out.append("|---|---|---|---|---|---|")
+        for p in data["passed"]:
+            rep_links = "、".join(f"[{r['filename']}]({r['filename']})" for r in p["reports"])
+            out.append(
+                f"| {p['stock_id']} | {p['name']} | {p['analyzed_date']} "
+                f"| {p['reason_md']} | {p['revisit_md']} | {rep_links} |"
+            )
 
-    out.append("")
-    out.append("## 已移出")
-    out.append("")
     removed = data["removed"]
-    if not removed:
-        out.append("（目前沒有）")
-    else:
+    if removed:
+        out.append("")
+        out.append("## 已移出（下市、合併等）")
+        out.append("")
         out.append("| 代號 | 名稱 | 加入日 | 移出日 | 移出原因 | 報告 |")
         out.append("|---|---|---|---|---|---|")
         for r in removed:

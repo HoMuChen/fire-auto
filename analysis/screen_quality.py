@@ -130,7 +130,7 @@ def main(asof, dd_max=-0.25):
     W["core_vs_med"] = W.core_pe / W.pe_med
     W = W.sort_values("core_vs_med")
     W.insert(0, "清單", ["✓" if s in tracked() else "" for s in W.index])
-    print(f"{d.date()}：池 {len(R)} 檔 → 體質好、本業估值不高於自己 5 年中位數 {len(Q)} 檔 → 而且股價弱 {len(W)} 檔（依「本業本益比 ÷ 自己 5 年本益比中位數」排序；✓＝已在 WATCHLIST，含不追蹤；nci＝少數股權佔淨利%，> 20 要拆子公司）")
+    print(f"{d.date()}：池 {len(R)} 檔 → 體質好、本業估值不高於自己 5 年中位數 {len(Q)} 檔 → 而且股價弱 {len(W)} 檔（依「本業本益比 ÷ 自己 5 年本益比中位數」排序；✓＝已做過研究（在 watchlist.json）；nci＝少數股權佔淨利%，> 20 要拆子公司）")
     f = W.copy()
     f = f.drop(columns=["eps5min", "nonop", "debt_chg", "intang"])
     for c in ("dd", "roe_min", "roe_avg", "roe_ttm", "nonop4", "nci", "opm", "debt", "pe_pct", "yoy3"):
