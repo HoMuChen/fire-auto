@@ -65,6 +65,8 @@
 | `feature_tu.py` | 第四十二批 FS5：涂敏峰清單的特徵（缺口、大盤跌時抗跌、季線、多頭排列、預估 EPS 本益比、同業比價、投信連買、千張大戶、負債比、借券、上影線、KD 背離、量價、月 MACD、低價、融資、三低一高、四特徵），由 `feature_library.py` 載入；`python research/v2/feature_tu.py fib` 是費氏時間轉折事件檢定。需要 `data/v2/sbl` |
 | `feature_combo.py` | 第三十三批 FS2：特徵百分位矩陣（`prep`）＋向量化 top20 回測（`bt`）、全部 2／3 個一組＋伯努利 2000 組、邊際貢獻 OLS（`marginal`）；輸出 `data/v2/results/fs2_dev.csv`、`fs2_marginal.csv` |
 | `holdout_h136.py` | 第三十四批 H136 holdout 一次性檢驗（需 `--unseal`）；用 FS2 引擎、對照同引擎 H29 |
+| `tx1md.py`／`absorb_lab.py` | 第七十五批 H188：台指期日盤 1 分 K＋tick rule 主動買賣（`data/v2/futures/tx1md`，FinMind 逐筆重抓、2011～2023）；「賣壓被吸收」反轉，dev ✗ |
+| `explore_orderbook.py` | 探索（未登記）：永豐錄的台指期五檔＋逐筆（`data/orderbook`，2026-10-29～11-06 共 7 天）。tick rule 對真實內外盤正確率約 91%；五檔失衡預測 1～10 秒 mid 約 0.7 點（價差中位 5 點，付不起）；OFI 同期 R² 約 55%、下一段相關 ≈ 0 |
 | `h136_monitor.py` | 實盤監控 M1：H136 失效判準。`bands`（上線前算一次，區塊抽樣 → `data/v2/results/h136_bands.json`）、`check`（每月換股後對照實盤月份；門檻見 HYPOTHESES.md「實盤監控 M1」） |
 | `ml_walkforward.py` | 第三十五批 ML1：逐年重訓（空一個月、assert 防前視）的 Fama-MacBeth 與 HistGradientBoosting；`stage2` 需 `--unseal`。需要 scikit-learn（`uv pip install scikit-learn`，不要 `uv add`，見 shioaji 鎖版問題） |
 | `holdout_h137.py` | 第三十六批 H137：H136＋M2 各半 vs H136 同波動＋現金，同一次跑第一階段核對與 holdout（需 `--unseal`） |
