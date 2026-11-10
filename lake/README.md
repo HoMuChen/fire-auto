@@ -39,7 +39,7 @@ DuckDB 只會抓需要的欄位與年份分區（`WHERE date >= …` 會跳過�
 
 | 表 | 內容 | 分區 | 起 |
 |---|---|---|---|
-| `universe` | 股票池 2,594 檔：stock_id、name、industry、market（twse/tpex）、delist_date | — | — |
+| `universe` | 股票池 2,603 檔（2026-11）：stock_id、name、industry、market、delist_date；`market` 有 `twse`／`tpex`／`emerging`（興櫃，559 檔）／`delisted`（58 檔不在 TaiwanStockInfo 的老下市股） | — | — |
 | `price` | 日線：原始 `open/high/low/close`（close=0 為無成交）＋還原 `adj_*`；`volume` 股、`money` 元、`turnover` 筆 | year | 2010 |
 | `per` | `PER`、`PBR`、`dividend_yield` | year | 2009 |
 | `revenue` | 月營收（元）＋ `avail_date`（次月 11 日） | — | 2009 |
@@ -64,6 +64,8 @@ DuckDB 只會抓需要的欄位與年份分區（`WHERE date >= …` 會跳過�
 - **財報 / 營收要用 `avail_date` 對齊，不要用 `date`**（`date` 是期末日 / 營收月份，當時還沒公布）。
 - 還原價 `adj_*` 是**事後**還原（之後的除權息會回頭改動歷史值）；成交量、流動性、漲跌停判斷用原始價。
 - 股票池含下市股（`universe.delist_date`），回測要用 point-in-time 名單，不要只取現存股票。
+- **股票池也含興櫃（`market = 'emerging'`），而興櫃只有近幾季的財報**：`fin` 每季家數從 2025 年約 1,840 家跳到 2026Q2 的 2,383 家，多出來的幾乎都是興櫃（2026Q1 起才有），看起來像資料斷層。
+  算全市場統計或回測要排除興櫃：用 `market <> 'emerging'`，**不要用 `market IN ('twse','tpex')`**（會連 `delisted` 的下市股一起排掉）。
 - **最新一季財報可能被改寫**：FinMind 剛公布時常先給「年初累計」，之後才改成單季（2026Q2 曾有近千檔是 H1 累計值）。
   每日更新會重抓最近 3 季並覆蓋；用最新一季前請確認 `_manifest.json` 的更新時間，或與上一季比對量級。
 - 日資料最近 10 個交易日會每天重抓覆蓋（FinMind 會事後修正成交量等），所以「最近幾天」的值可能小幅變動。
