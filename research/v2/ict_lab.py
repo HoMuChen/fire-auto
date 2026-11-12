@@ -58,7 +58,7 @@ def build(period):
         Hh = np.where(miss, C, x.high.values)
         L = np.where(miss, C, x.low.values)
         out.append(dict(day=pd.Timestamp(d), O=O.astype(float), H=Hh.astype(float), L=L.astype(float), C=C.astype(float),
-                        pdh=float(pv.high.max()), pdl=float(pv.low.min())))
+                        pdh=float(pv.high.max()), pdl=float(pv.low.min()), contract=str(c)))
     print(f"建資料 {period}：{len(out)} 天（跳過 {skip} 天：前一天沒有同合約或資料不足）", flush=True)
     return out
 
@@ -112,7 +112,7 @@ def setup(O, Hh, L, C, pdl, pdh, p):
                     return None
                 tgt = en + R * (en - stop)
                 px, how = manage(O, Hh, L, C, e, en, stop, tgt)
-                return dict(e=e, en=en, px=px, risk=en - stop, how=how)
+                return dict(e=e, en=en, px=px, risk=en - stop, how=how, anchor=s)
         return None
     sh = np.zeros(N, bool)
     for j in range(n, N - n):
@@ -137,7 +137,7 @@ def setup(O, Hh, L, C, pdl, pdh, p):
                 return None
             tgt = pdh if R == "pdh" else en + R * (en - stop)
             px, how = manage(O, Hh, L, C, e, en, stop, max(tgt, en + 1))
-            return dict(e=e, en=en, px=px, risk=en - stop, how=how)
+            return dict(e=e, en=en, px=px, risk=en - stop, how=how, anchor=slb)
         fv = None
         for i in range(m, slb + 1, -1):
             if L[i] > Hh[i - 2]:
@@ -154,7 +154,7 @@ def setup(O, Hh, L, C, pdl, pdh, p):
                     en = O[b]
                 tgt = pdh if R == "pdh" else en + R * (en - stop)
                 px, how = manage(O, Hh, L, C, b, en, stop, max(tgt, en + 1))
-                return dict(e=b, en=en, px=px, risk=en - stop, how=how, mss=m, fvg=fv[1] - fv[0])
+                return dict(e=b, en=en, px=px, risk=en - stop, how=how, mss=m, fvg=fv[1] - fv[0], anchor=slb)
             if Hh[b] >= tgt_lim:
                 return None
         return None
@@ -193,7 +193,8 @@ def run(days, sides=(1, -1), **kw):
             g[i] += r["pts"] / r["en"]
             ct[i] += cost(r["en"], r["px"], FEE_TMF) / r["en"]
             cm[i] += cost(r["en"], r["px"], FEE_MTX) / r["en"]
-            rows.append(dict(i=i, day=d["day"], side=s, e=r["e"] * p["tf"], pts=r["pts"], risk=r["risk"], how=r["how"],
+            rows.append(dict(i=i, day=d["day"], side=s, e=r["e"] * p["tf"], anchor=r["anchor"] * p["tf"], pts=r["pts"],
+                             risk=r["risk"], how=r["how"], en=r["en"],
                              cost_t=cost(r["en"], r["px"], FEE_TMF)))
     return g, ct, cm, pd.DataFrame(rows)
 
