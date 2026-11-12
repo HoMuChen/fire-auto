@@ -68,7 +68,7 @@
 | `tx1md.py`／`absorb_lab.py` | 第七十五批 H188：台指期日盤 1 分 K＋tick rule 主動買賣（`data/v2/futures/tx1md`，FinMind 逐筆重抓、2011～2023）；「賣壓被吸收」反轉，dev ✗ |
 | `ict_lab.py` | 第七十六批 H189：台指期 ICT「掃前日高低 → 結構轉變 → FVG 回測限價」（`tx1m`）；`leak` 防前視檢查，dev ✗ |
 | `flow_lab.py` | 第七十七批 H190：訂單流「泡泡」（每分鐘 tick rule Delta，`tx1md`）當 ICT／掃了就收回的過濾，對照 K 線實體版，dev ✗ |
-| `dflow_lab.py` | 第七十八批 H191：台指期每日主動買賣（`tx1md` 加總的每日 Delta 比、扣掉價格的殘差）擇時小台；資訊回歸＋交易規則，交易 dev ✗ |
+| `dflow_lab.py` | 第七十八批 H191：台指期每日主動買賣（`tx1md` 加總的每日 Delta 比、扣掉價格的殘差）擇時小台；資訊回歸＋交易規則，交易 dev ✗ |；`resid_delta(end, N)` 取特徵 RESID_DELTA（見 `MARKET_FEATURES.md`）
 | `explore_orderbook.py` | 探索（未登記）：永豐錄的台指期五檔＋逐筆（`data/orderbook`，2026-10-29～11-06 共 7 天）。tick rule 對真實內外盤正確率約 91%；五檔失衡預測 1～10 秒 mid 約 0.7 點（價差中位 5 點，付不起）；OFI 同期 R² 約 55%、下一段相關 ≈ 0 |
 | `h136_monitor.py` | 實盤監控 M1：H136 失效判準。`bands`（上線前算一次，區塊抽樣 → `data/v2/results/h136_bands.json`）、`check`（每月換股後對照實盤月份；門檻見 HYPOTHESES.md「實盤監控 M1」） |
 | `ml_walkforward.py` | 第三十五批 ML1：逐年重訓（空一個月、assert 防前視）的 Fama-MacBeth 與 HistGradientBoosting；`stage2` 需 `--unseal`。需要 scikit-learn（`uv pip install scikit-learn`，不要 `uv add`，見 shioaji 鎖版問題） |

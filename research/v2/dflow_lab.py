@@ -54,6 +54,12 @@ def build(end):
     return F, dr, X
 
 
+def resid_delta(end, N=5):
+    """特徵 RESID_DELTA_N（MARKET_FEATURES.md）：收盤 t 可得的殘差 Delta（日期索引；2011 年前半暖機為 NaN）。"""
+    _, _, X = build(end)
+    return X[N]["e"].rename(f"RESID_DELTA_{N}")
+
+
 def nw_ols(y, Xm, lag):
     ok = np.isfinite(y) & np.all(np.isfinite(Xm), axis=1)
     y, Xm = y[ok], Xm[ok]
