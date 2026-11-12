@@ -186,5 +186,34 @@ def main(period):
                            default=lambda v: round(float(v), 6) if isinstance(v, (float, np.floating)) else str(v)) + "\n")
 
 
+def feature_val():
+    """RESID_DELTA_5 特徵的 val 確認（第七十八批補充）：只做資訊回歸，不跑交易規則。"""
+    p0, p1 = PER["val"]
+    F, dr, X = build(p1)
+    x = X[5]
+    df = pd.DataFrame(dict(y=x["fwd"], dr=x["dr"], r=x["r"], e=x["e"])).loc[p0:p1].dropna()
+    sd = df.dr.std()
+    Xm = np.column_stack([np.ones(len(df)), df.dr.values, df.r.values])
+    b, t, n = nw_ols(df.y.values, Xm, 5)
+    be, te, _ = nw_ols(df.y.values, np.column_stack([np.ones(len(df)), df.e.values]), 5)
+    seg = {}
+    for s, (a0, a1) in (("2020-21", ("2020-01-01", "2021-12-31")), ("2022-23", ("2022-01-01", "2023-12-31"))):
+        d = df.loc[a0:a1]
+        bb, tt, _ = nw_ols(d.y.values, np.column_stack([np.ones(len(d)), d.dr.values, d.r.values]), 5)
+        seg[s] = (bb[1] * sd * 1e4, tt[1])
+    lab = "✗" if b[1] <= 0 else ("✓✓" if t[1] >= 2 else "✓")
+    print(f"RESID_DELTA_5 val（{p0}～{p1}，n={n}）：控制 r_5 後每 1σ DR_5 {b[1]*sd*1e4:+.1f}bp，t {t[1]:+.2f} → {lab}")
+    print(f"  直接用滾動殘差 e_5：每 1σ {be[1]*df.e.std()*1e4:+.1f}bp，t {te[1]:+.2f}")
+    print("  分段：" + "  ".join(f"{k} {v[0]:+.1f}bp（t {v[1]:+.2f}）" for k, v in seg.items()))
+    with open(H.LOG, "a") as f:
+        f.write(json.dumps(dict(ts=time.strftime("%Y-%m-%d %H:%M:%S"), kind="feature", period="val", strategy="RESID_DELTA_5",
+                                note="第七十八批補充 特徵 val 確認", n=n, bp=b[1] * sd * 1e4, t=t[1], e_bp=be[1] * df.e.std() * 1e4,
+                                e_t=te[1], seg=seg, label=lab), ensure_ascii=False,
+                           default=lambda v: round(float(v), 6) if isinstance(v, (float, np.floating)) else str(v)) + "\n")
+
+
 if __name__ == "__main__":
-    main(sys.argv[1])
+    if sys.argv[1] == "feature_val":
+        feature_val()
+    else:
+        main(sys.argv[1])
