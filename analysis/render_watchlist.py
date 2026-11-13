@@ -97,6 +97,8 @@ def _validate_tracking_item(item: object, prefix: str, analysis_dir: Path, is_re
 
     _check_date(item.get("added_date"), f"{prefix}.added_date", errs)
     _check_date(item.get("snapshot_date"), f"{prefix}.snapshot_date", errs)
+    if item.get("added_price_date") is not None:
+        _check_date(item.get("added_price_date"), f"{prefix}.added_price_date", errs)
     for k in ("added_price", "snapshot_price"):
         if not _is_num(item.get(k)) or float(item[k]) <= 0:
             errs.append(f"{prefix}.{k}: 必須為正數（收到 {item.get(k)!r}）")
@@ -310,7 +312,7 @@ def _render_tracking_detail(item: dict, is_first: bool = False) -> str:
 
     rep_links = "、".join(f"[{r['filename']}]({r['filename']})" for r in item["reports"])
     lines.append(
-        f"- **首次研究**：{item['added_date']}，收盤 {_fmt_num(item['added_price'])}（{_short_md(item['snapshot_date'])}）。"
+        f"- **首次研究**：{item['added_date']}，收盤 {_fmt_num(item['added_price'])}（{_short_md(item.get('added_price_date') or item['snapshot_date'])}）。"
         f"報告：{rep_links}"
     )
 
