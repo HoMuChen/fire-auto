@@ -25,7 +25,7 @@
 | `research/build_data_v2.py` | 重建 `data/v2/`（含下市股、還原權息、2010 起） |
 | `research/futures_cache*.py`、`research/tsmc_*`、`research/grid_*`、`research/txo_vix.py` | 期貨 / TSMC 網格研究與 30 分 K 快取（使用者主導的研究線） |
 | `strategies/` | 仍有效的研究筆記：TSMC 網格收租、外資棄守退場、外資大賣→長紅（統計）、美國數據公布前（迷思） |
-| `analysis/` | 個股研究清單：`analysis/watchlist.json`＝**單一真實來源**。**不分追蹤／不追蹤**（2026-11-07 使用者決定），只分「做過研究」和「沒做過」：做過綜合分析的股票一律放 `tracking`（`passed` 留空、只為相容 trading.homuchen.com 的讀取；`removed` 只放下市、合併），每檔有論點（可以是負面結論）、持續關注的點（質化問題、檢查點）、價位帶「便宜／合理／昂貴」、結論要改的條件（`exit_conditions`）。**增量更新只在使用者說「更新研究」時跑、不排程**：每月（月營收公布後）逐檔看營收、到期檢查點、更新質化判斷、對照價位帶並寫紀錄；每季（財報截止日後）寫新日期的報告、重算價位帶。**一律編輯 `analysis/watchlist.json`，改完執行 `analysis/publish.py` 自動驗證並重繪 `analysis/WATCHLIST.md` 與發布至 R2 `analysis/v1/`，勿直接手改 `WATCHLIST.md` 以免被覆蓋**（本機純檢查用 `publish.py --check-only` 或 `render_watchlist.py`）；`analysis/screen_quality.py`＝找新研究對象的一種來源（本業體質好、股價弱的篩選，只是候選，不是訊號） |
+| `analysis/` | 個股研究清單：`analysis/watchlist.json`＝**單一真實來源**。**不分追蹤／不追蹤**（2026-11-07 使用者決定），只分「做過研究」和「沒做過」：做過綜合分析的股票一律放 `tracking`（`passed` 留空、只為相容 trading.homuchen.com 的讀取；`removed` 只放下市、合併），每檔有論點（可以是負面結論）、持續關注的點（質化問題、檢查點）、價位帶「便宜／合理／昂貴」、結論要改的條件（`exit_conditions`）。**增量更新只在使用者說「更新研究」時跑、不排程**：開工前先從 R2 資料湖更新資料（見「資料」）；每月（月營收公布後）逐檔看營收、到期檢查點、更新質化判斷、對照價位帶並寫紀錄；每季（財報截止日後）寫新日期的報告、重算價位帶。**一律編輯 `analysis/watchlist.json`，改完執行 `analysis/publish.py` 自動驗證並重繪 `analysis/WATCHLIST.md` 與發布至 R2 `analysis/v1/`，勿直接手改 `WATCHLIST.md` 以免被覆蓋**（本機純檢查用 `publish.py --check-only` 或 `render_watchlist.py`）；`analysis/screen_quality.py`＝找新研究對象的一種來源（本業體質好、股價弱的篩選，只是候選，不是訊號） |
 | `legacy/` | ⛔ 已停用的舊系統與舊研究（只供查閱） |
 | `data/` | 快取與狀態（大多 gitignore，見下） |
 
@@ -98,6 +98,7 @@
 
 ## 資料
 
+- **做研究先從 R2 更新資料**（2026-11-21 使用者規定）：個股研究（`analysis/`）或任何研究開工前，先用 DuckDB 掛 R2 資料湖 `r2://trading-homuchen-com/v1/catalog.duckdb`（讀法見 `lake/README.md`，金鑰 `.env.local` 的 `R2_READ_*`、`R2_ACCOUNT_ID`），查 `tw.price` 最新日期，價格、月營收、財報、法人、融資以 R2 為準，再補網路新聞與公司說法；紀錄寫明資料截至哪天。前一個平日的資料要隔天 00:30（`lake.py daily`）之後才上 R2。`research/v2/` 程式讀本機 `data/v2/` 每檔 parquet，格式和 R2 長表不同、lake 沒有拉回指令；沒有 `data/v2` 的機器需要時從持有完整 `data/v2` 的機器同步。
 - **FinMind API** 是唯一資料來源（token：`.env.local` 的 `FINMIND_API_TOKEN`；使用者方案 **6000 次/小時**）。Supabase 已停用。
 - 打網路的指令在沙盒內會被擋 → 需 `dangerouslyDisableSandbox`。
 - **`data/v2/`（研究專用，gitignore，`research/build_data_v2.py` 重建約 65 分鐘；2026-10-31 起由 `lake/update.py` 增量更新，不再是凍結快照——最近 10 個交易日、最新 3 季財報會被覆蓋修正，除權息會改寫 adj 歷史）**：`universe.csv`（2,594 檔普通股，含 58 檔不在 TaiwanStockInfo 的下市股，`delist_date` 標 2010 後下市）、`raw/{id}.parquet`（原始價：流動性、漲跌停）、`adj/{id}.parquet`（還原權息：報酬；下市股自建）、`revenue/ per/ inst/ margin/ fin/ bs/`（`research/v2/fetch_fundamentals.py`）、`taiex_tr.parquet`（加權報酬指數）。raw 有 close=0 停牌日需防護。
