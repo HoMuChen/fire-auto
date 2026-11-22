@@ -26,6 +26,7 @@
 | `research/futures_cache*.py`、`research/tsmc_*`、`research/grid_*`、`research/txo_vix.py` | 期貨 / TSMC 網格研究與 30 分 K 快取（使用者主導的研究線） |
 | `strategies/` | 仍有效的研究筆記：TSMC 網格收租、外資棄守退場、外資大賣→長紅（統計）、美國數據公布前（迷思） |
 | `analysis/` | 個股研究清單：`analysis/watchlist.json`＝**單一真實來源**。**不分追蹤／不追蹤**（2026-11-07 使用者決定），只分「做過研究」和「沒做過」：做過綜合分析的股票一律放 `tracking`（`passed` 留空、只為相容 trading.homuchen.com 的讀取；`removed` 只放下市、合併），每檔有論點（可以是負面結論）、持續關注的點（質化問題、檢查點）、價位帶「便宜／合理／昂貴」、結論要改的條件（`exit_conditions`）。**增量更新只在使用者說「更新研究」時跑、不排程**：開工前先從 R2 資料湖更新資料（見「資料」）；每月（月營收公布後）逐檔看營收、到期檢查點、更新質化判斷、對照價位帶並寫紀錄；每季（財報截止日後）寫新日期的報告、重算價位帶。**一律編輯 `analysis/watchlist.json`，改完執行 `analysis/publish.py` 自動驗證並重繪 `analysis/WATCHLIST.md` 與發布至 R2 `analysis/v1/`，勿直接手改 `WATCHLIST.md` 以免被覆蓋**（本機純檢查用 `publish.py --check-only` 或 `render_watchlist.py`）；`analysis/screen_quality.py`＝找新研究對象的一種來源（本業體質好、股價弱的篩選，只是候選，不是訊號） |
+| `mops_monitor.py` | MOPS 重大訊息監控（試跑中，部署在 ai-dev `~/mops-monitor/`、不走 crontab）；做法見 `mops_monitor.md` |
 | `legacy/` | ⛔ 已停用的舊系統與舊研究（只供查閱） |
 | `data/` | 快取與狀態（大多 gitignore，見下） |
 
