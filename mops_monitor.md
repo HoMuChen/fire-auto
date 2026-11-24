@@ -61,7 +61,7 @@ launchd 在 ai-dev 上無法載入（`mu` 不是 console 使用者，bootstrap �
 1. **規則篩：** 不是上市櫃普通股（興櫃、DR、公發）記 `skip_market`；例行公告（法說會、注意交易資訊、iXBRL、公司治理主管、債券發行條件、背書保證…，見 `ROUTINE`）記 `skip_rule`。都不呼叫模型。
 2. **判斷：** 其餘的每 25 則一批交給 `claude -p`，回傳有沒有明顯影響、方向、理由。無影響記 `no`；呼叫失敗不記，下一輪重試。
 3. **報告：** 有影響的從 `~/fire-auto/data/v2` 組資料，包括股價與估值、近 10 日、月營收、季財報、法人、融資，再加上 MOPS 近兩個月的重訊。這些交給 `claude -p` 寫分析（JSON），組成 HTML 存到 `reports/`，再用 Resend 寄出，記 `yes`；失敗記 `fail`。一則約 80 秒。
-4. **設定：** 放在 `~/mops-monitor/.env`（權限 600）：`RESEND_API_KEY`（只能寄信的 key）、`MOPS_MAIL_TO`；寄件人預設 `alert@mail.homuchen.com`（`MOPS_MAIL_FROM`）。
+4. **設定：** 放在 `~/mops-monitor/.env`（權限 600）：`RESEND_API_KEY`（只能寄信的 key）、`MOPS_MAIL_TO`（多個收件者用逗號、分號或空白分隔，例如 `MOPS_MAIL_TO=a@x.com,b@y.com`，寫在同一行；一封最多 50 人，所有人會看到彼此的地址）；寄件人預設 `alert@mail.homuchen.com`（`MOPS_MAIL_FROM`）。
 
 股數用「淨值 × 淨值比 ÷ 收盤」回推，不用「股本 ÷ 10」，因為有些公司的面額不是 10 元，例如尚凡是 1 元。股價資料只到前一個交易日收盤。報告用來快速掌握消息，不是交易訊號。
 

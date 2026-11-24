@@ -12,7 +12,7 @@
      交給 claude -p 寫分析，組成 HTML，存到 reports/ 並寄出。
 報告是整理消息用，不是交易訊號（事件型策略在 research/v2 沒有通過驗證）。
 
-設定（同目錄 .env 或環境變數）：RESEND_API_KEY、MOPS_MAIL_TO（逗號分隔）、MOPS_MAIL_FROM（預設 alert@mail.homuchen.com）；
+設定（同目錄 .env 或環境變數）：RESEND_API_KEY、MOPS_MAIL_TO（多個收件者用逗號、分號或空白分隔，Resend 一封最多 50 人）、MOPS_MAIL_FROM（預設 alert@mail.homuchen.com）；
 沒有 key 或 --no-send → 只存 HTML。資料：FIRE_AUTO_ROOT（預設 ~/fire-auto）的 data/v2；資料庫同 mops_monitor.py（MOPS_DB）。
 """
 import argparse
@@ -297,8 +297,13 @@ def render(ann, info, ana, sections, hist):
 
 
 # ─────────── 寄信 ───────────
+def mail_to(env):
+    """MOPS_MAIL_TO 可放多個收件者，用逗號、分號或空白分隔。"""
+    return [x for x in re.split(r"[,;\s]+", env.get("MOPS_MAIL_TO", "")) if x]
+
+
 def send_mail(env, subject, html_body):
-    key, to = env.get("RESEND_API_KEY"), [x.strip() for x in env.get("MOPS_MAIL_TO", "").split(",") if x.strip()]
+    key, to = env.get("RESEND_API_KEY"), mail_to(env)
     if not key or not to:
         raise RuntimeError("沒有設定 RESEND_API_KEY 或 MOPS_MAIL_TO")
     body = {"from": f"重訊監控 <{env.get('MOPS_MAIL_FROM', 'alert@mail.homuchen.com')}>", "to": to,
