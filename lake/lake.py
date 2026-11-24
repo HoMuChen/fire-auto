@@ -7,6 +7,7 @@
   price|per|inst|margin|sbl|mv|holding/year=YYYY/data.parquet
   market/*.parquet、futures_30min/*.parquet、futures_1min/tx/year=YYYY/data.parquet
   broker/year=YYYY/month=MM/data.parquet、orderbook/{tick_hist|tick|bidask}/day=YYYY-MM-DD/{合約}.parquet
+  mops_news/year=YYYY/month=MM/data.parquet（重大訊息；來源 ai-dev ~/mops-monitor/data/mops.sqlite，可用 MOPS_DB 改）
 
 用法（/usr/local/bin/python3）：
   python3 lake/lake.py build [名稱 ...]     # 重建本機 data/lake/v1（只有內容變了的檔才會改寫）
@@ -358,6 +359,40 @@ def build_orderbook(ds):
                                        "columns": {f.name: str(f.type) for f in sample}, "files": files}
     print(f"  orderbook  " + "、".join(f"{k} {len(v)} 檔" for k, v in by_kind.items()) + f"  {time.time()-t0:.0f}s", flush=True)
 
+MOPS_DB = Path(os.environ.get("MOPS_DB", Path.home() / "mops-monitor" / "data" / "mops.sqlite"))   # mops_monitor.py 的資料庫
+
+
+def build_mops(ds):
+    """mops_monitor.py 的 SQLite → mops_news/year=YYYY/month=MM/data.parquet。
+    每次從 SQLite 全部重建，內容沒變的月份 sha256 相同、不會重傳；沒有資料庫的機器跳過（保留 manifest 舊紀錄）。"""
+    import sqlite3
+    if not MOPS_DB.exists():
+        print(f"  mops_news  略過：找不到 {MOPS_DB}", flush=True)
+        return
+    t0 = time.time()
+    con = sqlite3.connect(f"file:{MOPS_DB}?mode=ro", uri=True, timeout=30)
+    df = pd.read_sql("SELECT key, co_id AS stock_id, name, spoke_date, spoke_time, subject, detail, source, first_seen"
+                     " FROM announcements", con)
+    con.close()
+    df["datetime"] = pd.to_datetime(df.spoke_date + df.spoke_time, format="%Y%m%d%H%M%S")
+    df["date"] = df.datetime.dt.normalize()
+    df["first_seen"] = pd.to_datetime(df.first_seen).dt.tz_convert("Asia/Taipei").dt.tz_localize(None)
+    df = normalize(df[["date", "datetime", "stock_id", "name", "subject", "detail", "source", "first_seen", "key"]])
+    files = {}
+    ym = df.date.dt.strftime("%Y-%m")
+    for m in sorted(ym.unique()):
+        rel = f"mops_news/year={m[:4]}/month={m[5:]}/data.parquet"
+        files[rel] = write(to_table(df[ym == m]), rel)
+    for old in (STAGE / "mops_news").glob("year=*/month=*/data.parquet"):
+        if str(old.relative_to(STAGE)) not in files:
+            old.unlink()
+    ds["mops_news"] = _entry(df, files, "公開資訊觀測站重大訊息（fire-auto mops_monitor.py 每 5 分鐘輪詢即時清單，隔天和官方日期清單對帳補漏）；"
+                             "date／datetime＝發言日期時間（台北）、非交易日；detail＝說明全文（抓不到為 NULL）；"
+                             "source＝poll 即時抓到／reconcile 對帳才補到；first_seen＝第一次看到的時間（台北）；"
+                             "key＝去重鍵（代號|日期|時間|主旨雜湊）；2026-11-22 起", "month")
+    print(f"  mops_news  {len(df):>12,} 筆  {len(files):>3} 檔  {ds['mops_news']['min_date']} ~ {ds['mops_news']['max_date']}  {time.time()-t0:.0f}s", flush=True)
+
+
 def load_manifest(path=None):
     p = path or STAGE / MANIFEST
     return json.loads(Path(p).read_text()) if Path(p).exists() else {"version": PREFIX, "datasets": {}}
@@ -367,7 +402,7 @@ def build(names):
     STAGE.mkdir(parents=True, exist_ok=True)
     man = load_manifest()
     ds = man["datasets"]
-    want = names or list(SPEC) + ["market", "futures_1min", "broker", "orderbook"]
+    want = names or list(SPEC) + ["market", "futures_1min", "broker", "orderbook", "mops_news"]
     print(f"build → {STAGE}")
     for n in want:
         if n == "market":
@@ -378,6 +413,8 @@ def build(names):
             build_broker(ds)
         elif n == "orderbook":
             build_orderbook(ds)
+        elif n == "mops_news":
+            build_mops(ds)
         else:
             build_dataset(n, ds)
     man.update(version=PREFIX, generated_at=datetime.now().isoformat(timespec="seconds"),

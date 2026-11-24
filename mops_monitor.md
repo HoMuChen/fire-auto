@@ -2,7 +2,7 @@
 
 輪詢公開資訊觀測站的即時重大訊息，存進 SQLite，隔天再和官方日期清單對帳。
 
-**狀態（2026-11-22）：試跑中。** 只收資料，不發通知、不上 R2。2026-11-23（週一）是第一個完整交易日，2026-11-24 00:20 後看對帳結果。
+**狀態（2026-11-24）：** 11/23 第一個完整交易日對帳通過（官方 192 筆、輪詢抓到 192、漏 0）。資料每天由 `lake.py daily` 發布到 R2 的 `mops_news`，還沒有通知。
 
 ## 做法
 
@@ -26,6 +26,8 @@
 
 全文頁第一個 `<pre>` 是主旨，最長的 `<pre>` 才是說明全文。
 
+存託憑證（如 911608 明輝-DR）的全文走 `ajax_t59sb01`：`firstin=true&step=2b&SKEY=..&DATE1=西元YYYYMMDD&co_id=..&TYPEK=all&YEAR=115&MONTH=11`，頁面只有一個 `<pre>`。程式在 `raw_time` 存 `t59sb01` 標記這種公告。
+
 ## 部署（ai-dev）
 
 放在 `/Users/mu/mops-monitor/`，和實盤 repo 分開，不動 crontab。`mops_monitor.py` 和 `mops_monitor_run.sh` 分別部署成該目錄的 `mops_monitor.py`、`run.sh`，資料庫在 `data/mops.sqlite`。
@@ -44,10 +46,14 @@ launchd 在 ai-dev 上無法載入（`mu` 不是 console 使用者，bootstrap �
 
 - ai-dev 重開機後不會自動恢復，要手動啟動。
 - 程序掛掉沒有通知。
-- 平日尖峰的完整度和官方頻率限制還沒驗證。
+- MOPS 偶爾回 502 或逾時（一天 1～4 次），下一輪會補上，對帳也會再檢查。官方的頻率上限還沒測過。
 
-## 對帳通過後
+## R2
 
-- 每日匯出按月分區的 Parquet 到 R2（`v1/mops_news/year=YYYY/month=MM/`），加入 `catalog.duckdb` 的 `mops_news`，接在 `lake.py daily` 後，重寫當月和上月。
-- 不直接同步 `.sqlite`，避免 WAL 造成檔案不一致。
+`lake/lake.py` 的 `build_mops` 每次從 SQLite（預設 `~/mops-monitor/data/mops.sqlite`，可用 `MOPS_DB` 改）重建 `v1/mops_news/year=YYYY/month=MM/data.parquet`，view 是 `tw.main.mops_news`。內容沒變的月份 sha256 相同、不會重傳。沒有資料庫的機器會跳過。不直接同步 `.sqlite`，避免 WAL 造成檔案不一致。
+
+`lake.py daily` 只在週二～六 00:30 跑，所以週末的公告要到週二凌晨才會上 R2。
+
+## 之後
+
 - Telegram 通知直接從 ai-dev 的 SQLite 發，是否要做由使用者決定。

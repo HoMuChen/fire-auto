@@ -31,6 +31,7 @@ TW = timezone(timedelta(hours=8))
 DELAY = 1.5
 MAX_DETAILS_PER_RUN = 40
 MAX_DETAIL_TRIES = 5
+DR_MARK = "t59sb01"   # raw_time 存這個值＝存託憑證，全文走另一個端點
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS announcements(
@@ -102,10 +103,12 @@ def parse_rows(page):
         hhmmss = tm.replace(":", "").zfill(6)
         ad = roc_to_ad(date)
         keys = {k.lower(): v for k, v in re.findall(r"\.(\w+)\.value=['\"]([^'\"]*)", tr)}
+        dr = "t59sb01" in tr          # 存託憑證（如 911608 明輝-DR）的全文走 ajax_t59sb01，序號叫 SKEY
         out.append({
             "key": make_key(co_id, ad, hhmmss, subject), "co_id": co_id, "name": name,
             "spoke_date": ad, "spoke_time": hhmmss, "subject": subject,
-            "seq_no": keys.get("seq_no"), "raw_time": keys.get("spoke_time"),
+            "seq_no": keys.get("skey") if dr else keys.get("seq_no"),
+            "raw_time": DR_MARK if dr else keys.get("spoke_time"),
         })
     return out
 
@@ -152,13 +155,22 @@ def fetch_detail(row):
         time.sleep(DELAY)
         if not seq:
             return None, None, None
-    page = post("ajax_t05st01", {
-        "step": "2", "off": "1", "firstin": "1", "seq_no": seq, "spoke_time": raw_time,
-        "spoke_date": row["spoke_date"], "co_id": row["co_id"], "TYPEK": "all",
-    }, "t05st01")
-    # 頁面第一個 <pre> 是主旨，說明全文是最長的那個
+    if raw_time == DR_MARK:
+        # 存託憑證：頁面只有一個 <pre>，就是說明全文
+        page = post("ajax_t59sb01", {
+            "firstin": "true", "step": "2b", "SKEY": seq, "DATE1": row["spoke_date"], "co_id": row["co_id"],
+            "TYPEK": "all", "YEAR": str(int(row["spoke_date"][:4]) - 1911), "MONTH": str(int(row["spoke_date"][4:6])),
+            "colorchg": "", "SDAY": "", "EDAY": "", "id": "", "kind": "",
+        }, "t59sb01")
+        min_blocks = 1
+    else:
+        page = post("ajax_t05st01", {
+            "step": "2", "off": "1", "firstin": "1", "seq_no": seq, "spoke_time": raw_time,
+            "spoke_date": row["spoke_date"], "co_id": row["co_id"], "TYPEK": "all",
+        }, "t05st01")
+        min_blocks = 2   # 第一個 <pre> 是主旨，說明全文是最長的那個
     blocks = [clean(x) for x in re.findall(r"<pre[^>]*>(.*?)</pre>", page, re.S | re.I)]
-    return (max(blocks, key=len) if len(blocks) >= 2 else None), seq, raw_time
+    return (max(blocks, key=len) if len(blocks) >= min_blocks else None), seq, raw_time
 
 
 def connect():
