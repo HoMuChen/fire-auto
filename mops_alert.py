@@ -215,7 +215,7 @@ def facts(sid, info):
         out = []
         for who in ("外資", "投信", "自營商"):
             s = inst[inst.who == who].groupby("date").net.sum()
-            out.append((who, num(s[s.index.isin(days[-5:])].sum(), 0), num(s[s.index.isin(days[-20:])].sum(), 0)))
+            out.append((who, f"{s[s.index.isin(days[-5:])].sum():+,.0f}", f"{s[s.index.isin(days[-20:])].sum():+,.0f}"))
         sec.append(("法人買賣超（張）", ("", "近 5 日", "近 20 日"), out))
     mg = _read("margin", sid)
     if len(mg) > 20:
@@ -252,9 +252,122 @@ def history(sid, spoke_date, key):
     return out[:15]
 
 
+
+# ─────────── 圖表（PNG，信裡用 cid 內嵌；Gmail 不顯示 SVG 與 data URI）───────────
+UP, DOWN, LINE, MUTED, GRID, INK = "#e34948", "#008300", "#2a78d6", "#9ca3af", "#e5e7eb", "#52514e"   # 台股慣例：紅漲綠跌
+
+
+def _fig(rows, heights, hspace=0.12):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    plt.rcParams.update({"font.family": ["Heiti TC", "PingFang HK", "Arial Unicode MS", "sans-serif"],
+                         "axes.unicode_minus": False, "font.size": 9, "axes.edgecolor": GRID,
+                         "axes.labelcolor": INK, "xtick.color": INK, "ytick.color": INK})
+    fig, axes = plt.subplots(rows, 1, figsize=(7.2, sum(heights)), sharex=True,
+                             gridspec_kw={"height_ratios": heights, "hspace": hspace})
+    axes = axes if rows > 1 else [axes]
+    for ax in axes:
+        ax.grid(axis="y", color=GRID, linewidth=0.6)
+        ax.set_axisbelow(True)
+        for side in ("top", "right", "left"):
+            ax.spines[side].set_visible(False)
+        ax.tick_params(length=0)
+    return plt, fig, axes
+
+
+def _png(plt, fig):
+    import io
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    return buf.getvalue()
+
+
+def chart_price(sid, ann_date):
+    raw = _read("raw", sid)
+    raw = raw[raw.close > 0].tail(120)
+    if len(raw) < 20:
+        return None
+    plt, fig, (a1, a2) = _fig(2, [2.4, 0.9], hspace=0.22)
+    a1.plot(raw.date, raw.close, color=LINE, linewidth=2)
+    a1.set_title("收盤價（近 120 個交易日）", loc="left", fontsize=10, color=INK)
+    up = raw.close >= raw.close.shift(1)
+    a2.bar(raw.date, raw.volume / 1000, color=[UP if u else DOWN for u in up], width=0.8, alpha=0.75)
+    a2.set_ylabel("成交量（張）", fontsize=8)
+    d = pd.Timestamp(ann_date)
+    for ax in (a1, a2):
+        ax.axvline(d if d <= raw.date.max() else raw.date.max(), color=MUTED, linestyle="--", linewidth=1)
+    a1.annotate("公告" if d <= raw.date.max() else "公告（尚未交易）", xy=(min(d, raw.date.max()), a1.get_ylim()[1]),
+                xytext=(-4, -12), textcoords="offset points", ha="right", fontsize=8, color=INK)
+    fig.autofmt_xdate(rotation=0, ha="center")
+    return _png(plt, fig)
+
+
+def chart_revenue(sid):
+    rev = _read("revenue", sid)
+    if len(rev) < 13:
+        return None
+    rev = rev.assign(ym=rev.revenue_year * 100 + rev.revenue_month).drop_duplicates("ym", keep="last").set_index("ym").revenue
+    ym = list(rev.index)[-24:]
+    yoy = [rev[m] / rev[m - 100] - 1 if m - 100 in rev.index and rev[m - 100] else float("nan") for m in ym]
+    x = range(len(ym))
+    plt, fig, (a1, a2) = _fig(2, [2.0, 1.1])
+    a1.bar(x, [rev[m] / 1e8 for m in ym], color=LINE, width=0.7)
+    a1.set_title("月營收（億元，近 24 個月）", loc="left", fontsize=10, color=INK)
+    a2.bar(x, [v * 100 for v in yoy], color=[UP if v >= 0 else DOWN for v in yoy], width=0.7)
+    a2.axhline(0, color=MUTED, linewidth=0.8)
+    a2.set_ylabel("年增率（%）", fontsize=8)
+    a2.set_xticks([i for i in x if ym[i] % 100 in (1, 7)])
+    a2.set_xticklabels([f"{ym[i] // 100}/{ym[i] % 100:02d}" for i in x if ym[i] % 100 in (1, 7)])
+    return _png(plt, fig)
+
+
+def chart_inst(sid):
+    inst = _read("inst", sid)
+    if len(inst) == 0:
+        return None
+    inst = inst.assign(net=(inst.buy - inst.sell) / 1000)
+    days = sorted(inst.date.unique())[-20:]
+    series = [(who, inst[inst.name.str.startswith(pre)].groupby("date").net.sum().reindex(days, fill_value=0))
+              for who, pre in (("外資", "Foreign"), ("投信", "Investment"))]
+    series = [(w, s) for w, s in series if s.abs().sum() >= 1]          # 整段沒有買賣的法人不畫
+    if not series:
+        return None
+    plt, fig, axes = _fig(len(series), [1.3] * len(series), hspace=0.5)
+    for ax, (who, s) in zip(axes, series):
+        ax.bar(range(len(s)), s.values, color=[UP if v >= 0 else DOWN for v in s.values], width=0.7)
+        ax.axhline(0, color=MUTED, linewidth=0.8)
+        ax.set_title(f"{who}每日買賣超（張，近 20 日；紅＝買超、綠＝賣超）", loc="left", fontsize=10, color=INK)
+    axes[-1].set_xticks([0, len(days) - 1])
+    axes[-1].set_xticklabels([str(pd.Timestamp(days[0]).date()), str(pd.Timestamp(days[-1]).date())])
+    return _png(plt, fig)
+
+
+def charts(sid, ann_date):
+    """回傳 [(cid, png, 說明)]；任何一張失敗就略過，不影響報告。"""
+    out = []
+    for cid, fn, alt in (("price", lambda: chart_price(sid, ann_date), "股價與成交量"),
+                         ("revenue", lambda: chart_revenue(sid), "月營收與年增率"),
+                         ("inst", lambda: chart_inst(sid), "法人買賣超")):
+        try:
+            png = fn()
+            if png:
+                out.append((cid, png, alt))
+        except Exception as e:
+            print(f"  圖表 {cid} {sid} 失敗：{e}", file=sys.stderr)
+    return out
+
+
 # ─────────── HTML ───────────
 CSS_TD = "padding:4px 10px;border-bottom:1px solid #e5e7eb;font-size:14px;"
-COLOR = {"利多": "#15803d", "利空": "#b91c1c"}
+COLOR = {"利多": UP, "利空": DOWN}   # 台股慣例：紅＝利多、綠＝利空
+SIGNED = re.compile(r"(?<![\d/])[+-]\d[\d,]*(?:\.\d+)?%?")   # 帶正負號的數字（日期裡的 -11 不算）
+
+
+def colorize(text):
+    t = html.escape(str(text))
+    return SIGNED.sub(lambda m: f"<span style='color:{UP if m.group(0)[0] == '+' else DOWN};'>{m.group(0)}</span>", t)
 
 
 def table(cols, rows):
@@ -262,11 +375,11 @@ def table(cols, rows):
     if cols:
         h += "<tr>" + "".join(f"<th style='{CSS_TD}text-align:left;color:#6b7280;font-weight:600;'>{html.escape(c)}</th>" for c in cols) + "</tr>"
     for r in rows:
-        h += "<tr>" + "".join(f"<td style='{CSS_TD}{'text-align:right;' if i else ''}'>{html.escape(str(x))}</td>" for i, x in enumerate(r)) + "</tr>"
+        h += "<tr>" + "".join(f"<td style='{CSS_TD}{'text-align:right;' if i else ''}'>{colorize(x) if i else html.escape(str(x))}</td>" for i, x in enumerate(r)) + "</tr>"
     return h + "</table>"
 
 
-def render(ann, info, ana, sections, hist):
+def render(ann, info, ana, sections, hist, imgs=()):
     e = html.escape
     color = COLOR.get(ana.get("direction"), "#374151")
     t = datetime.strptime(ann["spoke_date"] + ann["spoke_time"], "%Y%m%d%H%M%S")
@@ -284,6 +397,8 @@ def render(ann, info, ana, sections, hist):
         body.append("<h3 style='font-size:16px;margin:16px 0 4px;'>接下來要觀察</h3><ul style='padding-left:20px;font-size:14px;'>"
                     + "".join(f"<li>{e(p)}</li>" for p in ana["watch"]) + "</ul>")
     body.append("<h3 style='font-size:16px;margin:20px 0 4px;'>資料</h3>")
+    for cid, _, alt in imgs:
+        body.append(f"<img src='cid:{cid}' alt='{e(alt)}' width='680' style='display:block;max-width:100%;height:auto;margin:4px 0 12px;'>")
     for title, cols, rows in sections:
         body.append(f"<div style='font-size:14px;font-weight:600;margin-top:8px;'>{e(title)}</div>" + table(cols, rows))
     if hist:
@@ -302,12 +417,16 @@ def mail_to(env):
     return [x for x in re.split(r"[,;\s]+", env.get("MOPS_MAIL_TO", "")) if x]
 
 
-def send_mail(env, subject, html_body):
+def send_mail(env, subject, html_body, imgs=()):
     key, to = env.get("RESEND_API_KEY"), mail_to(env)
     if not key or not to:
         raise RuntimeError("沒有設定 RESEND_API_KEY 或 MOPS_MAIL_TO")
     body = {"from": f"重訊監控 <{env.get('MOPS_MAIL_FROM', 'alert@mail.homuchen.com')}>", "to": to,
             "subject": subject, "html": html_body}
+    if imgs:                                   # 內嵌圖片：HTML 用 cid:xxx 引用
+        import base64
+        body["attachments"] = [{"filename": f"{cid}.png", "content": base64.b64encode(png).decode(), "content_id": cid}
+                               for cid, png, _ in imgs]
     req = urllib.request.Request("https://api.resend.com/emails", json.dumps(body).encode(), {
         "Authorization": f"Bearer {key}", "Content-Type": "application/json", "User-Agent": "mops-alert/1.0"})
     try:
@@ -326,10 +445,14 @@ def make_report(ann, info):
               f"=== 公司資料 ===\n{text}\n\n=== 近兩個月其他重訊 ===\n"
               + "\n".join(f"{r['spoke_date']} {r['subject'][:60]}" for r in hist))
     ana = parse_json(claude(prompt, CLAUDE_TIMEOUT[1]), "{")
-    return ana, render(ann, info, ana, sections, hist)
+    imgs = charts(ann["co_id"], f"{ann['spoke_date'][:4]}-{ann['spoke_date'][4:6]}-{ann['spoke_date'][6:]}")
+    return ana, render(ann, info, ana, sections, hist, imgs), imgs
 
 
-def save(ann, page):
+def save(ann, page, imgs=()):
+    import base64
+    for cid, png, _ in imgs:                   # 存檔版改成 data URI，瀏覽器直接開得了
+        page = page.replace(f"cid:{cid}", "data:image/png;base64," + base64.b64encode(png).decode())
     REPORTS.mkdir(exist_ok=True)
     p = REPORTS / f"{ann['spoke_date']}_{ann['spoke_time']}_{ann['co_id']}.html"
     p.write_text(f"<!doctype html><html><head><meta charset='utf-8'><title>{html.escape(ann['co_id'])} 重訊</title></head><body>{page}</body></html>")
@@ -388,12 +511,12 @@ def cmd_run(con, send):
     for a, r in hits:
         info = uni.loc[a["co_id"]]
         try:
-            ana, page = make_report(a, info)
-            path = save(a, page)
+            ana, page, imgs = make_report(a, info)
+            path = save(a, page, imgs)
             sent_at = None
             if send:
                 subj = f"[重訊{ana.get('direction', r.get('direction', ''))}] {a['co_id']} {info['name']}：{ana.get('title') or a['subject'][:30]}"
-                send_mail(env, subj, page)
+                send_mail(env, subj, page, imgs)
                 sent_at, sent = mm.now().isoformat(timespec="seconds"), sent + 1
             record(con, a["key"], "yes", ana.get("direction", r.get("direction")), r.get("reason"), str(path), sent_at)
         except Exception as e:
@@ -408,12 +531,12 @@ def cmd_report(con, key, send):
         sys.exit(f"找不到 {key}")
     a = dict(a)
     info = universe().loc[a["co_id"]]
-    ana, page = make_report(a, info)
-    path = save(a, page)
+    ana, page, imgs = make_report(a, info)
+    path = save(a, page, imgs)
     print(json.dumps(ana, ensure_ascii=False, indent=1))
     print(path)
     if send:
-        print("寄出", send_mail(load_env(), f"[重訊{ana.get('direction', '')}] {a['co_id']} {info['name']}：{ana.get('title', '')}", page))
+        print("寄出", send_mail(load_env(), f"[重訊{ana.get('direction', '')}] {a['co_id']} {info['name']}：{ana.get('title', '')}", page, imgs))
 
 
 def cmd_status(con, date):
