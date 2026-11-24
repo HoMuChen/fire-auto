@@ -291,7 +291,7 @@ def render(ann, info, ana, sections, hist):
                     + table(("日期", "主旨"), [(f"{r['spoke_date'][4:6]}/{r['spoke_date'][6:]} {r['spoke_time'][:2]}:{r['spoke_time'][2:4]}", r["subject"][:60]) for r in hist]))
     body.append("<h3 style='font-size:16px;margin:20px 0 4px;'>公告全文</h3>"
                 f"<pre style='white-space:pre-wrap;font-family:inherit;font-size:13px;background:#f9fafb;padding:12px;border-radius:6px;'>{e(ann['detail'] or '（全文未取得）')}</pre>")
-    body.append("<p style='font-size:12px;color:#9ca3af;margin-top:24px;'>fire-auto 重訊監控自動產生：股價等資料只到前一個交易日收盤，分析由模型撰寫，"
+    body.append("<p style='font-size:12px;color:#9ca3af;margin-top:24px;'>重訊監控自動產生：股價等資料只到前一個交易日收盤，分析由模型撰寫，"
                 "用來快速掌握消息，不是交易訊號。</p></div>")
     return "\n".join(body)
 
